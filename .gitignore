@@ -1,0 +1,7 @@
+# Local content artifacts — not part of the plugin repo
+html/
+inputs/
+
+# macOS
+.DS_Store
+**/.DS_Store
