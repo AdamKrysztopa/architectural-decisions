@@ -60,6 +60,11 @@ the best change is *removing* a hand-rolled pattern.
 1. **Read the code and name the smells.** Use `references/catalog.md` (smell → pattern). Common
    tells: big construction/algorithm conditionals, subclass explosions, manual resource cleanup,
    getter/setter pairs, hand-rolled singletons, `if obj is not None` guards, SQL inlined in logic.
+   The catalog's smells lean OOP/web-flavored; in library, scientific, or script code the highest-value
+   finding is often **plain duplication or an import-time side effect that maps to no pattern at
+   all** — the fix is "extract a shared function / helper, move the imports," and that is a perfectly
+   legitimate review item. Never skip a real problem just because no catalog row names it; the goal
+   is clearer code, not pattern coverage.
 2. **Map each smell to its pattern — and its Pythonic form.** Crucially, decide per finding whether
    the fix is the pattern or a language feature that *replaces* it (a module instead of a singleton,
    `with` instead of try/finally, a dataclass instead of a builder, `singledispatch` instead of a
@@ -80,6 +85,10 @@ Output:
 **Leave as-is:** <patterns/classes that are already appropriate.>
 **Consider simplifying away:** <hand-rolled patterns a language feature could replace.>
 ```
+
+**"Already idiomatic — no pattern needed" is a valid, even ideal, verdict.** If the code reads well
+and reaches for patterns only where they earn it, say so and stop. Don't manufacture findings; the
+most Pythonic review is often a short one.
 
 ## Recording the outcome (usually chat; a file on request)
 

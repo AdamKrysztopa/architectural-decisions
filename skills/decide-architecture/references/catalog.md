@@ -54,7 +54,7 @@ Microservices applied to the browser: a shell composes independently built/deplo
 
 ## III. Topology — how independent processes split and talk (pick one)
 
-### Modular Monolith `#p-microservices`
+### Modular Monolith `#p-modular-monolith`
 Clear internal module boundaries inside one deployable.
 - **When:** one deployable is fine; you want boundaries without the distributed-data tax. **The
   right default** for most teams.

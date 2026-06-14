@@ -59,8 +59,10 @@ who-talks-to-whom) to prevent dropped context and deadlocks.
   **Orchestrator-Workers** `#ap-orchestrator-workers`.
 - **A fixed roster of named specialists, central view** (coder/tester/reviewer; easy guardrails) →
   **Supervisor (Hierarchical)** `#ap-supervisor`.
-- **Peers hand off control down a chain** (triage → billing → refunds; low coordination) →
-  **Handoff (Swarm)** `#ap-handoff`.
+- **Peers hand off control down a chain** (independent stages with little shared context) →
+  **Handoff (Swarm)** `#ap-handoff`. *Caution:* a sequence of related steps a single agent could do
+  with tools (e.g. answer questions *and* issue a refund) is **not** a reason for a swarm — that's
+  one agent. Only split when the stages are genuinely independent and rarely share context.
 - **Many agents over an event backbone** (AI-native rebuild on Kafka / A2A) → **Multi-Agent Mesh**
   `#ap-mesh`.
 > Always surface: a single good agent often beats a multi-agent system — added agents multiply
@@ -75,6 +77,12 @@ who-talks-to-whom) to prevent dropped context and deadlocks.
   relevant slice.
 - **Learn reusable skills over time** (a long-lived agent that should improve) → **Skill Build
   (+ Retriever / Recorder)** `#ap-skill-build` — grow a library of executable skills, Voyager-style.
+  *Cost:* the heaviest memory option — a learned skill can encode and replay a wrong approach, so it
+  needs curation/validation; only worth it for a genuinely long-lived agent.
+
+> Memory and observability are **different concerns**: "Stateless" here means no memory carried
+> across the context window — it does **not** mean "don't trace." Tracing/audit (Q8) is always-on
+> regardless of the memory pick.
 
 ## Q7 — Reliability *(if Agent)*
 *What is the main reliability risk to harden against?*
@@ -84,7 +92,10 @@ who-talks-to-whom) to prevent dropped context and deadlocks.
   **SHIELDA error handling** `#ap-shielda` — map failures to a phase-aware recovery taxonomy instead
   of blind retries.
 - **Runaway loops or cost / low stakes** → a **step budget** so the loop fails safe rather than
-  running up a bill. Even low-stakes loops want one.
+  running up a bill.
+
+> A **step budget is baseline, not a choice** — *every* loop gets one. This question picks the
+> *additional* hardening (Integrator or SHIELDA) layered on top of that budget.
 
 ## Q8 — Governance
 *Does it take any irreversible or high-stakes actions (payments, deploys, account changes)?*

@@ -73,6 +73,11 @@ Here the deliverable is an honest assessment, not a fantasy redesign. The bias i
 1. **Map the current architecture.** Read enough of the codebase to name what's actually there on
    each axis: structure (layered? slices? rings?), topology (monolith? services?), data flow, UI,
    background work. Use the **review cues** in `references/catalog.md` to read the code's intent.
+   **Not every system maps to every axis** — a CLI tool, a library, a static frontend, or a
+   scientific script may have no meaningful Topology or Data axis. Mark those *n/a* instead of
+   forcing a label; the catalog cues lean toward request-serving backends, so down-scale them for
+   other shapes. And before counting files, separate product code from content/fixtures/vendored
+   deps so size doesn't mislead you.
 2. **Find the mismatches.** Compare the real shape against what the system needs. Look for the
    smells the catalog names: layer scatter, domain logic importing infrastructure types, a growing
    type-switch begging for a plugin/strategy, network calls with no stability patterns, a shared DB
@@ -97,6 +102,11 @@ Output — a review the user can prioritise:
 
 **Leave alone:** <parts that are fine as-is — say so explicitly, so the user doesn't over-correct.>
 ```
+
+**A clean bill of health is a valid result.** If the architecture is already right-sized for what
+the system is, say so plainly and keep the report short — name the current shape, confirm it fits,
+list nothing-to-do. Inventing findings to look thorough is itself a failure mode; a well-sized small
+app needs no refactor, and the most useful thing you can tell its author is "leave it."
 
 ## Recording the outcome (write the file)
 
@@ -128,8 +138,8 @@ them.>
 ```
 
 **Refactoring → a review report.** Write the review to `docs/architecture-review-<YYYY-MM-DD>.md`
-(Current shape + Findings + Leave-alone). If a finding is a direction the user commits to, offer to
-capture that one as its own ADR too.
+(create `docs/` if absent — Current shape + Findings + Leave-alone; short if the system is sound).
+If a finding is a direction the user commits to, offer to capture that one as its own ADR too.
 
 Write the file and report its path. Ask first only if the repo layout is unclear or the user is
 clearly still just exploring options rather than deciding.

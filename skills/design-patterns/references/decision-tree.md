@@ -27,8 +27,10 @@ Top question: **What are you trying to do?** → pick the closest goal, then one
 ## B. Structure / compose objects — *what structural problem do you have?*
 - **An incompatible interface** → **Adapter** `#dp-adapter`. *Pythonic:* a small wrapper; duck
   typing keeps it thin.
-- **Add behavior without changing the object** → **Decorator** `#dp-decorator`. *Pythonic:* built
-  in — `@decorator` + `functools.wraps`.
+- **Add behavior without changing the object** → **Decorator** `#dp-decorator`. *Pythonic:* for
+  *objects*, a thin wrapper class sharing the interface (often with `__getattr__` delegation) that
+  stacks in any order; for *functions*, the language's own `@decorator` + `functools.wraps`. Don't
+  reach for `@decorator` when the thing being wrapped is an object.
 - **One simple interface over a complex subsystem** → **Facade** `#dp-facade`. *Pythonic:* often
   just a module with a few top-level functions.
 - **Treat a single object and a tree the same way** → **Composite** `#dp-composite`. *Pythonic:* a

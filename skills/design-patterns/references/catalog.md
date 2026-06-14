@@ -69,4 +69,7 @@ goals.** A codebase with too many patterns is as sick as one with none. The best
 For each finding, state: the smell (with a file ref), the pattern it maps to, **and** whether the
 Pythonic answer is the pattern or a language feature that replaces it. Recommend the smallest change
 — frequently "replace this hand-rolled pattern with `with` / a dataclass / a module / a dict" rather
-than adding more structure. Patterns that already fit and read well: leave them, and say so.
+than adding more structure. Patterns that already fit and read well: leave them, and say so. And note the
+case no row above covers: **plain duplication or import-time side effects that need no pattern** —
+the fix is just "extract a shared function / helper, move the imports." Report it as a finding even
+though it isn't a GoF pattern; clearer code is the goal, not pattern coverage.

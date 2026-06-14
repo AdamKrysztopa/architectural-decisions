@@ -5,3 +5,6 @@ inputs/
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Skill eval results (local only)
+test-runs/

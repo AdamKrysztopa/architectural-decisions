@@ -63,6 +63,12 @@ active branches.>
 the task requires — or flagging a layer to drop.>
 ```
 
+**If the autonomy gate already answered "no agent" or "a workflow", don't force the table.** That
+outcome *is* the recommendation — and it's the most valuable one this skill gives. Say plainly what
+to build instead (a single well-prompted call, optionally with retrieval; or the one workflow shape
+and its guardrails), why it's sufficient, and the single signal that would later justify climbing
+the spectrum. Two honest lines beat a padded multi-layer design for a problem that didn't need one.
+
 ## Mode B — Refactoring: agent-system review
 
 The deliverable favours **subtracting autonomy and adding guardrails** over adding machinery. A
@@ -73,7 +79,13 @@ huge fraction of real agent problems are fixed by removing agents, not adding th
 2. **Run the seven-defect checklist** from `references/catalog.md`: (1) agent where a workflow/call
    would do, (2) multi-agent where one agent would do, (3) loops without a step budget + early-exit,
    (4) unvalidated tool outputs, (5) no durable memory when runs outlive the context window, (6)
-   ungated irreversible actions, (7) no tracing. Most findings live here.
+   ungated irreversible actions, (7) no tracing. Most findings live here. The checklist is a **lens,
+   not a form to fill**: many real systems are a *workflow* or a *workflow-of-single-calls* (e.g.
+   LangGraph), so translate each defect to what the system actually is rather than scoring it as if
+   it were an autonomous agent — and if you find a genuine issue that none of the seven name (a dead
+   tool, a disabled checkpointer, an unbuilt "agent" that's really a stub), report it anyway. Also
+   handle the **pre-build** case: if the agentic layer is only designed-on-paper / stubbed, review
+   the *intended* design and flag the defects to preempt before they're written.
 3. **Recommend conservatively.** Prefer collapsing a multi-agent design to one good agent, or a
    workflow to a single call, over adding a new pattern. Add only the guardrails the system actually
    lacks.
@@ -123,9 +135,11 @@ HITL, tracing), and the least-autonomy caveat: what was deliberately *not* built
 that would justify climbing the spectrum.>
 ```
 
-**Refactoring → a review report.** Write the review to `docs/agentic-review-<YYYY-MM-DD>.md`
-(Current design + Findings from the seven-defect checklist + Simplify / Sound-as-is). If a finding
-is a direction the user commits to, offer to capture it as its own ADR.
+**Refactoring → a review report.** Write the review to `docs/agentic-review-<YYYY-MM-DD>.md` (create
+`docs/` if absent — Current design + Findings from the seven-defect checklist + Simplify /
+Sound-as-is). If the system is already sound, say so plainly and keep the report short — a clean
+bill of health is a valid, useful outcome, not a failure to find work. If a finding is a direction
+the user commits to, offer to capture it as its own ADR.
 
 Write the file and report its path. Ask first only if the repo layout is unclear or the user is
 clearly still just exploring rather than deciding.

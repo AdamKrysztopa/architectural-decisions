@@ -31,7 +31,7 @@ language, natural sub-domains?*
 
 ### Q3 — Topology: how do you need to deploy and scale?
 The distribution axis. Pick exactly one.
-- **One deployable is fine** (just want clean internal module boundaries) → **Modular Monolith** `#p-microservices`
+- **One deployable is fine** (just want clean internal module boundaries) → **Modular Monolith** `#p-modular-monolith`
 - **A few separately-deployed services, one shared database** → **Service-Based** `#p-service-based`
 - **Independent services, each owning its data** (org size or scale forces it) → **Microservices** `#p-microservices`
 
@@ -62,10 +62,17 @@ producer knowing who consumes them?*
 - **Long-running or stateful jobs** (batch, agent loops, async tasks) → **Broker / Message Queue** `#p-distributed-rest`
 - **Spiky, short, glue work** (scale-to-zero functions on events) → **Serverless / FaaS** `#p-distributed-rest`
 
+> Don't double-count with Q6: Q6 is the *fan-out mechanism* (who reacts to an event); Q8 is *where
+> the work runs* (off the request path). An event-driven system often also needs a queue — that's
+> two distinct picks, not the same one twice.
+
 ### Q9 — Data processing at scale
 - **No real data pipeline** → nothing.
 - **A chain of transform stages** (ingest → transform → publish) → **Pipe-and-Filter / Pipeline** `#p-pipeline`
 - **Both reprocessable accuracy and low latency** → **Lambda / Kappa** `#p-lambda`
+  *(Tie-break vs Q7's Event Sourcing: ES replays your **domain history** to rebuild application
+  state; Lambda/Kappa reprocesses **analytics data** for dashboards/metrics. You can have both,
+  for different reasons.)*
 - **Refining data quality for a lakehouse** (Bronze→Silver→Gold) → **Medallion / Lakehouse** `#p-medallion`
 - **Many domains each owning their data** (a central team is the bottleneck) → **Data Mesh** `#p-data-mesh`
 - **Specialists collaborating via shared state** (multi-agent converging) → **Blackboard** `#p-medallion`
