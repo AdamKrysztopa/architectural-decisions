@@ -94,6 +94,41 @@ Output:
 **Sound as-is:** <parts that are already right.>
 ```
 
+## Recording the outcome (write the file)
+
+A design that lives only in a chat transcript is lost. Persist it.
+
+**Greenfield → an ADR.** After presenting the design, write `docs/adr/NNNN-<kebab-title>.md` — a
+4-digit number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/`
+if absent. Use this MADR-style template:
+
+```
+# NNNN. <decision title, e.g. "Single ReAct agent with HITL gates for the support bot">
+
+- Status: Accepted
+- Date: <YYYY-MM-DD>
+- Deciders: <the user / team, if known>
+
+## Context
+<the task and its forces — what the system must do, the autonomy genuinely required, the stakes /
+latency / cost constraints that drove each layer.>
+
+## Decision
+<the composed design: the layer · pattern · why table you just presented>
+
+## Consequences
+<the cost/watch-out for each layer, the guardrails included from day one (step budgets, loop caps,
+HITL, tracing), and the least-autonomy caveat: what was deliberately *not* built and the signal
+that would justify climbing the spectrum.>
+```
+
+**Refactoring → a review report.** Write the review to `docs/agentic-review-<YYYY-MM-DD>.md`
+(Current design + Findings from the seven-defect checklist + Simplify / Sound-as-is). If a finding
+is a direction the user commits to, offer to capture it as its own ADR.
+
+Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+clearly still just exploring rather than deciding.
+
 ## Why this shape
 
 The autonomy gate leads on purpose: the costliest agentic mistakes are made *before* any pattern is

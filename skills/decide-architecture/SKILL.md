@@ -98,6 +98,41 @@ Output — a review the user can prioritise:
 **Leave alone:** <parts that are fine as-is — say so explicitly, so the user doesn't over-correct.>
 ```
 
+## Recording the outcome (write the file)
+
+A decision that lives only in a chat transcript is lost. Persist it.
+
+**Greenfield → an ADR.** After presenting the stack, write `docs/adr/NNNN-<kebab-title>.md` — a
+4-digit number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/`
+if absent. Use this MADR-style template:
+
+```
+# NNNN. <decision title, e.g. "Adopt a modular monolith with a hexagonal core">
+
+- Status: Accepted
+- Date: <YYYY-MM-DD>
+- Deciders: <the user / team, if known>
+
+## Context
+<the forces from the interview — what's being built, and the load / team / domain facts that drove
+each axis. This is *why*, not just what.>
+
+## Decision
+<the composed stack: the axis · pick · why table you just presented>
+
+## Consequences
+<the cost accepted for each pick, the contextual notes triggered (gateway/mesh/stability/…), and
+the least-architecture caveat: which axes were deferred and the concrete signal that would reopen
+them.>
+```
+
+**Refactoring → a review report.** Write the review to `docs/architecture-review-<YYYY-MM-DD>.md`
+(Current shape + Findings + Leave-alone). If a finding is a direction the user commits to, offer to
+capture that one as its own ADR too.
+
+Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+clearly still just exploring options rather than deciding.
+
 ## Why this shape
 
 Naming the trade-off for every pick is deliberate: an architecture recommendation without its cost
