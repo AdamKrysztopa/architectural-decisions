@@ -1,0 +1,29 @@
+# arch-crew
+
+> A Claude Code plugin of three architectural-decision skills. Each helps you choose an architecture
+> for new work (a short selection interview) or audit existing code (a review against a pattern
+> catalog), and records the decision as an ADR or review report. The bias throughout: recommend the
+> least architecture that meets the requirement, and name the cost of every pick.
+
+## Skills
+
+- [decide-architecture](skills/decide-architecture/SKILL.md): software architecture — structure, topology, data, overlays. Greenfield → composed stack + ADR; existing code → review + targeted moves.
+- [design-patterns](skills/design-patterns/SKILL.md): GoF + Python-idiomatic design patterns. Greenfield → one recommended pattern + its Pythonic form; existing code → smell-to-pattern review.
+- [agentic-patterns](skills/agentic-patterns/SKILL.md): LLM-agent systems — autonomy level, reasoning loop, memory, governance, multi-agent topology. Greenfield → layered design + ADR; existing code → seven-defect review.
+
+## Reference knowledge (per skill)
+
+- [architecture decision tree](skills/decide-architecture/references/decision-tree.md) and [catalog](skills/decide-architecture/references/catalog.md)
+- [design-patterns decision tree](skills/design-patterns/references/decision-tree.md) and [catalog](skills/design-patterns/references/catalog.md)
+- [agentic decision tree](skills/agentic-patterns/references/decision-tree.md) and [catalog](skills/agentic-patterns/references/catalog.md)
+
+## Docs
+
+- [Documentation — how to use](docs/README.md)
+- [Worked examples](docs/examples/README.md)
+- [For coding agents](AGENTS.md)
+
+## Install
+
+- `/plugin marketplace add AdamKrysztopa/architectural-decisions`
+- `/plugin install arch-crew`
