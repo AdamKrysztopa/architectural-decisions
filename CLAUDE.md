@@ -4,15 +4,36 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-Three sibling **single-file, zero-dependency HTML reference documents** — interactive
-pattern catalogs, each ending in a clickable decision wizard:
+This repo is the **`arch-crew` Claude Code plugin** — three architectural-decision skills — plus
+the local HTML knowledge source those skills were distilled from.
 
-- `html/architecture-patterns.html` — software architecture patterns + a "build your stack" wizard.
-- `html/python-design-patterns.html` — GoF + Python-idiomatic patterns + a "which pattern?" wizard.
-- `html/agentic-patterns.html` — LLM-agent control-flow patterns + a "design your agentic system" wizard.
+### The plugin (the shipped artifact)
 
-Note: `html/` and `inputs/` are gitignored (local content artifacts); only the plugin
-scaffolding is tracked in git.
+`.claude-plugin/{plugin.json,marketplace.json}` + `package.json` define the `arch-crew` plugin.
+Three skills under `skills/`, each invoked as `arch-crew:<name>`:
+
+- `decide-architecture` — software architecture (structure/topology/data/overlays).
+- `design-patterns` — GoF + Python-idiomatic design patterns.
+- `agentic-patterns` — LLM-agent control-flow design.
+
+Each skill branches on project status: **greenfield → selection interview** (compose a
+recommendation) or **refactoring → code review** against the catalog. Each skill is a lean
+`SKILL.md` workflow plus two `references/` files read on demand (progressive disclosure):
+`decision-tree.md` (the interview/decision logic) and `catalog.md` (patterns with when/cost +
+code-review cues). Convention mirrors the sibling `ds-crew` plugin.
+
+### The HTML knowledge source (local only, not shipped)
+
+Three sibling **single-file, zero-dependency HTML reference documents** — interactive pattern
+catalogs, each ending in a clickable decision wizard. These are the **source of truth** the skills'
+references were burned in from; they are NOT part of the installable plugin:
+
+- `html/architecture-patterns.html` — architecture patterns + a "build your stack" wizard → `decide-architecture`.
+- `html/python-design-patterns.html` — GoF + Python-idiomatic patterns + a "which pattern?" wizard → `design-patterns`.
+- `html/agentic-patterns.html` — LLM-agent patterns + a "design your agentic system" wizard → `agentic-patterns`.
+
+When the catalogs change, re-distill the affected skill's `references/` from the HTML. `html/` and
+`inputs/` are gitignored — knowledge source only.
 
 The reading order / lineage is architecture → Python → agentic; each later file deliberately
 reuses the earlier files' visual system and CSS tokens.
