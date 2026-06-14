@@ -102,9 +102,10 @@ Output — a review the user can prioritise:
 
 A decision that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the stack, write `docs/adr/NNNN-<kebab-title>.md` — a
-4-digit number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/`
-if absent. Use this MADR-style template:
+**Greenfield → an ADR.** After presenting the stack, write `docs/adr/NNNN-short-title.md` (lowercase
+words joined by hyphens, e.g. `0001-modular-monolith-with-hexagonal-core.md`) — a 4-digit number,
+one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent. Use
+this MADR-style template:
 
 ```
 # NNNN. <decision title, e.g. "Adopt a modular monolith with a hexagonal core">

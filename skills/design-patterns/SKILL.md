@@ -89,8 +89,9 @@ standing record — so this skill is **chat-first**. Don't create files by defau
 Write a file when the decision is consequential enough to outlive the conversation, or when the
 user asks:
 - **A pattern choice that shapes a module's design** (e.g. "everything goes through a Service Layer
-  + Unit of Work") → an ADR at `docs/adr/NNNN-<kebab-title>.md` (4-digit, one past the highest in
-  `docs/adr/`, else `0001`), with **Context / Decision / Consequences** — and record the *Pythonic
+  + Unit of Work") → an ADR at `docs/adr/NNNN-short-title.md` (lowercase words joined by hyphens;
+  4-digit number, one past the highest in `docs/adr/`, else `0001`), with **Context / Decision /
+  Consequences** — and record the *Pythonic
   form chosen* in the Decision, since that's the part future readers will second-guess.
 - **A pattern review of existing code** → on request, write `docs/design-pattern-review-<YYYY-MM-DD>.md`
   (the Findings + Leave-as-is / Simplify-away sections).

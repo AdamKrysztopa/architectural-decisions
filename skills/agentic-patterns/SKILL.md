@@ -98,9 +98,10 @@ Output:
 
 A design that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the design, write `docs/adr/NNNN-<kebab-title>.md` — a
-4-digit number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/`
-if absent. Use this MADR-style template:
+**Greenfield → an ADR.** After presenting the design, write `docs/adr/NNNN-short-title.md` (lowercase
+words joined by hyphens, e.g. `0001-single-react-agent-with-hitl-gates.md`) — a 4-digit number, one
+past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent. Use this
+MADR-style template:
 
 ```
 # NNNN. <decision title, e.g. "Single ReAct agent with HITL gates for the support bot">
