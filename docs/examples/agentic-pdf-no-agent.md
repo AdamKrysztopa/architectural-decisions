@@ -7,7 +7,11 @@ with retrieval if the PDF is long. That's it."
 
 **What the skill did:** the autonomy gate (decision-tree Q1) recognized this as a single,
 predictable transformation — no runtime decisions, no loop, no external actions — and stopped there,
-treating "maybe retrieval" as deterministic preprocessing, not a reason to escalate. Output:
+treating "maybe retrieval" as deterministic preprocessing (a *fixed*, fetch-once step), not a reason
+to escalate. The line is **fixed-fetch vs. adaptive retrieval**: had the system needed to *decide*
+what / whether / how-many-times to retrieve and re-query on weak evidence, that would be **agentic
+RAG** — a genuine agent loop — and the gate would escalate to Q3, not demote to preprocessing. Here
+it doesn't, so "no agent" holds. Output:
 
 ---
 

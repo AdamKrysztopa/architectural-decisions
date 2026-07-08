@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Architectural-decision skills for Claude Code — pick or audit software architecture, design patterns, and agentic-system designs.",
-    "version": "0.1.1"
+    "version": "0.1.2"
   },
   "plugins": [
     {
       "name": "arch-crew",
       "source": "./",
       "description": "Three architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), and agentic-patterns (design an LLM-agent control flow). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "author": {
         "name": "Adam Krysztopa"
       },

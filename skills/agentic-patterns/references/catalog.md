@@ -19,6 +19,16 @@ existing agent code.
 - **Plan-and-Execute** `#ap-plan` — a planner decomposes the goal into ordered steps before an
   executor acts. *When:* long-horizon, multi-system tasks. *Cost:* brittle if it can't re-plan on
   failure. *Review cue:* a plan that's generated once and never revised when steps fail.
+- **Agentic RAG / Adaptive Retrieval** `#ap-agentic-rag` — retrieval as a *runtime decision*: the
+  loop decides whether to retrieve, which source, grades what came back, and re-queries on weak
+  evidence (Self-RAG, Corrective RAG / CRAG, Adaptive RAG). *When:* answer quality depends on
+  evidence the model must gather iteratively, not a single fixed fetch. *Cost:* ≈ **3–10× tokens and
+  2–5× latency** vs. static RAG — so route easy queries to a one-shot fast path and reserve the loop
+  for hard ones. *Review cue:* a fixed retrieve→generate pipeline that keeps returning
+  thin/irrelevant chunks with no grading or re-query step — **under-built RAG masquerading as "just
+  preprocessing."** *Prerequisite:* don't reach for it before advanced *static* RAG (hybrid dense +
+  BM25, a reranker, an eval harness) is sound — an agent looping over a weak retriever just pays more
+  to be wrong.
 
 ## II. Developer-steered control flow (workflows)
 - **Prompt Chaining** `#ap-prompt-chaining` — fixed sequence, each step feeds the next. *When:*
@@ -52,6 +62,14 @@ existing agent code.
 - **Retriever + Recorder** `#ap-retriever` — Recorder writes state out of the window; Retriever reads
   back the relevant slice. *When:* runs must survive the context window. *Review cue:* a long-running
   agent relying solely on context — state is lost on overflow/restart.
+- **Context Compaction / Summarization** `#ap-compaction` — periodically summarize or prune the
+  *running* trace so a long loop doesn't degrade ("lost in the middle") or overflow. Distinct from
+  Retriever/Recorder, which persist state *out* of the window; this manages what stays *in* it.
+  *When:* long ReAct runs, long chats. *Review cue:* a loop that just appends every observation until
+  quality quietly falls off a cliff.
+- **Sub-agent context isolation** `#ap-compaction` — give a spawned worker only the slice it needs,
+  not the whole parent trace. *When:* orchestrator/supervisor topologies. *Review cue:* workers
+  drowning in irrelevant parent context.
 - **Skill Build** `#ap-skill-build` — grow a library of reusable executable skills from experience
   (Voyager-style). *When:* a long-lived agent that should improve over time.
 - **Integrator** `#ap-integrator` — validate incoming tool data before it enters reasoning. *When:*
@@ -65,8 +83,14 @@ existing agent code.
   actions. *When:* payments, deploys, account changes. *Cost:* alert fatigue → rubber-stamping if
   scoped too broadly; scope tightly with a reject+feedback path. *Review cue:* irreversible actions
   with no gate.
-- **Controller** `#ap-hitl` — continuously monitors policy/behavior alongside the agent. Pairs with
-  HITL for high-stakes systems.
+- **Controller** `#ap-controller` — continuously monitors policy/behavior alongside the agent. Pairs
+  with HITL for high-stakes systems.
+- **Input/Output Guardrails** `#ap-guardrails` — a lightweight guard (a classifier or small model)
+  screens *inputs* (jailbreak, PII, off-scope) and *outputs* (safety, schema, groundedness) around
+  the agent. Cheap, always-on, and *orthogonal* to the other two: Controller watches behavior, HITL
+  gates irreversible actions, Guardrails filter what crosses the boundary. *When:* any user-facing or
+  untrusted input. *Review cue:* raw user input reaching tools, or raw model output reaching users,
+  with nothing in between.
 - **Observability / Tracing** `#ap-observability` — trace every Thought/Action/Observation, tokens,
   cost, tool latency. The line between a demo and production. *Review cue:* no tracing — failures are
   un-diagnosable.
@@ -85,3 +109,10 @@ does every loop have a step budget + early-exit? **(4)** are tool outputs valida
 **(5)** is there durable memory if runs outlive the context window? **(6)** are irreversible actions
 gated by HITL? **(7)** is everything traced? Most agentic failures are one of these seven, not a
 missing exotic pattern.
+
+**(8) The counter-check — the one that guards the *other* direction:** is a workflow or single call
+silently doing an agent's job *badly*? — e.g. a hardcoded retrieval pipeline that keeps missing
+because it can't re-query (under-built agentic RAG), or a fixed chain that breaks whenever inputs
+don't fit its shape. Under-building is rarer than over-building, but it's a real defect: flag it —
+don't *only* ever subtract autonomy. Checks (1)–(7) all remove autonomy; (8) exists so the review
+isn't one-sided.

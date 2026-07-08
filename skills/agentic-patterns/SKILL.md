@@ -20,7 +20,7 @@ an integration seam.
 Knowledge lives in two references you read on demand:
 - `references/decision-tree.md` — the layered design interview, bottom of the autonomy spectrum up.
 - `references/catalog.md` — every pattern (when / cost / review cue) and the **seven recurring
-  defects** to check existing agent code against.
+  defects** (plus an under-building counter-check) to check existing agent code against.
 
 ## Step 0 — Establish where the user is
 
@@ -31,13 +31,26 @@ The request usually tells you: "how should I build…" / "I want an agent that�
 "review my agent" / "is our multi-agent setup right?" / a repo to read = refactoring. Ask only if
 ambiguous.
 
+**Also detect whether autonomy is an *open question* or a *fixed constraint*.** "Should this be an
+agent?" is open — run the autonomy gate. But "I've committed to an agent (a product decision, an org
+standard, a capability I'm building to learn) — help me build it *well*" is fixed: acknowledge the
+constraint, name the cost once, and proceed to the design layers. Don't relitigate Q1 every turn
+when the user has already closed it — in real work they've often *already decided* and want the
+layered design, not a re-argument of whether to build at all.
+
 ## Mode A — Greenfield: the layered design interview
 
 Read `references/decision-tree.md` and walk it from the **autonomy gate** up.
 
-1. **Push down the spectrum first.** Genuinely test whether a single call or a workflow suffices
-   before recommending an agent — this is the highest-leverage thing the skill does. The honest
-   answer is often "you don't need an agent." Don't skip the gate to get to the fun part.
+1. **Push down the spectrum first — but the gate cuts both ways.** Genuinely test whether a single
+   call or a workflow suffices before recommending an agent — this is the highest-leverage thing the
+   skill does, and the honest answer is often "you don't need an agent." *Don't over-correct, though:*
+   autonomy **is** genuinely required — say so as readily as "no agent" — when the model must choose
+   the next action at runtime, when retrieval is *adaptive* (deciding whether/what/how-many-times to
+   fetch and re-querying on weak evidence — that's **agentic RAG**, not preprocessing), when a step
+   needs an observation that doesn't exist until an earlier step runs, or when the path space is too
+   large to hardcode. Demote to "no agent" only when *none* of those hold. Don't skip the gate to get
+   to the fun part — and don't force a genuinely open task into a rigid pipeline either.
 2. **Walk the layers in order**, skipping branches that don't apply (workflow designs skip the
    agent-only layers; single-agent designs skip topology). Ask one layer at a time.
 3. **Compose the design** — stack the selected layers, each naming its pattern and the one-line
@@ -72,17 +85,23 @@ the spectrum. Two honest lines beat a padded multi-layer design for a problem th
 ## Mode B — Refactoring: agent-system review
 
 The deliverable favours **subtracting autonomy and adding guardrails** over adding machinery. A
-huge fraction of real agent problems are fixed by removing agents, not adding them.
+huge fraction of real agent problems are fixed by removing agents, not adding them — but the other
+tail is real too: occasionally a workflow or single call is silently doing an agent's job *badly*
+(most often an under-built retrieval pipeline that can't re-query). Weigh both directions; don't
+only ever subtract.
 
 1. **Map the current design.** From the code or description, name each layer: autonomy level,
    reasoning loop, single vs. multi, memory, reliability, governance, integration.
-2. **Run the seven-defect checklist** from `references/catalog.md`: (1) agent where a workflow/call
-   would do, (2) multi-agent where one agent would do, (3) loops without a step budget + early-exit,
-   (4) unvalidated tool outputs, (5) no durable memory when runs outlive the context window, (6)
-   ungated irreversible actions, (7) no tracing. Most findings live here. The checklist is a **lens,
+2. **Run the checklist** from `references/catalog.md` — seven over-building defects plus one
+   under-building counter-check: (1) agent where a workflow/call would do, (2) multi-agent where one
+   agent would do, (3) loops without a step budget + early-exit, (4) unvalidated tool outputs, (5) no
+   durable memory when runs outlive the context window, (6) ungated irreversible actions, (7) no
+   tracing, and (8) — the other direction — a workflow/single call silently doing an agent's job
+   badly (e.g. hardcoded retrieval that can't re-query). Most findings live in (1)–(7); (8) keeps the
+   review honest. The checklist is a **lens,
    not a form to fill**: many real systems are a *workflow* or a *workflow-of-single-calls* (e.g.
    LangGraph), so translate each defect to what the system actually is rather than scoring it as if
-   it were an autonomous agent — and if you find a genuine issue that none of the seven name (a dead
+   it were an autonomous agent — and if you find a genuine issue that none of the eight name (a dead
    tool, a disabled checkpointer, an unbuilt "agent" that's really a stub), report it anyway. Also
    handle the **pre-build** case: if the agentic layer is only designed-on-paper / stubbed, review
    the *intended* design and flag the defects to preempt before they're written.

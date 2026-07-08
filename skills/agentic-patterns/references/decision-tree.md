@@ -13,12 +13,26 @@ selected layers into the final design.
 
 ## Q1 — Autonomy gate (always ask first)
 *How much autonomy does the task actually need? Start at the bottom.*
-- **A single well-prompted call could do it** (answer/summarize/classify once, optionally with
-  retrieval) → **No agent. One call.** `#ap-intro` — the cheapest, most testable, most reliable
-  option. Stop here. Add Tool Use only if it must act on a system. *(This is the most undervalued
-  answer — reach for it more often than feels natural.)*
+- **A single well-prompted call could do it** (answer/summarize/classify once, with a *fixed*
+  fetch-once retrieval) → **No agent. One call.** `#ap-intro` — the cheapest, most testable, most
+  reliable option. Stop here. Add Tool Use only if it must act on a system. *(The most undervalued
+  answer — but calibrate, don't over-correct: demote to "no agent" only when the positive test below
+  fails.)*
 - **Predictable steps a developer can lay out** → **Workflow** → go to Q2.
 - **Open-ended — the model must decide steps at runtime** → **Agent** → go to Q3.
+
+**Autonomy IS genuinely required — do NOT demote — when ANY of these hold:**
+- the model must decide *at runtime* which action/tool/step comes next, and you cannot enumerate the
+  branches in code;
+- the task needs *adaptive retrieval* — deciding whether / what / how-many-times to fetch, and
+  re-querying on weak evidence. That is **agentic RAG** (`#ap-agentic-rag`), an agent loop — **not**
+  preprocessing. Only a *fixed* fetch-once-then-stuff retrieval stays "no agent";
+- a step depends on an observation that doesn't exist until an earlier step runs (irreducible feedback);
+- the valid path space is too large or too data-dependent to hardcode.
+
+If one holds, an agent (or agentic workflow) is the honest answer — **say so as readily as you say
+"no agent."** The gate has teeth on both sides: under-building a genuinely open task into a rigid
+pipeline is as real a defect as over-building.
 
 ## Q2 — Workflow shape *(if Workflow)*
 A workflow is developer-steered: predictable, cheaper, testable. Pick the shape:

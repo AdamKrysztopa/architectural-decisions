@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "license": "MIT",
   "description": "A suite of architectural-decision skills for Claude Code (decide-architecture, design-patterns, agentic-patterns). Each branches on project status: greenfield runs a selection interview, refactoring reviews existing code against the pattern catalog.",
   "author": {

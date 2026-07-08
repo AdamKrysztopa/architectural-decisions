@@ -4,9 +4,9 @@ A suite of **architectural-decision skills** for Claude Code. Three skills help 
 architecture for new work, or *audit* the architecture of code you already have — each branching
 automatically on whether you're greenfield or refactoring.
 
-> **Validated across 20 real-world cases** (both modes, real repositories): zero wrong
-> recommendations, and it recommends *doing less* — no agent, no microservices, no pattern — as
-> readily as doing more. **[Full docs →](docs/README.md)** · **[Examples →](docs/examples/README.md)**
+> **Validated across 20 real-world cases** spanning both modes and real repositories — it recommends
+> *doing less* (no agent, no microservices, no pattern) as readily as doing more.
+> **[Full docs →](docs/README.md)** · **[Examples →](docs/examples/README.md)**
 
 | Skill | Use it to… | Greenfield mode | Refactoring mode |
 |-------|-----------|-----------------|------------------|
