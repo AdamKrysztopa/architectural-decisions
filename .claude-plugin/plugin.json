@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), and agentic-patterns (LLM-agent control-flow design). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves.",
   "author": {
     "name": "Adam Krysztopa",
