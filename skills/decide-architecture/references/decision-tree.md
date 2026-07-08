@@ -66,16 +66,45 @@ producer knowing who consumes them?*
 > the work runs* (off the request path). An event-driven system often also needs a queue — that's
 > two distinct picks, not the same one twice.
 
-### Q9 — Data processing at scale
-- **No real data pipeline** → nothing.
-- **A chain of transform stages** (ingest → transform → publish) → **Pipe-and-Filter / Pipeline** `#p-pipeline`
-- **Both reprocessable accuracy and low latency** → **Lambda / Kappa** `#p-lambda`
+### Q9 — Data: what's the data story? *(the gate)*
+- **No real data platform** (app persistence only) → nothing; skip Q9.1–Q9.4.
+- **A chain of transform stages** (ingest → transform → publish, or an agent graph) → **Pipe-and-Filter
+  / Pipeline** `#p-pipeline`; skip Q9.1–Q9.4.
+- **Specialists collaborating via shared state** (multi-agent converging) → **Blackboard** `#p-blackboard`; skip Q9.1–Q9.4.
+- **A real analytics / ML data platform** (data stored, refined, processed and owned at scale) →
+  walk the four sub-axes Q9.1–Q9.4. They are *orthogonal*: a platform picks one of each and composes
+  them, so don't treat them as competing.
+
+The data axis is four questions, not one (the paper's framing): *where data lives · how it's refined
+· how it moves · who owns it.* Ask them only when Q9 = "real data platform".
+
+#### Q9.1 — Storage substrate: where does the data live? *(pick one)*
+- **Structured & modelled before load** (schema-on-write; pure BI/reporting) → **Data Warehouse** `#p-warehouse`
+- **Raw & cheap, interpreted at query time** (schema-on-read; varied/unknown data) → **Data Lake** `#p-lake`
+  *(warn: without governance a lake becomes a swamp)*
+- **Both — open storage with ACID, schema & BI** (Delta/Iceberg/Hudi) → **Lakehouse** `#p-lakehouse` *(the 2026 default)*
+
+#### Q9.2 — Refinement: how is the data refined or modelled?
+- **No formal refinement model** → nothing.
+- **Quality tiers Bronze→Silver→Gold** → **Medallion** `#p-medallion`
+- **Auditable historical model** (Hubs/Links/Satellites; heavy-audit domains) → **Data Vault** `#p-vault`
+
+#### Q9.3 — Processing model: how does data move? *(pick one)*
+- **Batch only** (periodic loads are enough) → nothing extra.
+- **Batch correctness plus streaming freshness** → **Lambda / Kappa** `#p-lambda` *(prefer Kappa if you can replay)*
   *(Tie-break vs Q7's Event Sourcing: ES replays your **domain history** to rebuild application
   state; Lambda/Kappa reprocesses **analytics data** for dashboards/metrics. You can have both,
   for different reasons.)*
-- **Refining data quality for a lakehouse** (Bronze→Silver→Gold) → **Medallion / Lakehouse** `#p-medallion`
-- **Many domains each owning their data** (a central team is the bottleneck) → **Data Mesh** `#p-data-mesh`
-- **Specialists collaborating via shared state** (multi-agent converging) → **Blackboard** `#p-medallion`
+- **Continuous, end to end, near-zero latency** (Kafka → Flink/Spark → lakehouse) → **Modern Streaming** `#p-streaming`
+
+#### Q9.4 — Ownership & governance: who owns the data?
+- **One central team, single conformed platform** → nothing extra.
+- **Central core feeding departmental marts** (consistency at the core, autonomy at the edges) → **Hub-and-Spoke** `#p-hub-spoke`
+- **Domains own data-as-a-product** (a central team is the bottleneck) → **Data Mesh** `#p-data-mesh`
+  *(an org pattern first — don't adopt it for a small team)*
+- *Contextual note:* scattered sources you can't physically move → surface **Data Fabric** `#p-fabric`,
+  an AI-assisted metadata/governance layer. Mesh decentralises ownership; Fabric centralises
+  integration & governance — many platforms run both.
 
 ### Q10 — Volatile seam
 *Is there one volatile external dependency you'll likely swap, fake or mock — an LLM/MT provider,
@@ -101,7 +130,11 @@ processed in parallel (Erlang / Akka territory)?*
 Collect one pick per answered axis into a labelled stack:
 `Structure` · `Modelling` (DDD, if yes) · `Topology` · `Scale` (Space-Based, if yes) ·
 `Transactions` (Saga, if yes) · `Integration` (Event-Driven, if yes) · `Read/write` (CQRS/ES) ·
-`Background jobs` · `Data & ML` · `Volatile seam` · `Presentation` · `Concurrency`.
+`Background jobs` · `Data` · `Volatile seam` · `Presentation` · `Concurrency`.
+
+The **Data** axis is special: a real data platform contributes *several* rows at once — one each for
+`Data — storage`, `Data — refinement`, `Data — processing`, `Data — ownership` (Q9.1–Q9.4) — because
+those questions are orthogonal. A simple app or a plain pipeline contributes at most one.
 
 ### Contextual notes to surface automatically
 - **Microservices** → you'll also likely want an **API Gateway / BFF** at the edge, a **service
@@ -109,5 +142,8 @@ Collect one pick per answered axis into a labelled stack:
 - **Microservices or Service-Based** → once calls cross a network, wrap each in **stability
   patterns** — circuit breakers, bulkheads, retries with timeouts.
 - **Microservices + extreme scale** → consider **cell-based** architecture.
+- **Data Mesh** → it's an *organisational* pattern as much as a technical one; it solves a
+  people-and-scale problem, so don't adopt it for a small team just for the architecture.
+- **Data Lake chosen** → pair it with governance/catalog from day one, or it becomes a data swamp.
 - Always close with the thesis: the goal is the *least* architecture that meets the requirement;
   every axis you add buys capability at the cost of operational complexity — make each earn it.

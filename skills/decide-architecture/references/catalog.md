@@ -103,20 +103,62 @@ the request path.
 **Broker / Message Queue** (long-running/stateful async jobs), **Serverless / FaaS** (spiky,
 short, scale-to-zero glue), API Gateway/BFF, service mesh, sidecar.
 
-## IV. Data — how data is processed and refined at scale
+## IV. Data — where it lives, how it's refined, how it moves, who owns it
 
+The data axis is really **four orthogonal questions** — a real analytics/ML platform picks one
+answer to *each* and composes them (a simple app answers "none" to all four). Don't force them into
+a single either/or: a platform can be Lakehouse *and* Medallion *and* streaming *and* mesh at once.
+
+**Where data lives — the storage substrate (pick one)**
+- **Data Warehouse** `#p-warehouse` — structured, modelled *before* load (schema-on-write). When:
+  pure BI/reporting on known schemas (Snowflake, BigQuery, Redshift). Cost: rigid; poor fit for raw
+  or unstructured data. Review cue: heavy upfront modelling for what is really exploratory data.
+- **Data Lake** `#p-lake` — raw structured/semi/unstructured data stored cheaply, interpreted at
+  query time (schema-on-read). When: a flexible landing zone for varied/unknown data. Cost: without
+  governance it rots into a *data swamp*. Review cue: files dumped with no catalog/lineage → add
+  governance or promote to a lakehouse.
+- **Lakehouse** `#p-lakehouse` — lake-cheap open storage *plus* warehouse features (ACID, schema
+  enforcement, time travel, BI querying) on open formats (Delta, Iceberg, Hudi). When: the **2026
+  default** for new platforms — ends the lake-vs-warehouse debate. Cost: younger tooling than mature
+  warehouses.
+
+**How data is refined / modelled**
+- **Medallion** `#p-medallion` — Bronze→Silver→Gold quality tiers (raw → cleaned/conformed →
+  business-ready). When: refining data quality on a lakehouse; each tier has one job so failures
+  isolate and you rebuild downstream instead of re-pulling the source.
+- **Data Vault** `#p-vault` — Hubs (business keys) · Links (relationships) · Satellites
+  (time-stamped attributes). When: auditability and schema evolution dominate — banking, insurance,
+  healthcare ("what did this record look like on this date?"). Cost: many tables and join
+  complexity; overkill outside heavy-audit domains.
+
+**How data moves — the processing model (pick one)**
 - **Pipe-and-Filter / Pipeline** `#p-pipeline` — a chain of independent transform stages
-  (ingest → transform → publish). When: staged data/ETL or an agent graph.
+  (ingest → transform → publish). When: staged batch/ETL or an agent graph.
 - **Lambda / Kappa** `#p-lambda` — batch layer for correctness + speed layer for freshness
-  (Lambda); or one stream for everything (Kappa). When: need both reprocessable accuracy and low
-  latency.
-- **Medallion / Lakehouse** `#p-medallion` — Bronze→Silver→Gold quality tiers. When: refining data
-  quality for a lakehouse.
+  (Lambda); or one replayable stream for everything (Kappa). When: need both reprocessable accuracy
+  and low latency. Prefer Kappa unless a hard reason keeps batch separate — Lambda's twin codebases
+  are the "Lambda tax".
+- **Modern Streaming** `#p-streaming` — continuous events source→analytics at near-zero latency
+  (Kafka → Flink/Spark → lakehouse); the convergence of Kappa, Event-Driven and Lakehouse thinking.
+  When: real-time analytics, fraud detection, live recommendations, operational dashboards.
+  (Rides on **Event-Driven** `#p-event-driven` in Part III — its messaging backbone.)
+
+**Who owns and governs the data**
+- **Hub-and-Spoke** `#p-hub-spoke` — one central conformed warehouse feeds purpose-built
+  departmental data marts. When: consistency at the core with autonomy at the edges (classic
+  enterprise BI). Cost: the central warehouse is a bottleneck and single point of contention.
 - **Data Mesh** `#p-data-mesh` — decentralised, domain-owned data-as-a-product on shared self-serve
-  infra. When: a central data team is the bottleneck; many domains own their data. The decentralised
-  contrast to the centralized lakehouse.
-- **Blackboard** `#p-medallion` — specialists collaborate via shared state, converging on a
-  solution. When: multi-agent or multi-stage problem-solving with no fixed pipeline.
+  infra with federated governance. When: a central data team has become the bottleneck across many
+  domains. It's an *organisational* pattern first — don't adopt it for a small team. The
+  decentralised counterpoint to the central lakehouse (microservices : monolith :: mesh : lakehouse).
+- **Data Fabric** `#p-fabric` — an AI-assisted integration/governance layer (active metadata,
+  discovery, lineage, policy) unifying access across sources you don't want to physically move.
+  When: scattered sources and governance pain. Mesh decentralises *ownership* (an org model);
+  Fabric centralises *integration & governance* (a tech layer) — many enterprises run both.
+
+**Collaboration**
+- **Blackboard** `#p-blackboard` — specialists read/write shared state, converging on a solution.
+  When: multi-agent or multi-stage problem-solving with no fixed pipeline.
 
 ## V. Overlays — styles that ride on the others
 - **Actor model** `#p-actor` — many independent stateful entities processed in parallel with fault
