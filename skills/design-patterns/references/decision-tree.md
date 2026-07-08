@@ -23,6 +23,9 @@ Top question: **What are you trying to do?** → pick the closest goal, then one
   use a module-level object; a Python module is already a singleton.
 - **Recycle costly workers across many tasks** → **Thread / Process Pool** `#dp-pool`. *Pythonic:*
   `concurrent.futures.ThreadPoolExecutor` / `ProcessPoolExecutor`.
+- **Model a domain value safely (money, email, coordinates)** → **Value Object** `#dp-value-object`.
+  *Pythonic:* a `@dataclass(frozen=True)` that validates in `__post_init__` — immutable, equality by
+  value, illegal states unrepresentable.
 
 ## B. Structure / compose objects — *what structural problem do you have?*
 - **An incompatible interface** → **Adapter** `#dp-adapter`. *Pythonic:* a small wrapper; duck
@@ -65,6 +68,14 @@ Top question: **What are you trying to do?** → pick the closest goal, then one
   capture `__dict__` / a dataclass snapshot.
 - **Evaluate a small grammar / expression language** → **Interpreter** `#dp-interpreter`.
   *Pythonic:* reach for `lark` / `pyparsing` / `ast`; hand-rolled interpreters are rare.
+- **Compose reusable business rules (combine / negate them)** → **Specification** `#dp-specification`.
+  *Pythonic:* predicates combined with `&` / `|`, or small objects implementing `__and__`/`__or__`.
+- **Externalise a decision or authorization rule** → **Policy** `#dp-policy`. *Pythonic:* a callable
+  or a registry keyed by context — it's a Strategy for *rules*. (Swapping an *algorithm*? that's
+  plain **Strategy**.)
+- **Chain steps that can fail, without nested try/except** → **Result / Maybe** `#dp-result`.
+  *Pythonic:* railway-oriented — the `returns` library, or a small `Result` union / `T | None` with
+  early returns.
 
 ## D. Resource / language idiom — *which lifecycle or access concern is it?*
 - **Guarantee setup and teardown around a block** → **Context Manager** `#dp-context-manager`.
@@ -95,6 +106,25 @@ Top question: **What are you trying to do?** → pick the closest goal, then one
   *Pythonic:* `queue.Queue` for threads, `asyncio.Queue` for async.
 - **Multiplex I/O without a thread each** → **Event Loop** `#dp-event-loop`. *Pythonic:* `asyncio`
   — `async def` / `await`.
+- **Make flaky I/O resilient (retry with backoff)** → **Retry** `#dp-retry`. *Pythonic:* a decorator
+  with configurable backoff — reach for `tenacity` before hand-rolling `for attempt in range(3)`.
+  The code-level companion to the architecture skill's stability patterns.
+
+## Telling look-alikes apart
+When two leaves feel equally plausible, the pick is usually decided by *one* question — don't guess:
+- **Factory Method vs Abstract Factory vs Builder vs Prototype** — one class chosen at runtime ·
+  a consistent *family* · many optional steps · cheaper to clone than rebuild.
+- **Adapter vs Facade vs Proxy vs Decorator vs Bridge** — make an incompatible interface fit ·
+  simplify a subsystem · same interface + control access · same interface + add behaviour · split
+  abstraction from implementation.
+- **Strategy vs State vs Command** — swap an algorithm from outside · behaviour follows internal
+  state (+ transitions) · reify an action to queue/log/undo it.
+- **Observer vs Mediator vs Message Bus** — one → many subscribers · many peers via one hub · typed
+  messages to registered handlers app-wide.
+- **Chain of Responsibility vs Decorator** — a handler can *stop* the chain · every wrapper passes
+  through and adds behaviour.
+- **Strategy vs Policy** — swapping an *algorithm* vs swapping a *business rule*; same mechanism,
+  different intent.
 
 ## The cardinal Pythonic rule
 Before recommending any pattern, ask whether the language already solves it (a function, a module,

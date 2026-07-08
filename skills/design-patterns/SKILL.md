@@ -17,9 +17,10 @@ pattern** (plus an optional alternative), not a stack.
 
 Knowledge lives in two references you read on demand:
 - `references/decision-tree.md` — the "what are you trying to do?" router → one pattern + its
-  Pythonic caveat.
+  Pythonic caveat. Ends with a **"telling look-alikes apart"** cheat-sheet for the confusion pairs.
 - `references/catalog.md` — the refactoring lens: code smells mapped to the pattern (and the
-  language feature) that resolves them.
+  language feature) that resolves them. Also carries the **disambiguation** ("patterns people
+  confuse") and **principles** (SOLID / GRASP — *why* a smell is a smell) sections.
 
 ## Step 0 — Establish where the user is
 
@@ -71,6 +72,11 @@ the best change is *removing* a hand-rolled pattern.
    visitor).
 3. **Recommend conservatively.** Patterns that already fit and read well: leave them and say so.
    Don't pattern-ize code that's fine.
+4. **When a smell maps to two patterns, disambiguate — don't guess.** Use the "patterns people
+   confuse" section (Strategy vs State vs Command, Adapter vs Facade vs Proxy vs Decorator, …); the
+   distinguishing question usually settles it. And where it sharpens the finding, name the
+   **principle** being violated (SRP, OCP, DIP…) — "this class has three reasons to change" is often
+   more persuasive than the pattern label.
 
 Output:
 
