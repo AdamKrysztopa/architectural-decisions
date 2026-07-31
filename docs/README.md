@@ -1,12 +1,13 @@
 # arch-crew — documentation
 
-Three architectural-decision skills that make **architectural decisions** with you, then write them down.
+Four architectural-decision skills that make **architectural decisions** with you, then write them down.
 Greenfield? They run a short selection interview and recommend a design. Existing code? They review
 it against a pattern catalog. Every recommendation carries its cost; the bias is always toward the
 **least architecture that meets the requirement.**
 
-> Validated across 20 real-world cases (both modes, real repositories) — it correctly recommends
-> *doing less* as readily as doing more. See the [examples](examples/).
+> The architecture, design-pattern, and agentic skills were validated across 20 real-world cases
+> (both modes, real repositories) — they correctly recommend *doing less* as readily as doing more.
+> See the [examples](examples/).
 
 ## Install for Claude Code
 
@@ -26,13 +27,14 @@ codex plugin add arch-crew@arch-crew
 
 Start a new Codex session after installation.
 
-## The three skills
+## The four skills
 
 | Invoke | For | Greenfield → | Existing code → |
 |--------|-----|--------------|-----------------|
 | `arch-crew:decide-architecture` | software architecture (structure, topology, data, overlays) | selection interview → composed stack + ADR | review → targeted moves + report |
 | `arch-crew:design-patterns` | GoF + Python-idiomatic design patterns | which-pattern interview → one recommendation + Pythonic form | smell → pattern review |
 | `arch-crew:agentic-patterns` | LLM-agent systems (autonomy, loops, memory, governance) | layered design interview → "your agentic design" + ADR | seven-defect agent review |
+| `arch-crew:test-patterns` | testing strategy — QA as a discipline vs. executable unit/integration/E2E tests vs. data/ML/LLM evaluation | risk-led portfolio → included/force/cost table + ADR | suite review → one highest-leverage rebalancing move |
 
 ## How to use
 
@@ -42,13 +44,14 @@ You usually don't name the skill — just describe the decision and the right on
 - *"Is our monolith's layering right?"* → `decide-architecture` (refactoring)
 - *"Which pattern fits — I've got a growing if/elif picking an algorithm?"* → `design-patterns`
 - *"Should this be one agent or several? How do I add human approval?"* → `agentic-patterns`
+- *"What tests should I write — and why is our suite so slow and flaky?"* → `test-patterns`
 
 Each skill first works out **where you are** (greenfield vs. refactoring), then:
 
 **Greenfield — a short interview.** It asks one decision at a time, skipping questions your project
 already answers, and composes the result. You get a recommendation table (each pick + why + cost)
-and, for architecture/agentic decisions, an **ADR** written to `docs/adr/NNNN-*.md` so the decision
-outlives the chat. (`design-patterns` is chat-first; it writes an ADR only for module-shaping choices
+and, for architecture/agentic/testing decisions, an **ADR** written to `docs/adr/NNNN-*.md` so the
+decision outlives the chat. (`design-patterns` is chat-first; it writes an ADR only for module-shaping choices
 or on request.)
 
 **Refactoring — a review.** It maps your code onto the catalog, finds real mismatches (not aesthetic
@@ -64,9 +67,11 @@ You get a review report in `docs/`.
 
 ## Where the knowledge comes from
 
-The decision logic and catalogs are distilled into each skill's `references/` (the model reads
-these on demand) from three single-file HTML pattern references kept locally as the source of truth.
-`SKILL.md` stays a lean workflow.
+The decision logic and catalogs live in each skill's `references/` (the model reads these on
+demand). For `decide-architecture`, `design-patterns`, and `agentic-patterns` they are distilled
+from three single-file HTML pattern references kept locally as the source of truth;
+`test-patterns` has no HTML source and its references were written directly. `SKILL.md` stays a
+lean workflow either way.
 
 ## For coding agents and maintainers
 

@@ -1,11 +1,18 @@
 const marketplaceDescription =
-  "Three architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), and agentic-patterns (design an LLM-agent control flow). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
+  "Four architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), and test-patterns (compose a risk-led testing portfolio across QA practice, unit / integration / end-to-end tests, and data / ML / LLM evaluation). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
 
 const keywords = [
   "architecture",
   "design-patterns",
   "agentic",
   "llm-agents",
+  "testing",
+  "test-strategy",
+  "unit-testing",
+  "integration-testing",
+  "end-to-end-testing",
+  "qa",
+  "llm-evals",
   "decision-support",
   "code-review",
   "refactoring",
@@ -31,7 +38,7 @@ function marketplace({ metadata }) {
     owner: metadata.author,
     metadata: {
       description:
-        "Architectural-decision skills for Claude Code — pick or audit software architecture, design patterns, and agentic-system designs.",
+        "Architectural-decision skills for Claude Code — pick or audit software architecture, design patterns, agentic-system designs, and testing strategy.",
       version: metadata.version,
     },
     plugins: [

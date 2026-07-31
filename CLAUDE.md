@@ -4,8 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-This repo is the **`arch-crew` cross-agent skill package** — three architectural-decision skills —
-plus the local HTML knowledge source those skills were distilled from. Claude Code and Codex have
+This repo is the **`arch-crew` cross-agent skill package** — four architectural-decision skills —
+plus the local HTML knowledge source three of them were distilled from. Claude Code and Codex have
 generated packages; no Cursor or GitHub Copilot package is supported yet.
 
 ### Shared skills and generated packages
@@ -19,11 +19,13 @@ marketplaces can install a target package directly.
 Its user-facing marketplace and install commands, plugin identity, skill namespace, and canonical
 skill bytes must remain compatible with the existing Claude release.
 
-Three shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
+Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 
 - `decide-architecture` — software architecture (structure/topology/data/overlays).
 - `design-patterns` — GoF + Python-idiomatic design patterns.
 - `agentic-patterns` — LLM-agent control-flow design.
+- `test-patterns` — testing strategy: QA as a process discipline, executable unit/integration/E2E
+  levels, and data/ML/LLM evaluation overlays kept as three distinct dimensions.
 
 Each skill branches on project status: **greenfield → selection interview** (compose a
 recommendation) or **refactoring → code review** against the catalog. Each skill is a lean
@@ -34,8 +36,10 @@ code-review cues). Convention mirrors the sibling `ds-crew` plugin.
 ### The HTML knowledge source (local only, not shipped)
 
 Three sibling **single-file, zero-dependency HTML reference documents** — interactive pattern
-catalogs, each ending in a clickable decision wizard. These are the **source of truth** the skills'
-references were burned in from; they are NOT part of the installable plugin:
+catalogs, each ending in a clickable decision wizard. These are the **source of truth** three of the
+skills' references were burned in from; they are NOT part of the installable plugin (`test-patterns`
+has **no** HTML source — its references are authored directly, so there is no wizard to keep in
+sync and no coverage invariant for it):
 
 - `html/architecture-patterns.html` — architecture patterns + a "build your stack" wizard → `decide-architecture`.
 - `html/python-design-patterns.html` — GoF + Python-idiomatic patterns + a "which pattern?" wizard → `design-patterns`.

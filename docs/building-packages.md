@@ -56,7 +56,7 @@ codex plugin list --json
 ```
 
 Confirm both installed plugins are versioned correctly and contain only their target manifest plus
-the three generated skill trees. Remove the temporary plugin and marketplace registrations after
+the four generated skill trees. Remove the temporary plugin and marketplace registrations after
 the smoke test. The Codex CLI currently has no separate non-mutating plugin validator, so its actual
 marketplace installation is the release gate.
 

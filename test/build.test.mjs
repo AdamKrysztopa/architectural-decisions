@@ -101,7 +101,12 @@ test("skill names and progressive-disclosure references remain valid", async () 
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
     .sort();
-  assert.deepEqual(skillNames, ["agentic-patterns", "decide-architecture", "design-patterns"]);
+  assert.deepEqual(skillNames, [
+    "agentic-patterns",
+    "decide-architecture",
+    "design-patterns",
+    "test-patterns",
+  ]);
 
   for (const name of skillNames) {
     const text = await readFile(join(canonicalSkills, name, "SKILL.md"), "utf8");
@@ -140,6 +145,26 @@ test("manifests and installer catalogs agree on identity, version, and target", 
   assert.equal(codexMarketplace.plugins.length, 1);
   assert.equal(codexMarketplace.plugins[0].name, metadata.name);
   assert.equal(codexMarketplace.plugins[0].source.path, "./build/codex");
+});
+
+test("generated metadata advertises every canonical skill", async () => {
+  const skillNames = (await readdir(canonicalSkills, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name);
+  const claudeManifest = await readJson(join(repositoryRoot, "build/claude/.claude-plugin/plugin.json"));
+  const claudeMarketplace = await readJson(join(repositoryRoot, ".claude-plugin/marketplace.json"));
+  const codexManifest = await readJson(join(repositoryRoot, "build/codex/.codex-plugin/plugin.json"));
+
+  const surfaces = [
+    ["claude manifest", claudeManifest.description],
+    ["claude marketplace", claudeMarketplace.plugins[0].description],
+    ["codex manifest", codexManifest.description],
+  ];
+  for (const [label, description] of surfaces) {
+    for (const name of skillNames) {
+      assert.ok(description.includes(name), `${label} description omits ${name}`);
+    }
+  }
 });
 
 test("unsupported targets fail without creating an artifact", async () => {

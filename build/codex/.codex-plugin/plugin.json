@@ -1,7 +1,7 @@
 {
   "name": "arch-crew",
-  "version": "0.1.3",
-  "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, and agentic-patterns. Each skill guides a selection interview for new work or a focused review of existing code.",
+  "version": "0.2.0",
+  "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, agentic-patterns, and test-patterns. Each skill guides a selection interview for new work or a focused review of existing code.",
   "author": {
     "name": "Adam Krysztopa",
     "email": "krysztopa@gmail.com"
@@ -11,7 +11,7 @@
   "interface": {
     "displayName": "Arch Crew",
     "shortDescription": "Architecture decisions with explicit trade-offs",
-    "longDescription": "Choose or review software architectures, design patterns, and LLM-agent control flows, then record the decision.",
+    "longDescription": "Choose or review software architectures, design patterns, LLM-agent control flows, and testing strategies, then record the decision.",
     "developerName": "Adam Krysztopa",
     "category": "Developer Tools",
     "capabilities": [
@@ -21,7 +21,8 @@
     "defaultPrompt": [
       "Choose the least architecture that meets my requirements.",
       "Review this codebase's architecture and propose targeted improvements.",
-      "Design an LLM-agent control flow with explicit trade-offs."
+      "Design an LLM-agent control flow with explicit trade-offs.",
+      "Decide which tests this project actually needs, and review the suite I already have."
     ]
   }
 }

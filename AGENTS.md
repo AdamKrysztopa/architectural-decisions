@@ -4,8 +4,9 @@ Guidance for AI coding agents (Claude Code, Cursor, Codex, and others) working i
 
 ## What this repo is
 
-**arch-crew** — a cross-agent package of three architectural-decision skills. Each helps choose an
-architecture for new work, or audit existing code, and writes the decision down (ADR / review).
+**arch-crew** — a cross-agent package of four architectural-decision skills. Each helps choose an
+architecture, pattern, or testing strategy for new work, or audit existing code, and writes the
+decision down (ADR / review).
 Claude Code and Codex are currently supported package targets; do not imply support for other
 agents until a target adapter and generated package exist.
 
@@ -20,6 +21,7 @@ architecture that meets the requirement:
 | choosing/structuring a new system, or questioning an existing architecture (monolith vs microservices, layering, events, CQRS, data pipeline) | `arch-crew:decide-architecture` |
 | choosing an object/class design pattern, or reviewing one (factory, strategy, observer, decorator, repository), especially in Python | `arch-crew:design-patterns` |
 | designing or reviewing an LLM-agent system (one agent vs many, reasoning loop, tools, memory, human approval, multi-agent topology) | `arch-crew:agentic-patterns` |
+| deciding what to test or rebalancing a suite (unit vs integration vs E2E, pyramid vs trophy, QA's role, flaky or slow CI, contract / property-based / mutation / golden tests, testing data pipelines, models, LLMs, and agents) | `arch-crew:test-patterns` |
 
 Each skill branches on project status: **greenfield → a selection interview**; **existing code →
 a code review** against the catalog. Trigger them even when the user does not name a pattern.
