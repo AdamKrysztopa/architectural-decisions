@@ -3,7 +3,7 @@
   "version": "0.1.2",
   "type": "module",
   "license": "MIT",
-  "description": "A suite of architectural-decision skills for Claude Code (decide-architecture, design-patterns, agentic-patterns). Each branches on project status: greenfield runs a selection interview, refactoring reviews existing code against the pattern catalog.",
+  "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",
   "author": {
     "name": "Adam Krysztopa",
     "email": "krysztopa@gmail.com"

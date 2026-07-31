@@ -17,7 +17,13 @@ async function writeJson(path, value) {
 }
 
 function assertRelativePath(path, label) {
-  if (isAbsolute(path) || path.split(/[\\/]/).includes("..")) {
+  if (
+    typeof path !== "string" ||
+    path.length === 0 ||
+    path === "." ||
+    isAbsolute(path) ||
+    path.split(/[\\/]/).includes("..")
+  ) {
     throw new Error(`${label} must stay inside the repository: ${path}`);
   }
 }
@@ -83,26 +89,43 @@ async function buildTarget(target, context) {
   assertRelativePath(targetConfig.adapter, `${target} adapter`);
   const adapterPath = join(buildersDirectory, targetConfig.adapter);
   const { default: adapter } = await import(pathToFileURL(adapterPath));
-  const outputRoot = join(repositoryRoot, context.packaging.buildDirectory, target);
+  assertRelativePath(adapter.outputDirectory, `${target} outputDirectory`);
+  const outputRoot = join(
+    repositoryRoot,
+    context.packaging.buildDirectory,
+    adapter.outputDirectory,
+  );
   const buildRoot = resolve(repositoryRoot, context.packaging.buildDirectory);
+  const outputRelative = relative(buildRoot, outputRoot);
 
-  if (relative(buildRoot, outputRoot).startsWith("..")) {
+  if (!outputRelative || outputRelative.startsWith("..") || isAbsolute(outputRelative)) {
     throw new Error(`Refusing to clean output outside build root: ${outputRoot}`);
+  }
+
+  const adapterContext = {
+    metadata: context.metadata,
+    packaging: context.packaging,
+    target,
+    targetConfig,
+  };
+  const runtimeTrees = adapter.runtimeTrees?.(adapterContext);
+  if (!Array.isArray(runtimeTrees) || runtimeTrees.length === 0) {
+    throw new Error(`${target} adapter must declare at least one runtime tree`);
   }
 
   assertRelativePath(adapter.manifestPath, `${target} manifestPath`);
   await rm(outputRoot, { recursive: true, force: true });
   await mkdir(outputRoot, { recursive: true });
 
-  const canonicalSkills = join(repositoryRoot, context.packaging.canonicalSkills);
-  const generatedSkills = join(outputRoot, "skills");
-  await cp(canonicalSkills, generatedSkills, { recursive: true });
+  for (const runtimeTree of runtimeTrees) {
+    assertRelativePath(runtimeTree.source, `${target} runtime source`);
+    assertRelativePath(runtimeTree.destination, `${target} runtime destination`);
+    const sourceRoot = join(repositoryRoot, runtimeTree.source);
+    const destinationRoot = join(outputRoot, runtimeTree.destination);
+    await cp(sourceRoot, destinationRoot, { recursive: true });
+    await assertCopiedExactly(sourceRoot, destinationRoot);
+  }
 
-  const adapterContext = {
-    metadata: context.metadata,
-    target,
-    targetConfig,
-  };
   await writeJson(join(outputRoot, adapter.manifestPath), adapter.manifest(adapterContext));
 
   for (const rootFile of adapter.rootFiles ?? []) {
@@ -110,7 +133,6 @@ async function buildTarget(target, context) {
     await writeJson(join(repositoryRoot, rootFile.path), rootFile.render(adapterContext));
   }
 
-  await assertCopiedExactly(canonicalSkills, generatedSkills);
   return outputRoot;
 }
 

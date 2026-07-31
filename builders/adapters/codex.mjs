@@ -45,6 +45,10 @@ function marketplace({ metadata }) {
 }
 
 export default {
+  outputDirectory: "codex",
+  runtimeTrees: ({ packaging }) => [
+    { source: packaging.canonicalSkills, destination: "skills" },
+  ],
   manifestPath: ".codex-plugin/plugin.json",
   manifest,
   rootFiles: [{ path: ".agents/plugins/marketplace.json", render: marketplace }],

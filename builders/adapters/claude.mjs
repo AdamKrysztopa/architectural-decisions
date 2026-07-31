@@ -49,6 +49,10 @@ function marketplace({ metadata }) {
 }
 
 export default {
+  outputDirectory: "claude",
+  runtimeTrees: ({ packaging }) => [
+    { source: packaging.canonicalSkills, destination: "skills" },
+  ],
   manifestPath: ".claude-plugin/plugin.json",
   manifest,
   rootFiles: [

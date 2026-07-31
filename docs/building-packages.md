@@ -39,6 +39,27 @@ that each target contains its expected manifest and canonical skill files, conta
 another agent, and that the Claude skill trees match the canonical `skills/` files byte-for-byte.
 A clean rebuild of committed artifacts should leave no diff.
 
+### Host validation before release
+
+The Node tests enforce the repository contract, but they do not replace each host's parser and
+installer. In a disposable CLI environment, run:
+
+```sh
+claude plugin validate build/claude --strict
+claude plugin validate .claude-plugin/marketplace.json --strict
+claude plugin marketplace add ./
+claude plugin install arch-crew@arch-crew
+
+codex plugin marketplace add .
+codex plugin add arch-crew@arch-crew
+codex plugin list --json
+```
+
+Confirm both installed plugins are versioned correctly and contain only their target manifest plus
+the three generated skill trees. Remove the temporary plugin and marketplace registrations after
+the smoke test. The Codex CLI currently has no separate non-mutating plugin validator, so its actual
+marketplace installation is the release gate.
+
 ## Installation contracts
 
 Claude Code remains backward-compatible:
@@ -60,8 +81,8 @@ After Codex installation, start a new session before using bundled skills.
 ## Adding a target adapter
 
 1. Check the agent's current documented packaging and installation contract.
-2. Add one small `builders/adapters/<target>.mjs` definition that declares the output root, allowlisted runtime
-   files, and JSON manifest/catalog renderers.
+2. Add one small `builders/adapters/<target>.mjs` definition that declares the output directory,
+   allowlisted runtime trees, and JSON manifest/catalog renderers.
 3. Keep workflows, references, prompts, templates, checklists, and examples in canonical shared
    locations. Add a narrowly scoped overlay only if the agent cannot consume a portable skill file.
 4. Add validation proving the output is deterministic, target-only, and preserves canonical files
