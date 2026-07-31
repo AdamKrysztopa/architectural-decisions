@@ -1,8 +1,8 @@
 # arch-crew
 
-A suite of **architectural-decision skills** for Claude Code. Three skills help you *choose* an
-architecture for new work, or *audit* the architecture of code you already have — each branching
-automatically on whether you're greenfield or refactoring.
+A suite of **architectural-decision skills** for supported coding agents. Three skills help you
+*choose* an architecture for new work, or *audit* the architecture of code you already have — each
+branching automatically on whether you're greenfield or refactoring.
 
 > **Validated across 20 real-world cases** spanning both modes and real repositories — it recommends
 > *doing less* (no agent, no microservices, no pattern) as readily as doing more.
@@ -19,7 +19,7 @@ code) — then either runs a short selection interview or reviews your code agai
 through-line in all three: recommend the **least architecture that meets the requirement**, and name
 the cost of every pick.
 
-## Install
+## Install for Claude Code
 
 Add the marketplace and install the plugin:
 
@@ -31,6 +31,20 @@ Add the marketplace and install the plugin:
 Then invoke a skill directly (e.g. `arch-crew:decide-architecture`) or just describe an architecture
 decision and the right skill triggers.
 
+This is the original Claude Code installation path and remains fully backward-compatible.
+
+## Install for Codex
+
+Add the Codex marketplace and install its generated plugin package:
+
+```sh
+codex plugin marketplace add AdamKrysztopa/architectural-decisions
+codex plugin add arch-crew@arch-crew
+```
+
+Start a new Codex session after installation, then invoke a skill or describe the architectural
+decision you need to make.
+
 ## How the knowledge is sourced
 
 The decision logic and pattern catalogs are distilled from three single-file HTML references
@@ -41,17 +55,29 @@ The decision logic and pattern catalogs are distilled from three single-file HTM
 
 `SKILL.md` stays a lean workflow and reads those references on demand (progressive disclosure).
 
-## Layout
+## Packaging and layout
+
+The portable skill workflows and their references in `skills/`, along with the shared docs and
+examples, are canonical source. `builders/` contains thin target adapters; it does not own or fork
+skill logic. `build/<target>/` is generated, committed release output containing only what that
+target needs. This lets a Claude installation receive Claude files and a Codex installation receive
+Codex files without cross-agent configuration.
 
 ```
-.claude-plugin/
-  plugin.json
-  marketplace.json
 skills/
   decide-architecture/   SKILL.md + references/{decision-tree,catalog}.md
   design-patterns/        SKILL.md + references/{decision-tree,catalog}.md
   agentic-patterns/       SKILL.md + references/{decision-tree,catalog}.md
+builders/
+  build.mjs               shared deterministic builder
+  adapters/               thin target packaging adapters
+build/
+  claude/                 generated Claude package
+  codex/                  generated Codex package
 ```
+
+The root `.claude-plugin/` files remain as a Claude compatibility façade. See the
+[maintainer build guide](docs/building-packages.md) for the build and validation workflow.
 
 ## License
 

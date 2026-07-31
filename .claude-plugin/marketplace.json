@@ -11,7 +11,7 @@
   "plugins": [
     {
       "name": "arch-crew",
-      "source": "./",
+      "source": "./build/claude",
       "description": "Three architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), and agentic-patterns (design an LLM-agent control flow). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.",
       "version": "0.1.2",
       "author": {

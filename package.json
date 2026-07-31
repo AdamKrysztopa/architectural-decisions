@@ -1,10 +1,30 @@
 {
   "name": "arch-crew",
   "version": "0.1.2",
+  "type": "module",
   "license": "MIT",
   "description": "A suite of architectural-decision skills for Claude Code (decide-architecture, design-patterns, agentic-patterns). Each branches on project status: greenfield runs a selection interview, refactoring reviews existing code against the pattern catalog.",
   "author": {
     "name": "Adam Krysztopa",
     "email": "krysztopa@gmail.com"
+  },
+  "scripts": {
+    "build": "node builders/build.mjs",
+    "test": "node --test test/build.test.mjs",
+    "test:build": "node --test test/build.test.mjs"
+  },
+  "agentPackaging": {
+    "canonicalSkills": "skills",
+    "buildDirectory": "build",
+    "targets": {
+      "claude": {
+        "adapter": "adapters/claude.mjs",
+        "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), and agentic-patterns (LLM-agent control-flow design). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves."
+      },
+      "codex": {
+        "adapter": "adapters/codex.mjs",
+        "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, and agentic-patterns. Each skill guides a selection interview for new work or a focused review of existing code."
+      }
+    }
   }
 }
