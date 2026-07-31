@@ -148,27 +148,79 @@ reliably by lower-level tests?*
 - **Reopen when:** a defect escapes through a module whose tests were green, or assertion quality
   becomes contested in a critical area.
 
-### Performance, load, and resilience *(integration- or E2E-scoped concerns, not levels)*
-- **Add when:** a named latency, throughput, or capacity requirement exists **and** a regression
-  against it would be user-visible or contractual. Then test the shape that requirement implies:
-  load at expected volume, stress beyond it to find the breaking point, a soak run where leaks and
-  drift surface, or a failover / chaos exercise against a named dependency whose loss the system is
-  claimed to survive.
+### Performance *(a cross-level concern, not a level)*
+Performance evidence is not automatically expensive. Buy it at the smallest scope that can expose
+the named regression.
+- **Add a local deterministic benchmark or complexity guard when:** the cost lives in the code
+  itself — an algorithm, a parser, a serializer, a query builder, a hot loop — and a regression
+  would be invisible until it aggregated in production. This is unit-scoped, runs in the ordinary
+  suite, and is often the cheapest *correct* performance evidence available. Assert a bound or a
+  relative regression, never a wall-clock absolute on shared CI hardware.
+- **Add load, stress, or soak testing when:** a named latency, throughput, or capacity requirement
+  exists **and** a regression against it would be user-visible or contractual. Then test the shape
+  that requirement implies: load at expected volume, stress beyond it to find the breaking point, or
+  a soak run where leaks and drift surface.
 - **Keep light when:** no such number has been named — which is most systems, most of the time.
   Production observability (latency percentiles, error rates, saturation) usually answers "is it
   fast enough?" more cheaply and more truthfully than a synthetic rig, and a benchmark on
   unrepresentative data, hardware, or concurrency misleads with confidence. One cheap guard on a
   known-hot path beats a load-testing programme nobody reads.
 - **Reopen when:** a number becomes real (SLO, contract, capacity plan), traffic shape shifts by an
-  order of magnitude, an incident traces to saturation or to a failover that did not work, or
-  latency regressions start reaching users.
+  order of magnitude, an incident traces to saturation, or latency regressions start reaching users.
+
+### Resilience and failure behavior *(a cross-level concern, not a level)*
+This gate is **independent of the performance gate** — it fires on a named failure, recovery, or
+continuity requirement, and needs no number at all.
+- **Add when:** the system makes a claim about surviving something: "keep taking orders when the
+  payment provider is down", "degrade to cached results", "recover without data loss after a broker
+  restart", a documented fallback, an agreed RTO/RPO, or a retry / timeout / circuit-breaker someone
+  is relying on. **The claim is the force.** An untested failure path is a claim nobody has checked.
+- **Test at the cheapest scope that can falsify the claim:** first a unit test on the retry, timeout,
+  backoff, or fallback logic itself; then a narrow integration test with the dependency refused,
+  slowed, or returning garbage; and a failover or chaos exercise against real infrastructure **only**
+  when the claim depends on wiring, replication, or orchestration that no smaller test reproduces.
+- **Keep light when:** no continuity claim has been made, the dependency's loss simply means the
+  feature is unavailable, and that is acceptable and visible. Say so plainly rather than inventing a
+  resilience programme.
+- **Reopen when:** an incident traces to a failure path nobody had exercised, a dependency becomes
+  business-critical, an RTO/RPO or availability target is agreed, or a failover does not work the
+  first time it is needed.
+
+### Security testing *(a cross-level concern, not a level)*
+**Scanning is the baseline, not the strategy.** Dependency and static scanners find known-vulnerable
+libraries and common code-level patterns; they cannot know who is *allowed* to do what in your
+domain. Broken access control sits at the top of the OWASP Top 10 precisely because it is invisible
+to tools that do not know your rules.
+- **Add authorization and business-rule tests when:** the system has roles, ownership, tenancy, or
+  any rule about who may read or change what — that is, nearly always. Assert the **negative** cases
+  at the cheapest level that can express them: wrong user, wrong tenant, wrong role, missing token,
+  expired token, another user's identifier. A positive-path-only suite proves the feature works, not
+  that it is protected.
+- **Add realistic API / integration verification when:** authn, authz, or input handling depends on
+  real middleware, framework configuration, or serialization — verify it at the boundary rather than
+  against a mocked guard that always says yes. A stubbed authorizer tests the stub.
+- **Add negative and abuse cases when:** a named input surface is attacker-reachable — injection into
+  a query, template, or command; unsafe deserialization; path traversal; mass assignment; SSRF on a
+  user-supplied URL. One case per named surface, not a transcription of a checklist.
+- **Add fuzzing or dynamic testing when:** the surface is a parser, protocol, or file format, or
+  otherwise structured and attacker-controlled, and hand-written cases keep missing input shapes.
+- **Add a specialist assessment (threat model, penetration test, code audit) when:** exposure
+  warrants it — internet-facing with sensitive data, money movement, regulated data, a new trust
+  boundary — or a regulation, customer, or contract requires it. Point it at the design and the trust
+  boundaries; do not buy it to re-run a scanner.
+- **Keep light when:** the system is internal, single-tenant, holds nothing sensitive, and crosses no
+  meaningful trust boundary. Baseline scanning plus the authorization tests you already owe is then
+  the honest portfolio.
+- **Reopen when:** a trust boundary appears (multi-tenancy, external users, a public API), the data
+  classification changes, an incident or report traces to access control or input handling, or the
+  system starts moving money or handling personal data.
 
 ## Step 5 — Apply the domain overlay
 Overlays are **added to** Step 4, never substituted for it. Deterministic code and wiring still get
 ordinary unit / integration / E2E tests.
 
 ### Data pipelines
-Keep three concerns separate — they fail differently and are owned differently:
+Keep four concerns separate — they fail differently and are owned differently:
 1. **Transformation-code tests** — deterministic examples for the logic (unit level).
 2. **Data-quality assertions** — run against *data*, not code: schema, nullability, uniqueness,
    referential integrity, ranges, freshness, volume, distribution.
@@ -178,13 +230,23 @@ Keep three concerns separate — they fail differently and are owned differently
      assertion would trip on normal variation. An unowned, noisy assertion is worse than none.
    - **Reopen when:** bad data reaches a consumer, a source changes shape, or a new consumer takes a
      hard dependency on the table.
-3. **Data contracts + production monitoring**
-   - **Add when:** ownership crosses a team boundary **and** upstream changes have broken you before;
-     or the pipeline runs continuously, where yesterday's good data says nothing about today's.
+3. **Data contracts** — a negotiated agreement across an ownership boundary, plus enforcement.
+   - **Add when:** ownership of the producing side sits with a different team or system **and**
+     upstream changes have broken you before — or the dependency is new and the producer currently
+     has no way to learn who depends on their schema.
    - **Keep light when:** producer and consumer are the same team inside one deployable — a schema
-     assertion at the load step is cheaper and equally truthful.
+     assertion at the load step is cheaper and equally truthful. **A continuously running pipeline
+     does not by itself earn a contract**; it earns monitoring (below).
    - **Reopen when:** an upstream schema or semantic change breaks a consumer, or a second team
-     starts producing into the same table.
+     starts producing into or consuming from the same table.
+4. **Production monitoring of the pipeline** — signals on the running system, owned operationally.
+   - **Add when:** the pipeline runs continuously or on a schedule, where yesterday's good data says
+     nothing about today's: freshness, volume, run success and duration, null and distribution
+     shift — each routed to a named person who will act on it.
+   - **Keep light when:** the pipeline is a one-off, a backfill, or an ad-hoc run whose output a
+     human inspects directly before anything downstream uses it.
+   - **Reopen when:** a missing, late, or bad load is discovered by a consumer rather than by a
+     signal, or the output starts feeding an automated decision.
 
 Name the failure surfaces that actually break pipelines — they are rarely the transform itself:
 **idempotency / re-runnability** (does the second run change the result?), **backfill and replay**
@@ -298,6 +360,9 @@ Inspect, then conclude. Where evidence is missing, say the conclusion is provisi
 - flaky retries, quarantine, and whether anyone owns them
 - mock density and assertion quality (do assertions encode a requirement?)
 - production defects that escaped, and which layer *should* have caught each
+- authorization seams tested only on the allowed path; guards verified against a stub rather than
+  the real middleware
+- stated guarantees with no test behind them — retries, timeouts, fallbacks, degraded modes, failover
 - coverage trends as a navigation signal (never as a target); mutation evidence if it exists
 - test ownership — orphaned suites decay
 
@@ -318,7 +383,8 @@ changed?** Mutation thinking helps answer that; a mutation *tool* is not mandato
 ## Composing the portfolio
 Compose the rows in this order — **this is a writing order, not an escalation ladder**: QA practices
 (dimension 1, each gated on its own force) · baseline static feedback · unit → integration
-(+ contracts) → E2E (dimension 2, and this arrow *is* an escalation) · domain overlay (dimension 3,
-additive) · shape summary, if useful. Each row names its force, the cost accepted, the heavier option
+(+ contracts) → E2E (dimension 2, and this arrow *is* an escalation) · the cross-level concerns that
+fired (performance, resilience, security — each placed at the cheapest scope that answers it) ·
+domain overlay (dimension 3, additive) · shape summary, if useful. Each row names its force, the cost accepted, the heavier option
 deliberately skipped, and the signal that would reopen it. Close with the smallest-portfolio check —
 and remember that **removing** a layer is as valid an outcome as adding one.

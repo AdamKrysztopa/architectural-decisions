@@ -7,7 +7,7 @@ it against a pattern catalog. Every recommendation carries its cost; the bias is
 
 > The architecture, design-pattern, and agentic skills were validated across 20 real-world cases
 > (both modes, real repositories) — they correctly recommend *doing less* as readily as doing more.
-> See the [examples](examples/).
+> `test-patterns` is newer and not yet covered by that validation set. See the [examples](examples/).
 
 ## Install for Claude Code
 

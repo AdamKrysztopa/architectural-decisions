@@ -6,7 +6,8 @@ have — each branching automatically on whether you're greenfield or refactorin
 
 > The architecture, design-pattern, and agentic skills were **validated across 20 real-world cases**
 > spanning both modes and real repositories — they recommend *doing less* (no agent, no
-> microservices, no pattern, no E2E suite) as readily as doing more.
+> microservices, no pattern) as readily as doing more. `test-patterns` is newer and not yet part of
+> that validation set, but it is built on the same principle.
 > **[Full docs →](docs/README.md)** · **[Examples →](docs/examples/README.md)**
 
 | Skill | Use it to… | Greenfield mode | Refactoring mode |

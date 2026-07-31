@@ -78,13 +78,50 @@ separate, optional decision.
 **Common confusion:** automation does not replace it. Automated checks confirm known expectations;
 exploratory work discovers the expectations you were missing.
 
+### User acceptance / release evidence
+**Question answered:** Can we show — to a customer, a regulator, or ourselves — that this release is
+fit to go out?
+**Use when:** a contract, regulator, customer, or safety case requires formal acceptance; or rollback
+is difficult and a failed release has high impact, so someone must be able to say *why* it shipped.
+**Avoid or keep light when:** releases are small, observable, reversible, and owned by the team that
+built them — the deploy pipeline plus production signals already *is* the release evidence.
+**Reopen when:** release impact grows, rollback gets harder, or an external obligation (contract,
+audit, certification) enters scope.
+**Cost:** calendar time and coordination; an artifact to produce and store per release; the standing
+risk that it hardens into a scheduled gate that delays feedback without adding information. Formal
+UAT also tends to re-verify what automated checks already covered.
+**Review cues:** a sign-off step whose acceptance criteria nobody can state; UAT re-running the
+regression suite by hand; release notes with no link to any evidence; acceptance performed by people
+who never saw the requirement.
+**Common confusion:** acceptance *evidence* and an acceptance *phase* are different purchases —
+the obligation is to be able to demonstrate fitness, not to hold a stage-gate. And "user acceptance"
+is dimension 1 (a quality practice); it is not a fourth executable level, even when parts of it are
+automated as E2E tests.
+
 ---
 
 ## II. Code-test levels
 
-The three primary levels are **unit**, **integration**, **end-to-end**. Everything else in this file
-is a *technique*, a *strategy within a level*, or a *baseline check*. What matters is the question a
-test answers and the resources it touches — not its folder name.
+This catalog **normalizes to three levels** — **unit**, **integration**, **end-to-end**. That is a
+house convention chosen because those three track *cost and feedback speed*, which is what the gates
+in `decision-tree.md` actually trade off. It is not a universal taxonomy, and testing terminology
+genuinely varies between organizations (a point Fowler makes repeatedly about "unit" and
+"integration" alike). Translate rather than argue:
+
+| If your organization says… | …read it here as |
+|----------------------------|------------------|
+| **Component testing** (ISTQB level 1) | unit |
+| **Component integration testing** (ISTQB level 2) | narrow integration |
+| **System integration testing** (ISTQB level 2, across systems) | broad integration, or contract tests |
+| **System testing** (ISTQB level 3) | component/API test, or E2E depending on what it touches |
+| **Acceptance testing** (ISTQB level 4) | E2E where it is executable; otherwise dimension 1 — user acceptance / release evidence |
+| Service test, middle layer, "the trophy's middle" | integration |
+| UI test, browser test, journey test | E2E |
+
+ISTQB's four levels and this catalog's three are the same territory drawn with different borders;
+neither is wrong. Everything else in this file is a *technique*, a *strategy within a level*, a
+*cross-level concern*, or a *baseline check*. What matters is the question a test answers and the
+resources it touches — not its folder name and not which taxonomy named it.
 
 ### Unit test
 **Use when:** there is meaningful branching, calculation, state transition, or invariant that can be
@@ -414,6 +451,75 @@ lines matter.
 
 ---
 
+### Cross-level concerns
+
+Performance, resilience, and security are **qualities, not levels**. Each is bought at whichever
+scope can expose its named failure most cheaply — often a unit test, sometimes an integration test,
+occasionally a full-system exercise. Their gates are in `decision-tree.md` **Step 4**, and they fire
+independently of one another.
+
+### Performance testing *(a cross-level concern)*
+**Question answered:** Will this be fast enough, and will we notice when it stops being?
+**Use when:** either a local hot path exists whose cost is a property of the code (a deterministic
+microbenchmark or complexity guard is then the cheapest correct evidence), **or** a named latency,
+throughput, or capacity requirement exists whose breach would be user-visible or contractual (then
+load / stress / soak at the scope the requirement implies).
+**Avoid or keep light when:** no number has been named and no hot path is known. Production
+percentiles answer "is it fast enough?" more cheaply and more truthfully than a synthetic rig.
+**Reopen when:** an SLO, contract, or capacity plan makes a number real; traffic shape shifts by an
+order of magnitude; an incident traces to saturation; latency regressions reach users.
+**Cost:** load rigs need representative data, hardware, and concurrency, plus an owner to keep them
+representative — an unrepresentative rig misleads with confidence. Wall-clock assertions on shared
+CI hardware are a flakiness source; assert bounds or relative regressions instead.
+**Review cues:** a load-test suite nobody reads the results of; `time.sleep`-calibrated thresholds;
+benchmarks run once at project start and never since; performance "tested" only in production.
+**Common confusion:** performance testing is not inherently an E2E activity. Load testing is; a
+benchmark over a serializer or an algorithm is a unit test with a different assertion.
+
+### Resilience and failure-injection testing *(a cross-level concern)*
+**Question answered:** Does the system actually do what we claim when a dependency fails?
+**Use when:** a named failure, recovery, or continuity claim exists — a documented fallback, a
+degraded mode, an RTO/RPO, a retry / timeout / circuit-breaker someone relies on. **No number is
+required; the claim is the force.** Test it at the cheapest falsifying scope: the retry/fallback
+logic as a unit test, the dependency refused or slowed as a narrow integration test, and failover or
+chaos against real infrastructure only when wiring or replication is the thing in doubt.
+**Avoid or keep light when:** no continuity claim exists and the dependency's loss simply means the
+feature is unavailable — visibly and acceptably so.
+**Reopen when:** an incident traces to a failure path nobody exercised, a dependency becomes
+business-critical, an availability target is agreed, or a failover fails when first needed.
+**Cost:** failure injection needs a seam (fault-injecting client, proxy, or container control);
+chaos exercises need production-like infrastructure and a blast-radius plan.
+**Review cues:** retry and timeout code with no test; a documented fallback path no test enters; a
+circuit breaker whose open state is never exercised; "we have a replica" with no failover drill.
+**Common confusion:** resilience is routinely bundled with performance because both get labelled
+"non-functional". They are separate gates — a system with no latency SLO can still owe a tested
+failure path, and this is the common case.
+
+### Security testing *(a cross-level concern)*
+**Question answered:** Can someone do something here they are not allowed to do?
+**Use when:** the system has roles, ownership, tenancy, or any rule about who may read or change
+what — write the **negative** authorization cases (wrong user, wrong tenant, wrong role, missing or
+expired token, another user's id) at the cheapest level that can express them. Add abuse cases per
+named attacker-reachable input surface, fuzzing for parsers and protocols, and a specialist
+assessment (threat model, penetration test, audit) when exposure or an external requirement warrants
+it.
+**Avoid or keep light when:** internal, single-tenant, no sensitive data, no meaningful trust
+boundary — baseline scanning plus the authorization tests you already owe.
+**Reopen when:** a trust boundary appears (multi-tenancy, external users, a public API), data
+classification changes, an incident traces to access control or input handling, or the system starts
+moving money or personal data.
+**Cost:** negative-path tests roughly double the case count at an authorization seam; fuzzing needs
+corpus and triage time; specialist assessment is calendar time and money, and its findings arrive as
+a remediation backlog.
+**Review cues:** every authorization test asserts the *allowed* case only; authorization verified
+against a mocked guard rather than the real middleware; scanner output treated as the security
+story; a pen-test report with no test written for anything it found.
+**Common confusion:** scanning is the **baseline, not the strategy**. Scanners find known-vulnerable
+dependencies and generic code patterns; they cannot know your domain's rules, which is why broken
+access control sits at the top of the OWASP Top 10 and why it is your tests' job, not a tool's.
+
+---
+
 ## V. Domain overlays
 
 Overlays are **additive**. Deterministic code and wiring still get ordinary unit/integration/E2E tests.
@@ -435,8 +541,14 @@ integrity, ranges, freshness, volume, or distribution shifts.
 **Reopen when:** a consumer breaks on data that passed every code test.
 **Cost:** runtime per run, alert fatigue if thresholds are guessed, ownership of every alert.
 **Review cues:** hundreds of generated expectations nobody triages; alerts routed nowhere.
-**Common confusion:** these run on the *data's* cadence, not the commit's, and a failure means "the
-data changed", not "the code broke" — so don't gate a deploy on them, and give them their own owner.
+**Common confusion:** two different placements get conflated, and they have opposite gating rules.
+*Build-time assertions over a candidate artifact you are about to publish* — a freshly built table, a
+transformed batch, a candidate model's outputs — run on the **build's** cadence and may legitimately
+fail the build or block the deploy; that is exactly what `dbt build` does, running each model's tests
+immediately after building it and skipping its dependents on failure. *Assertions over source or
+production data* run on the **data's** cadence; a failure there means "the data changed", not "the
+code broke", so route it to a named operational owner rather than to a red build — blocking a deploy
+on it punishes whoever happens to be shipping.
 
 ### Data contracts
 **Use when:** ownership crosses a team boundary and breakages are recurring.
@@ -457,16 +569,73 @@ monitoring genuinely suffices.
 actually fears.
 **Common confusion:** a test-set metric is not behavioral evidence; it hides subgroup failures.
 
-### ML production-readiness checks
-**Use when:** the model ships: data validation, leakage and split checks, reproducibility (seeds,
-versions, data snapshots), training/serving consistency, rollback, drift monitoring.
-**Avoid or keep light when:** an experiment that will never be deployed.
-**Reopen when:** an incident can't be reproduced, rolled back, or explained.
-**Cost:** infrastructure and discipline; a large rubric applied mechanically becomes box-ticking.
-**Review cues:** no way to reproduce last month's model; features computed differently in training
-and serving.
-**Common confusion:** Google's ML Test Score is a rubric to *cite and adapt*, not a checklist to copy
-wholesale into every project.
+### ML production-readiness — four *independently gated* concerns
+
+**"The model ships" does not buy all of these.** They fail differently, cost differently, and are
+earned separately — mirroring the four clusters in `decision-tree.md` **Step 5 → ML models**. Google's
+ML Test Score is a rubric to *cite and adapt*, not a checklist to copy wholesale; applied
+mechanically it becomes box-ticking, which is the failure mode this split exists to prevent. Each
+entry below has its own keep-light outcome, and for a fixed-data, one-shot, or human-reviewed system
+most of them are correctly answered "not yet".
+
+### ML data validation, leakage and split checks
+**Use when:** the model is retrained on data that keeps arriving, or the split has structure — time,
+group, entity, geography — that a random split would silently violate.
+**Avoid or keep light when:** a one-shot model on a fixed, understood dataset with an obviously
+independent split. One documented assertion about *why* the split is valid is then enough.
+**Reopen when:** offline metrics outrun online results, retraining becomes automated, a new feature
+source appears, or someone proposes a random split over grouped or temporal data.
+**Cost:** validation code to maintain against a moving schema; leakage checks need someone who
+understands how the data was generated, which is often not the person training the model.
+**Review cues:** a random split over time-series or per-entity data; features computed over the full
+dataset before splitting; target-derived or post-outcome fields in the feature set; a test set reused
+so often it has effectively become a training set.
+**Common confusion:** leakage is a *split and feature-provenance* defect, not a metric defect — it
+shows up as unusually good offline numbers, which is exactly why it survives review.
+
+### ML reproducibility and training/serving consistency
+**Use when:** someone other than the author will retrain it, a result must be reconstructible later
+(audit, incident, publication), **or** features are computed by different code in training and
+serving.
+**Avoid or keep light when:** exploratory work by one person, or one code path computes features for
+both training and serving — the consistency risk does not exist yet. Record the seed and the data
+version and move on.
+**Reopen when:** a result cannot be reproduced, serving metrics diverge from training metrics, a
+second person takes over retraining, or a serving path is rewritten in another language.
+**Cost:** seed/version/snapshot discipline; a feature-computation path shared or verified across two
+runtimes; storage for data snapshots.
+**Review cues:** no way to reproduce last month's model; unpinned dependency or data versions;
+feature engineering duplicated in a training notebook and a serving service.
+**Common confusion:** training/serving skew is not a modeling problem — it is two implementations of
+the same transformation drifting, and it is caught by an equivalence test, not by a metric.
+
+### ML release gating — baseline comparison and rollback
+**Use when:** you are about to ship a *second* model. Compare the candidate to the incumbent (or to a
+trivial baseline) on the same held-out data and refuse a silent regression; know how to put the
+previous model back.
+**Avoid or keep light when:** the very first model, where "better than nothing" is the bar and the
+comparison has no incumbent to make.
+**Reopen when:** a regression ships unnoticed, or a bad model cannot be withdrawn quickly.
+**Cost:** low — a held-out set, a comparison step, and a versioned artifact to roll back to. This is
+the cheapest real release gate in ML.
+**Review cues:** a new model promoted on its own metric with no incumbent comparison; no record of
+which model version served which predictions; rollback that means retraining.
+**Common confusion:** an improved aggregate metric is not a promotion criterion on its own — pair it
+with the slice and behavioral evidence above, or you ship an average win over a segment loss.
+
+### ML drift and quality-degradation monitoring
+**Use when:** the model runs continuously against live data whose distribution can move, **and** a
+degraded prediction has consequences before a human would notice unaided.
+**Avoid or keep light when:** a batch or one-off scoring job whose output a human already reviews, or
+labels arrive fast enough that ordinary outcome reporting already exposes decay.
+**Reopen when:** the model enters a continuous or automated decision path, upstream data ownership
+changes, or performance visibly decays between retrains.
+**Cost:** instrumentation, a reference distribution to compare against, threshold tuning, and an
+owner for every alert — an unowned drift dashboard is decoration.
+**Review cues:** drift alerts nobody triages; no signal that would reveal decay before a user
+complains; monitoring on inputs only, with nothing watching outcome quality.
+**Common confusion:** input drift is a *hypothesis* about degradation, not degradation itself — the
+model may be fine. Where labels arrive, measure outcomes; use drift as the early proxy, not the verdict.
 
 ### Deterministic LLM / agent scaffold tests
 **Use when:** always, for LLM and agentic systems: request/response validation, tool schemas, tool
@@ -558,6 +727,15 @@ Use as a lens in Mode B, not a form to fill. Each: what it looks like · why it 
   → Calibrate against human-reviewed cases before trusting a threshold, or use a deterministic check.
 - **Broad E2E used to detect simple contract drift** — the slowest layer diagnosing a schema rename.
   → Buy a consumer/provider or schema contract and delete most of those E2E tests.
+- **Authorization tested only on the allowed path** — every test logs in as the user who *may* do the
+  thing, so the suite proves the feature works and says nothing about who is kept out; scanners
+  cannot fill this gap because they do not know your rules. → Add the negative cases (wrong user,
+  wrong tenant, wrong role, missing/expired token) at the seam that enforces them, against the real
+  middleware rather than a stubbed guard.
+- **Untested failure paths behind a stated guarantee** — retries, timeouts, fallbacks, degraded
+  modes, and failover are documented and relied on, but no test ever enters them. → Exercise the
+  claim at the cheapest falsifying scope: the retry/fallback logic as a unit test, the dependency
+  refused or slowed as a narrow integration test.
 
 ---
 
@@ -573,6 +751,8 @@ journeys) · `mutmut` / `Cosmic Ray` (mutation) · `tox` / `nox` (matrix runs) �
 `FunctionModel`, `Agent.override`, `pydantic_ai.models.ALLOW_MODEL_REQUESTS = False`).
 
 **Cross-ecosystem:** Vitest / Jest, Testing Library, Playwright (JS/TS) · JUnit and Testcontainers
-(JVM) · Pact (polyglot-first consumer/provider contracts — JS/TS, Java/Kotlin, .NET, Go, Python,
-Ruby, Rust, PHP, Swift over a shared Rust core) · dbt **data** tests (dbt also has unit tests since
+(JVM) · Pact (polyglot consumer/provider contracts — JS/TS, Java/Kotlin, .NET, Go, Python, Ruby,
+Rust, PHP, Swift; **many** of the language bindings wrap a shared Rust core, while others — Pact-JVM
+among them — are separate implementations, so check feature parity for your language rather than
+assuming it) · dbt **data** tests (dbt also has unit tests since
 1.8 — those are ordinary code tests) and Great Expectations / GX Core (data-quality assertions).

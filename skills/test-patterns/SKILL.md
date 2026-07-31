@@ -13,9 +13,15 @@ strategy error:
    acceptance, independent assurance where justified, production feedback. It is **not** a fourth
    level beside unit / integration / E2E, and its existence does not imply a separate QA phase,
    department, or release bottleneck. The default is whole-team quality ownership.
-2. **Executable code tests** — exactly three primary levels: **unit**, **integration**, **E2E**.
-   Static analysis, typing, linting, and security scanning are baseline verification, not a fourth
-   level. Contract testing is a specialized *integration* strategy. Property-based, parameterized,
+2. **Executable code tests** — normalized here to three primary levels: **unit**, **integration**,
+   **E2E**. That is *this skill's normalization*, not a universal taxonomy: ISTQB names four levels
+   (component, integration, system, acceptance), and level vocabulary genuinely varies between
+   organizations. Three is chosen because it tracks cost and feedback speed, which is what the gates
+   actually trade off — `references/catalog.md` §II maps the common alternative terms onto it, so
+   translate rather than argue. Static analysis, typing, linting, and security scanning are baseline
+   verification, not a further level. Contract testing is a specialized *integration* strategy.
+   Performance, resilience, and security are *cross-level concerns* — bought at whichever scope
+   exposes their named failure most cheaply, each on its own gate. Property-based, parameterized,
    mutation, snapshot, approval, golden-file, characterization, and test-double approaches are
    *techniques*, not levels.
 3. **Stochastic quality evaluation** — the extra evidence data, ML, and LLM/agentic systems need on
