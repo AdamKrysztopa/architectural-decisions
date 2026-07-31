@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, and agentic-patterns. Each skill guides a selection interview for new work or a focused review of existing code.",
   "author": {
     "name": "Adam Krysztopa",

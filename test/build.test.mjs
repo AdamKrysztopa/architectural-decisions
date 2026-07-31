@@ -6,6 +6,13 @@ import { join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
 import { before, test } from "node:test";
+import {
+  assertContainedPath,
+  assertRelativePath,
+  assertRootFileBoundaries,
+  assertRootFileContract,
+  validateRuntimeTrees,
+} from "../builders/build.mjs";
 
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -49,7 +56,7 @@ before(async () => {
   await runBuild();
 });
 
-test("build is deterministic", async () => {
+test("repeated builds are idempotent", async () => {
   const paths = [
     join(repositoryRoot, "build"),
     join(repositoryRoot, ".claude-plugin"),
@@ -74,8 +81,6 @@ test("target inventories contain only their manifest and canonical skills", asyn
     [...codexFiles].sort(),
     [".codex-plugin/plugin.json", ...skillFiles].sort(),
   );
-  assert.ok(!claudeFiles.some((file) => file.includes("codex") || file.startsWith(".agents/")));
-  assert.ok(!codexFiles.some((file) => file.includes("claude")));
 });
 
 test("generated skill payloads are byte-identical to the canonical skills", async () => {
@@ -139,4 +144,56 @@ test("manifests and installer catalogs agree on identity, version, and target", 
 
 test("unsupported targets fail without creating an artifact", async () => {
   await assert.rejects(runBuild("future-agent"), /Unknown target 'future-agent'/);
+});
+
+test("path guards reject broad, absolute, and traversal destinations", () => {
+  const buildRoot = join(repositoryRoot, "build");
+  assert.doesNotThrow(() =>
+    assertContainedPath(buildRoot, join(buildRoot, "claude"), "claude output"),
+  );
+  assert.throws(() => assertRelativePath(".", "test path"), /must stay inside/);
+  assert.throws(() => assertRelativePath("../outside", "test path"), /must stay inside/);
+  assert.throws(() => assertRelativePath(resolve("/tmp"), "test path"), /must stay inside/);
+  assert.throws(() => assertContainedPath(buildRoot, buildRoot, "build output"), /must stay inside/);
+  assert.throws(
+    () => assertContainedPath(buildRoot, repositoryRoot, "build output"),
+    /must stay inside/,
+  );
+});
+
+test("adapter contracts require runtime trees and exact root-file allowlists", () => {
+  const runtimeTrees = [{ source: "skills", destination: "skills" }];
+  assert.doesNotThrow(() => validateRuntimeTrees("test", runtimeTrees));
+  assert.throws(() => validateRuntimeTrees("test", []), /at least one runtime tree/);
+  assert.throws(
+    () => validateRuntimeTrees("test", [{ source: "../outside", destination: "skills" }]),
+    /must stay inside/,
+  );
+
+  const rootFiles = [{ path: ".agents/plugins/marketplace.json" }];
+  const generatedRootFiles = [".agents/plugins/marketplace.json"];
+  assert.doesNotThrow(() =>
+    assertRootFileContract("test", rootFiles, generatedRootFiles),
+  );
+  assert.throws(
+    () => assertRootFileContract("test", [], generatedRootFiles),
+    /differ from generatedRootFiles/,
+  );
+  assert.throws(
+    () => assertRootFileContract("test", [...rootFiles, ...rootFiles], generatedRootFiles),
+    /duplicate root file/,
+  );
+  assert.throws(
+    () => assertRootFileContract("test", rootFiles, [...generatedRootFiles, ...generatedRootFiles]),
+    /generatedRootFiles contains a duplicate/,
+  );
+
+  const generatedRootDirectories = [".agents/plugins"];
+  assert.doesNotThrow(() =>
+    assertRootFileBoundaries("test", generatedRootFiles, generatedRootDirectories),
+  );
+  assert.throws(
+    () => assertRootFileBoundaries("test", ["package.json"], generatedRootDirectories),
+    /outside its root directories/,
+  );
 });

@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "type": "module",
   "license": "MIT",
   "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",
@@ -16,6 +16,23 @@
   "agentPackaging": {
     "canonicalSkills": "skills",
     "buildDirectory": "build",
+    "generatedRootDirectories": {
+      "claude": [
+        ".claude-plugin"
+      ],
+      "codex": [
+        ".agents/plugins"
+      ]
+    },
+    "generatedRootFiles": {
+      "claude": [
+        ".claude-plugin/plugin.json",
+        ".claude-plugin/marketplace.json"
+      ],
+      "codex": [
+        ".agents/plugins/marketplace.json"
+      ]
+    },
     "targets": {
       "claude": {
         "adapter": "adapters/claude.mjs",

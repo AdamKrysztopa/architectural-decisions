@@ -18,8 +18,8 @@ are not supported until they have an adapter, an installer catalog, and validati
 
 Generated artifacts are committed intentionally: Git-backed marketplaces can install the exact,
 reviewed package without requiring a build step on the user's machine. This makes each release diff
-larger, but avoids drift between repository source and marketplace output. CI should fail if a clean
-rebuild changes tracked artifacts.
+larger, but avoids drift between repository source and marketplace output. CI fails if a clean
+rebuild changes, adds, or removes a generated artifact.
 
 ## Build and validate
 
@@ -82,7 +82,10 @@ After Codex installation, start a new session before using bundled skills.
 
 1. Check the agent's current documented packaging and installation contract.
 2. Add one small `builders/adapters/<target>.mjs` definition that declares the output directory,
-   allowlisted runtime trees, and JSON manifest/catalog renderers.
+   allowlisted runtime trees, and JSON manifest/catalog renderers. Register any generated
+   repository-root files and their dedicated boundaries in `agentPackaging.generatedRootFiles` and
+   `agentPackaging.generatedRootDirectories`; the builder rejects undeclared, missing, duplicate,
+   out-of-boundary, or stale root outputs.
 3. Keep workflows, references, prompts, templates, checklists, and examples in canonical shared
    locations. Add a narrowly scoped overlay only if the agent cannot consume a portable skill file.
 4. Add validation proving the output is deterministic, target-only, and preserves canonical files

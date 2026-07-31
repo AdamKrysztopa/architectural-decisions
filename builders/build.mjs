@@ -16,7 +16,7 @@ async function writeJson(path, value) {
   await writeFile(path, `${JSON.stringify(value, null, 2)}\n`, "utf8");
 }
 
-function assertRelativePath(path, label) {
+export function assertRelativePath(path, label) {
   if (
     typeof path !== "string" ||
     path.length === 0 ||
@@ -25,6 +25,80 @@ function assertRelativePath(path, label) {
     path.split(/[\\/]/).includes("..")
   ) {
     throw new Error(`${label} must stay inside the repository: ${path}`);
+  }
+}
+
+export function assertContainedPath(root, candidate, label) {
+  const relativePath = relative(root, candidate);
+  if (!relativePath || relativePath.startsWith("..") || isAbsolute(relativePath)) {
+    throw new Error(`${label} must stay inside ${root}: ${candidate}`);
+  }
+}
+
+export function validateRuntimeTrees(target, runtimeTrees) {
+  if (!Array.isArray(runtimeTrees) || runtimeTrees.length === 0) {
+    throw new Error(`${target} adapter must declare at least one runtime tree`);
+  }
+
+  for (const runtimeTree of runtimeTrees) {
+    assertRelativePath(runtimeTree?.source, `${target} runtime source`);
+    assertRelativePath(runtimeTree?.destination, `${target} runtime destination`);
+  }
+}
+
+export function assertRootFileContract(target, rootFiles, generatedRootFiles) {
+  if (!Array.isArray(rootFiles)) {
+    throw new Error(`${target} adapter rootFiles must be an array`);
+  }
+  if (!Array.isArray(generatedRootFiles)) {
+    throw new Error(`${target} generatedRootFiles must be an array`);
+  }
+
+  for (const path of generatedRootFiles) {
+    assertRelativePath(path, `${target} generated root file`);
+  }
+  if (new Set(generatedRootFiles).size !== generatedRootFiles.length) {
+    throw new Error(`${target} generatedRootFiles contains a duplicate path`);
+  }
+
+  const declaredPaths = rootFiles.map((rootFile) => {
+    assertRelativePath(rootFile?.path, `${target} root file`);
+    return rootFile.path;
+  });
+  if (new Set(declaredPaths).size !== declaredPaths.length) {
+    throw new Error(`${target} adapter declares a duplicate root file`);
+  }
+
+  const declared = [...declaredPaths].sort();
+  const managed = [...generatedRootFiles].sort();
+  if (JSON.stringify(declared) !== JSON.stringify(managed)) {
+    throw new Error(`${target} adapter root files differ from generatedRootFiles`);
+  }
+}
+
+export function assertRootFileBoundaries(
+  target,
+  generatedRootFiles,
+  generatedRootDirectories,
+) {
+  if (!Array.isArray(generatedRootDirectories) || generatedRootDirectories.length === 0) {
+    throw new Error(`${target} generatedRootDirectories must be a non-empty array`);
+  }
+
+  const directoryRoots = generatedRootDirectories.map((directory) => {
+    assertRelativePath(directory, `${target} generated root directory`);
+    return resolve(repositoryRoot, directory);
+  });
+
+  for (const path of generatedRootFiles) {
+    const candidate = resolve(repositoryRoot, path);
+    const insideBoundary = directoryRoots.some((directoryRoot) => {
+      const relativePath = relative(directoryRoot, candidate);
+      return relativePath && !relativePath.startsWith("..") && !isAbsolute(relativePath);
+    });
+    if (!insideBoundary) {
+      throw new Error(`${target} generated root file is outside its root directories: ${path}`);
+    }
   }
 }
 
@@ -65,12 +139,36 @@ async function assertCopiedExactly(sourceRoot, destinationRoot) {
   }
 }
 
+async function assertGeneratedRootInventory(
+  target,
+  generatedRootFiles,
+  generatedRootDirectories,
+) {
+  const actualFiles = [];
+  for (const directory of generatedRootDirectories) {
+    const files = await listFiles(join(repositoryRoot, directory));
+    actualFiles.push(...files.map((file) => join(directory, file).split(sep).join("/")));
+  }
+
+  const expected = [...generatedRootFiles].sort();
+  const actual = actualFiles.sort();
+  if (JSON.stringify(actual) !== JSON.stringify(expected)) {
+    throw new Error(`${target} generated root inventory differs from generatedRootFiles`);
+  }
+}
+
 async function loadContext() {
   const packagePath = join(repositoryRoot, "package.json");
   const metadata = await readJson(packagePath);
   const packaging = metadata.agentPackaging;
 
-  if (!packaging?.canonicalSkills || !packaging?.buildDirectory || !packaging?.targets) {
+  if (
+    !packaging?.canonicalSkills ||
+    !packaging?.buildDirectory ||
+    !packaging?.generatedRootDirectories ||
+    !packaging?.generatedRootFiles ||
+    !packaging?.targets
+  ) {
     throw new Error("package.json is missing agentPackaging configuration");
   }
 
@@ -96,11 +194,7 @@ async function buildTarget(target, context) {
     adapter.outputDirectory,
   );
   const buildRoot = resolve(repositoryRoot, context.packaging.buildDirectory);
-  const outputRelative = relative(buildRoot, outputRoot);
-
-  if (!outputRelative || outputRelative.startsWith("..") || isAbsolute(outputRelative)) {
-    throw new Error(`Refusing to clean output outside build root: ${outputRoot}`);
-  }
+  assertContainedPath(buildRoot, outputRoot, `${target} output`);
 
   const adapterContext = {
     metadata: context.metadata,
@@ -109,17 +203,22 @@ async function buildTarget(target, context) {
     targetConfig,
   };
   const runtimeTrees = adapter.runtimeTrees?.(adapterContext);
-  if (!Array.isArray(runtimeTrees) || runtimeTrees.length === 0) {
-    throw new Error(`${target} adapter must declare at least one runtime tree`);
-  }
+  validateRuntimeTrees(target, runtimeTrees);
+  const rootFiles = adapter.rootFiles ?? [];
+  const generatedRootFiles = context.packaging.generatedRootFiles[target];
+  const generatedRootDirectories = context.packaging.generatedRootDirectories[target];
+  assertRootFileContract(
+    target,
+    rootFiles,
+    generatedRootFiles,
+  );
+  assertRootFileBoundaries(target, generatedRootFiles, generatedRootDirectories);
 
   assertRelativePath(adapter.manifestPath, `${target} manifestPath`);
   await rm(outputRoot, { recursive: true, force: true });
   await mkdir(outputRoot, { recursive: true });
 
   for (const runtimeTree of runtimeTrees) {
-    assertRelativePath(runtimeTree.source, `${target} runtime source`);
-    assertRelativePath(runtimeTree.destination, `${target} runtime destination`);
     const sourceRoot = join(repositoryRoot, runtimeTree.source);
     const destinationRoot = join(outputRoot, runtimeTree.destination);
     await cp(sourceRoot, destinationRoot, { recursive: true });
@@ -128,10 +227,14 @@ async function buildTarget(target, context) {
 
   await writeJson(join(outputRoot, adapter.manifestPath), adapter.manifest(adapterContext));
 
-  for (const rootFile of adapter.rootFiles ?? []) {
-    assertRelativePath(rootFile.path, `${target} root file`);
+  for (const rootFile of rootFiles) {
     await writeJson(join(repositoryRoot, rootFile.path), rootFile.render(adapterContext));
   }
+  await assertGeneratedRootInventory(
+    target,
+    generatedRootFiles,
+    generatedRootDirectories,
+  );
 
   return outputRoot;
 }

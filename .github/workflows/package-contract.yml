@@ -19,4 +19,7 @@ jobs:
       - run: npm test
       - run: npm run build -- --target all
       - name: Verify all committed generated files are current
-        run: git diff --exit-code
+        run: |
+          git diff --exit-code
+          git add -A -N
+          git diff --exit-code
