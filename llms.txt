@@ -1,6 +1,6 @@
 # arch-crew
 
-> A Claude Code plugin of three architectural-decision skills. Each helps you choose an architecture
+> A cross-agent package of three architectural-decision skills. Each helps you choose an architecture
 > for new work (a short selection interview) or audit existing code (a review against a pattern
 > catalog), and records the decision as an ADR or review report. The bias throughout: recommend the
 > least architecture that meets the requirement, and name the cost of every pick.
@@ -25,5 +25,21 @@
 
 ## Install
 
+### Claude Code
+
 - `/plugin marketplace add AdamKrysztopa/architectural-decisions`
 - `/plugin install arch-crew`
+
+This original Claude Code path is backward-compatible.
+
+### Codex
+
+- `codex plugin marketplace add AdamKrysztopa/architectural-decisions`
+- `codex plugin add arch-crew@arch-crew`
+
+## Packaging
+
+`skills/`, docs, and examples are the canonical shared content. Thin target adapters in
+`builders/` generate committed, target-only package trees in `build/<target>/`; do not edit those
+artifacts by hand. Claude Code and Codex are currently supported targets. See
+[the package build guide](docs/building-packages.md) for maintainer workflow.

@@ -1,6 +1,6 @@
 # arch-crew — documentation
 
-Three Claude Code skills that make **architectural decisions** with you, then write them down.
+Three architectural-decision skills that make **architectural decisions** with you, then write them down.
 Greenfield? They run a short selection interview and recommend a design. Existing code? They review
 it against a pattern catalog. Every recommendation carries its cost; the bias is always toward the
 **least architecture that meets the requirement.**
@@ -8,12 +8,23 @@ it against a pattern catalog. Every recommendation carries its cost; the bias is
 > Validated across 20 real-world cases (both modes, real repositories) — it correctly recommends
 > *doing less* as readily as doing more. See the [examples](examples/).
 
-## Install
+## Install for Claude Code
 
 ```
 /plugin marketplace add AdamKrysztopa/architectural-decisions
 /plugin install arch-crew
 ```
+
+This established installation path remains supported without changes.
+
+## Install for Codex
+
+```sh
+codex plugin marketplace add AdamKrysztopa/architectural-decisions
+codex plugin add arch-crew@arch-crew
+```
+
+Start a new Codex session after installation.
 
 ## The three skills
 
@@ -57,7 +68,12 @@ The decision logic and catalogs are distilled into each skill's `references/` (t
 these on demand) from three single-file HTML pattern references kept locally as the source of truth.
 `SKILL.md` stays a lean workflow.
 
-## For coding agents
+## For coding agents and maintainers
 
 This repo ships [`AGENTS.md`](../AGENTS.md) and [`llms.txt`](../llms.txt) so AI coding tools can
 discover the skills and route the right one. The skill `description` fields are the trigger surface.
+
+The workflows, references, docs, and examples are shared canonical content. Agent-specific
+packages are generated into committed `build/<target>/` trees from thin adapters; they are not a
+second place to edit a workflow. For targets, rebuilds, adapter rules, and validation, see the
+[package build guide](building-packages.md).

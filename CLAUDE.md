@@ -4,13 +4,22 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-This repo is the **`arch-crew` Claude Code plugin** — three architectural-decision skills — plus
-the local HTML knowledge source those skills were distilled from.
+This repo is the **`arch-crew` cross-agent skill package** — three architectural-decision skills —
+plus the local HTML knowledge source those skills were distilled from. Claude Code and Codex have
+generated packages; no Cursor or GitHub Copilot package is supported yet.
 
-### The plugin (the shipped artifact)
+### Shared skills and generated packages
 
-`.claude-plugin/{plugin.json,marketplace.json}` + `package.json` define the `arch-crew` plugin.
-Three skills under `skills/`, each invoked as `arch-crew:<name>`:
+`skills/` contains the canonical portable workflows and references. `docs/` and the examples are
+canonical shared documentation. Target adapters in `builders/` select those files and generate
+allowlisted install trees in `build/<target>/`; generated artifacts are committed so Git-backed
+marketplaces can install a target package directly.
+
+`.claude-plugin/{plugin.json,marketplace.json}` remains the root Claude compatibility façade.
+Its user-facing marketplace and install commands, plugin identity, skill namespace, and canonical
+skill bytes must remain compatible with the existing Claude release.
+
+Three shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 
 - `decide-architecture` — software architecture (structure/topology/data/overlays).
 - `design-patterns` — GoF + Python-idiomatic design patterns.
@@ -38,7 +47,7 @@ When the catalogs change, re-distill the affected skill's `references/` from the
 The reading order / lineage is architecture → Python → agentic; each later file deliberately
 reuses the earlier files' visual system and CSS tokens.
 
-There is no build system, no package manager, no test runner, no framework. Each `.html` file
+The HTML references have no framework or browser build step. Each `.html` file
 is self-contained: all CSS lives in one inline `<style>`, all behavior in one inline `<script>`.
 The hard constraint across every file: **no external libraries, no build step, stays a single
 portable HTML document.**
@@ -54,6 +63,20 @@ To sanity-check wizard JS after editing, extract the inline script and run Node'
 awk '/^<script>/{f=1;next} /^<\/script>/{f=0} f' html/architecture-patterns.html > /tmp/wiz.js
 node --check /tmp/wiz.js
 ```
+
+## Package build workflow
+
+Build a target after changing shared runtime content or an adapter:
+
+```sh
+npm run build -- --target claude
+npm run build -- --target codex
+npm run build -- --target all
+```
+
+Use the validation commands documented in [`docs/building-packages.md`](docs/building-packages.md).
+Do not edit `build/` by hand. The project intentionally generates structured JSON directly and
+copies Markdown byte-for-byte; it does not use Jinja or another prose templating engine.
 
 ## Shared visual system (keep consistent across all three files)
 
