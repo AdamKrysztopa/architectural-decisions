@@ -10,5 +10,6 @@ every pick.**
 | [agentic-refund-bot](agentic-refund-bot.md) | agentic-patterns · greenfield | A layered agent design with HITL on irreversible actions |
 | [architecture-ecommerce](architecture-ecommerce.md) | decide-architecture · greenfield | Going heavy (microservices + Saga + CQRS) only when forces demand it |
 | [design-patterns-payment](design-patterns-payment.md) | design-patterns · greenfield | The GoF pattern *and* its lighter Pythonic form |
+| [test-patterns-thin-llm-service](test-patterns-thin-llm-service.md) | test-patterns · greenfield | Declining the pyramid, the QA phase, the E2E suite, and the LLM judge |
 
 Greenfield runs also write an ADR to `docs/adr/NNNN-*.md`; refactoring runs write a review report.

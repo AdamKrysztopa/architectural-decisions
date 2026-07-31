@@ -10,7 +10,7 @@ function manifest({ metadata, targetConfig }) {
       displayName: "Arch Crew",
       shortDescription: "Architecture decisions with explicit trade-offs",
       longDescription:
-        "Choose or review software architectures, design patterns, and LLM-agent control flows, then record the decision.",
+        "Choose or review software architectures, design patterns, LLM-agent control flows, and testing strategies, then record the decision.",
       developerName: metadata.author.name,
       category: "Developer Tools",
       capabilities: ["Interactive", "Write"],
@@ -18,6 +18,7 @@ function manifest({ metadata, targetConfig }) {
         "Choose the least architecture that meets my requirements.",
         "Review this codebase's architecture and propose targeted improvements.",
         "Design an LLM-agent control flow with explicit trade-offs.",
+        "Decide which tests this project actually needs, and review the suite I already have.",
       ],
     },
   };

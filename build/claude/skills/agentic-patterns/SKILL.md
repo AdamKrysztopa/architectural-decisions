@@ -22,6 +22,10 @@ Knowledge lives in two references you read on demand:
 - `references/catalog.md` — every pattern (when / cost / review cue) and the **seven recurring
   defects** (plus an under-building counter-check) to check existing agent code against.
 
+Neither reference covers *evidence*: for scaffold tests and semantic evals — what to assert about
+the deterministic wiring and what to evaluate about the model's output — hand off to the
+`test-patterns` skill, which owns that decision tree.
+
 ## Step 0 — Establish where the user is
 
 Branch on **greenfield or refactoring?** Designing a new agentic system, or assessing one that
