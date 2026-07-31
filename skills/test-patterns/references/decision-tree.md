@@ -159,7 +159,11 @@ the named regression.
 - **Add load, stress, or soak testing when:** a named latency, throughput, or capacity requirement
   exists **and** a regression against it would be user-visible or contractual. Then test the shape
   that requirement implies: load at expected volume, stress beyond it to find the breaking point, or
-  a soak run where leaks and drift surface.
+  a soak run where leaks and drift surface. **Scope it where the requirement lives — load testing is
+  not automatically E2E.** A single binary or component driven directly is often enough; one service
+  at its API against an ephemeral database is integration-scoped and answers most per-service
+  numbers; go full-system only when the capacity behavior *emerges* across components (pools, queues,
+  caches, shared downstreams) and no narrower rig reproduces it.
 - **Keep light when:** no such number has been named — which is most systems, most of the time.
   Production observability (latency percentiles, error rates, saturation) usually answers "is it
   fast enough?" more cheaply and more truthfully than a synthetic rig, and a benchmark on
@@ -189,8 +193,8 @@ continuity requirement, and needs no number at all.
 ### Security testing *(a cross-level concern, not a level)*
 **Scanning is the baseline, not the strategy.** Dependency and static scanners find known-vulnerable
 libraries and common code-level patterns; they cannot know who is *allowed* to do what in your
-domain. Broken access control sits at the top of the OWASP Top 10 precisely because it is invisible
-to tools that do not know your rules.
+domain, so authorization rules are yours to test. Broken access control also sits at the top of the
+OWASP Top 10 — hold both facts without asserting that one explains the other.
 - **Add authorization and business-rule tests when:** the system has roles, ownership, tenancy, or
   any rule about who may read or change what — that is, nearly always. Assert the **negative** cases
   at the cheapest level that can express them: wrong user, wrong tenant, wrong role, missing token,
@@ -231,9 +235,10 @@ Keep four concerns separate — they fail differently and are owned differently:
    - **Reopen when:** bad data reaches a consumer, a source changes shape, or a new consumer takes a
      hard dependency on the table.
 3. **Data contracts** — a negotiated agreement across an ownership boundary, plus enforcement.
-   - **Add when:** ownership of the producing side sits with a different team or system **and**
-     upstream changes have broken you before — or the dependency is new and the producer currently
-     has no way to learn who depends on their schema.
+   - **Add when:** ownership of the producing side sits with a different team or system, **and**
+     either upstream changes have broken you before **or** the dependency is new and the producer has
+     no way to discover who consumes their schema. (`catalog.md` → *Data contracts* states the same
+     trigger; if you change one, change both.)
    - **Keep light when:** producer and consumer are the same team inside one deployable — a schema
      assertion at the load step is cheaper and equally truthful. **A continuously running pipeline
      does not by itself earn a contract**; it earns monitoring (below).
@@ -261,7 +266,7 @@ contracts are themselves the named risk and no narrower test reproduces the fail
 Tools (dbt tests, Great Expectations, and equivalents) are *examples*, not mandatory architecture.
 
 ### ML models
-Keep the ordinary code and pipeline tests, then add model-specific evidence in four gated clusters —
+Keep the ordinary code and pipeline tests, then add model-specific evidence in five gated clusters —
 each bought separately, none implied by the others. The ML Test Score is a useful rubric to *cite*,
 not a checklist to copy mechanically into every project.
 
@@ -283,9 +288,6 @@ not a checklist to copy mechanically into every project.
   portfolio. **"You do not need metamorphic checks yet" is a correct, common answer.**
 - **Reopen when:** a stakeholder names a segment, a complaint traces to one subpopulation, or a
   release regresses a case someone cared about.
-- **Baseline comparison / champion-challenger** — before promoting any model, compare it to the
-  incumbent (or to a trivial baseline) on the same held-out data and refuse a silent regression.
-  Cheapest real release gate there is; earn it as soon as you ship a *second* model.
 
 **3. Reproducibility controls (seeds, versions, data snapshots) + training/serving consistency**
 - **Add when:** someone other than the author will retrain it, a result must be reconstructible later
@@ -295,7 +297,30 @@ not a checklist to copy mechanically into every project.
 - **Reopen when:** a result cannot be reproduced, serving metrics diverge from training metrics, or a
   second person takes over retraining.
 
-**4. Drift and quality-degradation monitoring**
+**4. Release evidence — baseline comparison, and rollback as a separate gate**
+
+*Comparison* and *rollback* answer different questions and are earned on different triggers. Do not
+bundle them, and do not exempt the first model from either.
+
+- **Add baseline comparison when:** you are about to ship *any* consequential model — first one
+  included. There is always something to compare against; "no incumbent" is not "no baseline".
+  - **First consequential model** → compare against a **trivial, rules-based, or non-ML
+    alternative**: majority class, the existing heuristic, the manual process it replaces. Evaluate
+    both on the same held-out data. If the model does not beat it, that is the finding.
+  - **Later model** → compare against the **incumbent** on the same held-out data and refuse a
+    silent regression.
+- **Add a rollback / disable path when:** deployment consequence warrants it — the output reaches
+  users, moves money, or drives an automated decision. Gate this on **consequence, not on model
+  count**: a first model in a consequential path owes a versioned artifact and a rehearsed way back
+  (previous model, or the pre-model behavior) just as much as a fifth one does.
+- **Keep light when:** the model is exploratory or offline and nobody acts on its output (skip the
+  comparison ceremony, not the sanity check), or its output is advisory and human-reviewed before it
+  acts (record the artifact version; skip the rehearsed rollback). **"It's our first model" is never
+  the reason** — an unbeaten trivial baseline is exactly the thing a first release should surface.
+- **Reopen when:** a regression ships unnoticed; a bad model cannot be withdrawn quickly; someone
+  discovers the trivial baseline matches the model; the output starts driving an automated decision.
+
+**5. Drift and quality-degradation monitoring**
 - **Add when:** the model runs continuously against live data whose distribution can move, **and** a
   degraded prediction has consequences before a human would notice unaided.
 - **Keep light when:** it is a batch or one-off scoring job whose output a human already reviews, or

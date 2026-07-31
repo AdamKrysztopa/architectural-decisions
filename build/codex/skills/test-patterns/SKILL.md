@@ -14,8 +14,9 @@ strategy error:
    level beside unit / integration / E2E, and its existence does not imply a separate QA phase,
    department, or release bottleneck. The default is whole-team quality ownership.
 2. **Executable code tests** — normalized here to three primary levels: **unit**, **integration**,
-   **E2E**. That is *this skill's normalization*, not a universal taxonomy: ISTQB names four levels
-   (component, integration, system, acceptance), and level vocabulary genuinely varies between
+   **E2E**. That is *this skill's normalization*, not a universal taxonomy: ISTQB CTFL names five
+   levels (component, component integration, system, system integration, acceptance), and level
+   vocabulary genuinely varies between
    organizations. Three is chosen because it tracks cost and feedback speed, which is what the gates
    actually trade off — `references/catalog.md` §II maps the common alternative terms onto it, so
    translate rather than argue. Static analysis, typing, linting, and security scanning are baseline

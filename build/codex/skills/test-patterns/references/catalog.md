@@ -110,18 +110,22 @@ genuinely varies between organizations (a point Fowler makes repeatedly about "u
 
 | If your organization says… | …read it here as |
 |----------------------------|------------------|
-| **Component testing** (ISTQB level 1) | unit |
-| **Component integration testing** (ISTQB level 2) | narrow integration |
-| **System integration testing** (ISTQB level 2, across systems) | broad integration, or contract tests |
-| **System testing** (ISTQB level 3) | component/API test, or E2E depending on what it touches |
-| **Acceptance testing** (ISTQB level 4) | E2E where it is executable; otherwise dimension 1 — user acceptance / release evidence |
+| **Component testing** (ISTQB) | unit |
+| **Component integration testing** (ISTQB) | narrow integration |
+| **System testing** (ISTQB) | component/API test, or E2E — by what it actually touches |
+| **System integration testing** (ISTQB) | broad integration, or contract tests |
+| **Acceptance testing** (ISTQB) | **map by scope, not by name** — an executable example over a pure function is a unit test, one over an API is integration, one over a real deployed journey is E2E. Manual acceptance, UAT sign-off, and release evidence stay in dimension 1. |
 | Service test, middle layer, "the trophy's middle" | integration |
-| UI test, browser test, journey test | E2E |
+| UI test, browser test, journey test | **map by resources touched** — a component test with the network and backend stubbed is unit or integration; only a run against a real backend is E2E |
 
-ISTQB's four levels and this catalog's three are the same territory drawn with different borders;
-neither is wrong. Everything else in this file is a *technique*, a *strategy within a level*, a
-*cross-level concern*, or a *baseline check*. What matters is the question a test answers and the
-resources it touches — not its folder name and not which taxonomy named it.
+CTFL 4.0.1 names **five** test levels — component, component integration, system, system
+integration, and acceptance — and does not number them; the order above is the syllabus's. Its five
+and this catalog's three are the same territory drawn with different borders; neither is wrong.
+Everything else in this file is a *technique*, a *strategy within a level*, a *cross-level concern*,
+or a *baseline check*. What matters is the question a test answers and the resources it touches —
+not its folder name and not which taxonomy named it. **Two names that sound like a level are traps:
+"acceptance test" and "browser test" describe a test's *audience* and its *driver*, not its scope.
+Place both by what the test actually executes.**
 
 ### Unit test
 **Use when:** there is meaningful branching, calculation, state transition, or invariant that can be
@@ -210,7 +214,9 @@ diagnosis difficulty, and churn after UI or workflow changes.
 **Review cues:** dozens of E2E tests covering variations of one journey; E2E used to detect schema
 drift (buy a contract instead); retries configured as the flakiness strategy.
 **Common confusion:** E2E confidence feels proportional to its cost. It isn't — a handful of
-well-chosen journeys carries nearly all of the value.
+well-chosen journeys carries nearly all of the value. And **a browser is a driver, not a scope**: a
+component test rendered in a real browser with the network stubbed touches no backend and belongs at
+unit or integration scope, whatever the tool's name suggests. Classify by resources touched.
 
 ### Baseline static feedback *(not a level)*
 **Use when:** always, for the stack's idioms — type checking, linting, formatting, static analysis,
@@ -473,8 +479,13 @@ representative — an unrepresentative rig misleads with confidence. Wall-clock 
 CI hardware are a flakiness source; assert bounds or relative regressions instead.
 **Review cues:** a load-test suite nobody reads the results of; `time.sleep`-calibrated thresholds;
 benchmarks run once at project start and never since; performance "tested" only in production.
-**Common confusion:** performance testing is not inherently an E2E activity. Load testing is; a
-benchmark over a serializer or an algorithm is a unit test with a different assertion.
+**Common confusion:** no performance technique is inherently an E2E activity — **load testing
+included.** Buy it at the scope where the requirement lives: a benchmark over a serializer or an
+algorithm is a unit test with a different assertion; a single service driven at its API against an
+ephemeral database is integration-scoped load testing, and often the whole answer; E2E load testing
+is earned only when the capacity behavior you care about *emerges across the full system* —
+connection pools, queues, caches, and shared downstreams interacting — and no narrower rig
+reproduces it.
 
 ### Resilience and failure-injection testing *(a cross-level concern)*
 **Question answered:** Does the system actually do what we claim when a dependency fails?
@@ -515,8 +526,9 @@ a remediation backlog.
 against a mocked guard rather than the real middleware; scanner output treated as the security
 story; a pen-test report with no test written for anything it found.
 **Common confusion:** scanning is the **baseline, not the strategy**. Scanners find known-vulnerable
-dependencies and generic code patterns; they cannot know your domain's rules, which is why broken
-access control sits at the top of the OWASP Top 10 and why it is your tests' job, not a tool's.
+dependencies and generic code patterns; they cannot know your domain's rules, so enforcing those
+rules is your tests' job, not a tool's. Broken access control also sits at the top of the OWASP Top
+10 — two facts worth holding together, without claiming either causes the other.
 
 ---
 
@@ -546,13 +558,25 @@ integrity, ranges, freshness, volume, or distribution shifts.
 transformed batch, a candidate model's outputs — run on the **build's** cadence and may legitimately
 fail the build or block the deploy; that is exactly what `dbt build` does, running each model's tests
 immediately after building it and skipping its dependents on failure. *Assertions over source or
-production data* run on the **data's** cadence; a failure there means "the data changed", not "the
-code broke", so route it to a named operational owner rather than to a red build — blocking a deploy
-on it punishes whoever happens to be shipping.
+production data* run on the **data's** cadence, so they should page a named operational owner rather
+than redden an unrelated build — blocking a deploy on them punishes whoever happens to be shipping.
+
+**Do not infer the cause from the placement.** A production-data failure does not mean "the data
+changed" — a transformation deployed an hour ago can corrupt production output just as easily as an
+upstream source can shift. Route by **execution context** (which cadence fired it), **provenance**
+(does the failing column come from a source or from code you own), **severity** (who is already
+consuming the bad rows), and **ownership** (who can actually fix it) — then diagnose. Assigning
+blame to the data before looking is how a fresh regression gets triaged as an upstream problem and
+lives in production for a week.
 
 ### Data contracts
-**Use when:** ownership crosses a team boundary and breakages are recurring.
-**Avoid or keep light when:** producer and consumer are the same team and codebase.
+**Use when:** ownership of the producing side sits with a different team or system, **and** either
+upstream changes have broken you before **or** the dependency is new and the producer has no way to
+discover who consumes their schema. (Same rule as `decision-tree.md` Step 5 → data pipelines, item
+3 — one trigger, stated identically in both places.)
+**Avoid or keep light when:** producer and consumer are the same team and codebase — a schema
+assertion at the load step is cheaper and equally truthful. A continuously running pipeline does not
+by itself earn a contract; it earns monitoring.
 **Reopen when:** an upstream schema change surprises a consumer again.
 **Cost:** schema versioning, negotiation, enforcement in both pipelines.
 **Review cues:** consumers defensively coding around upstream surprises; schema changes announced in chat.
@@ -572,7 +596,7 @@ actually fears.
 ### ML production-readiness — four *independently gated* concerns
 
 **"The model ships" does not buy all of these.** They fail differently, cost differently, and are
-earned separately — mirroring the four clusters in `decision-tree.md` **Step 5 → ML models**. Google's
+earned separately — mirroring the gated clusters in `decision-tree.md` **Step 5 → ML models**. Google's
 ML Test Score is a rubric to *cite and adapt*, not a checklist to copy wholesale; applied
 mechanically it becomes box-ticking, which is the failure mode this split exists to prevent. Each
 entry below has its own keep-light outcome, and for a fixed-data, one-shot, or human-reviewed system
@@ -609,17 +633,29 @@ feature engineering duplicated in a training notebook and a serving service.
 **Common confusion:** training/serving skew is not a modeling problem — it is two implementations of
 the same transformation drifting, and it is caught by an equivalence test, not by a metric.
 
-### ML release gating — baseline comparison and rollback
-**Use when:** you are about to ship a *second* model. Compare the candidate to the incumbent (or to a
-trivial baseline) on the same held-out data and refuse a silent regression; know how to put the
-previous model back.
-**Avoid or keep light when:** the very first model, where "better than nothing" is the bar and the
-comparison has no incumbent to make.
-**Reopen when:** a regression ships unnoticed, or a bad model cannot be withdrawn quickly.
+### ML release gating — baseline comparison and rollback *(two gates, earned separately)*
+**Use when — comparison:** every consequential model release, including the first. There is always a
+baseline; "no incumbent" is not "no comparison". For a **first** consequential model, compare against
+a trivial, rules-based, or non-ML alternative — majority class, the existing heuristic, the manual
+process it replaces — on the same held-out data, and refuse to ship a model that does not beat it.
+For a **later** model, compare against the incumbent and refuse a silent regression.
+**Use when — rollback:** gated **independently**, by deployment consequence, not by model count. If a
+bad model reaches users, moves money, or makes automated decisions, you owe a versioned artifact and
+a rehearsed way to put the previous behavior (or no model at all) back — on the first release as
+much as the fifth.
+**Avoid or keep light when — comparison:** an exploratory or offline model nobody acts on. **Never
+for the reason that it is the first model** — "better than nothing" is a claim, and comparing against
+the trivial baseline is precisely how you find out it is false. The most expensive first models are
+the ones that shipped without anyone checking they beat the rule they replaced.
+**Avoid or keep light when — rollback:** the model's output is advisory, human-reviewed before it
+acts, and easily ignored — noting the artifact version is then enough.
+**Reopen when:** a regression ships unnoticed; a bad model cannot be withdrawn quickly; a trivial
+baseline turns out to match the model; the model's output starts driving an automated decision.
 **Cost:** low — a held-out set, a comparison step, and a versioned artifact to roll back to. This is
 the cheapest real release gate in ML.
-**Review cues:** a new model promoted on its own metric with no incumbent comparison; no record of
-which model version served which predictions; rollback that means retraining.
+**Review cues:** a first model promoted with no baseline of any kind to compare against; a new model
+promoted on its own metric with no incumbent comparison; no record of which model version served
+which predictions; rollback that means retraining.
 **Common confusion:** an improved aggregate metric is not a promotion criterion on its own — pair it
 with the slice and behavioral evidence above, or you ship an average win over a segment loss.
 
@@ -683,12 +719,21 @@ sharing a model and prompt style; thresholds set to whatever the first run produ
 validated, and temperature zero reduces variation without making it deterministic.
 
 ### Production monitoring as evidence
-**Use when:** always for data/ML/LLM systems — drift, freshness, error rates, refusal/fallback rates,
-latency, cost, user-visible failure signals, sampled human review.
-**Avoid or keep light when:** never skip; scope it to signals someone will act on.
-**Reopen when:** a production failure mode appears that no existing signal covers.
-**Cost:** instrumentation, dashboards, alert ownership.
-**Review cues:** offline evals only; nobody would notice a quality regression until a user complains.
+**Use when:** the system is **deployed or scheduled** and its degradation could precede human
+detection — a continuously serving model, a scheduled pipeline, an agent answering users. Then pick
+from drift, freshness, error rates, refusal/fallback rates, latency, cost, user-visible failure
+signals, and sampled human review — only the signals someone is named to act on.
+**Avoid or keep light when:** the run is a one-off, a backfill, or an ad-hoc job, or a human already
+reviews the output before anything downstream consumes it. There is nothing running to monitor, and
+the review *is* the detection. This mirrors the keep-light outcomes in the data-pipeline and ML-drift
+entries — do not override them with a blanket "monitoring is always required".
+**Reopen when:** the system moves from one-off to scheduled or continuous, its output starts feeding
+an automated decision, human review of every output stops, or a production failure mode appears that
+no existing signal covers.
+**Cost:** instrumentation, dashboards, alert ownership. An unowned dashboard is decoration, and a
+monitor on a system nobody runs twice is pure cost.
+**Review cues:** a deployed system with offline evals only, where nobody would notice a quality
+regression until a user complains; conversely, a monitoring stack built around a one-shot job.
 **Common confusion:** monitoring does not replace pre-release evidence, and pre-release evidence does
 not replace monitoring — stochastic systems need both.
 
