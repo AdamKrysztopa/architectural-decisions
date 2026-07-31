@@ -1,6 +1,6 @@
 ---
 name: test-patterns
-description: "Use when choosing or reviewing a software testing strategy — what belongs to QA versus executable tests, which unit / integration / end-to-end tests are justified, why a suite is slow or flaky, whether contract or property-based testing fits, or how to test data, ML, LLM, and agentic systems. Branches automatically: greenfield → a risk-led testing portfolio and ADR; existing test code → a suite review with one highest-leverage rebalancing move. Keeps QA as a process discipline, code testing as unit / integration / end-to-end, and stochastic evaluation as a separate overlay. Pushes toward the smallest reliable feedback loop that covers the risk. Reach for this whenever tests, the test pyramid or trophy, mocks, fixtures, flakiness, coverage, mutation testing, golden files, or LLM evals come up, even if no level is named."
+description: "Use when choosing or reviewing a software testing strategy — 'what tests should I write', 'unit vs integration vs E2E', 'pyramid or trophy', 'why is our suite so slow and flaky', 'do we need QA', 'how should I test this data pipeline / model / agent', or 'review my test suite'. Branches automatically: greenfield → a risk-led testing portfolio and ADR; existing test code → a suite review with one highest-leverage rebalancing move. Pushes toward the smallest reliable evidence portfolio that covers the risk. Reach for this on any testing-strategy question — levels, flakiness, coverage, contract, mutation, golden-file, or LLM evals — even if none is named; writing one test is ordinary implementation work, not this skill."
 ---
 
 # test-patterns : compose the smallest reliable evidence portfolio, or rebalance the suite you have
@@ -24,7 +24,9 @@ strategy error:
 
 Suite *shapes* (pyramid, trophy, honeycomb) and *techniques* are chosen **last** — only after the
 risks and boundaries are named. The through-line: **choose the smallest reliable evidence portfolio
-that covers the named risks, and name the cost of every layer.**
+that covers the named risks, and name the cost of every layer.** The guardrail that outranks the
+rest: **do not add a broader layer merely to make the diagram look balanced — add it because a named
+failure cannot be detected reliably at a cheaper boundary.**
 
 Knowledge lives in two references you read on demand:
 - `references/decision-tree.md` — the interview and the asymmetric escalation gates.
@@ -44,11 +46,17 @@ open — run the gates. But "we're contractually required to produce acceptance 
 it well" is fixed: acknowledge the constraint, name its cost once, and design around it. Don't
 relitigate a decision the user has already closed.
 
+If the question is really how to **build** an agent — autonomy level, reasoning loop, topology,
+memory, guardrails — rather than how to get evidence about one, hand off to the `agentic-patterns`
+skill, which owns that decision tree. This skill covers the evidence, not the design.
+
 ## Mode A — Greenfield: the risk-led portfolio interview
 
 Read `references/decision-tree.md` and walk it from **Step 1 (scope) → Step 2 (system and failure
 surfaces) → Step 3 (QA gates) → Step 4 (level gates) → Step 5 (domain overlays) → Step 6 (shape,
 last)**. Ask one decision at a time; skip anything the codebase or the user has already answered.
+**Step 1 can end the walk early:** a pure quality-practices question ("do we need QA?") stops at
+Step 3 unless executable code testing also comes up — don't hand back an unrequested test portfolio.
 
 1. **Name the failure modes before naming any level.** No layer is justified by a diagram. If you
    cannot say what failure a test catches, it is not yet earned.
@@ -56,7 +64,10 @@ last)**. Ask one decision at a time; skip anything the codebase or the user has 
    expose the named failure. A broader, slower, or more expensive layer — broad integration, E2E, an
    independent QA gate, mutation testing, an LLM judge — needs *stronger* evidence to add than the
    cheap option needs to keep. Never use a numeric score to hide the judgment.
-3. **Record every pick with its trade-off** — including what you deliberately did *not* buy.
+3. **Record every pick with its trade-off** — including what you deliberately did *not* buy. Take
+   each pick's *force*, *cost accepted*, and *reopening signal* from `references/decision-tree.md`
+   and `references/catalog.md`, not from your own priors, so every row carries a real trade-off
+   rather than a name.
 
 Output — a portfolio the user can act on:
 
@@ -83,13 +94,16 @@ don't pad the table to look thorough.
 
 ## Mode B — Existing suite: the test-suite review
 
-Inspect before concluding: production code, test code, CI configuration, fixtures, external
-dependencies, runtime by level, flaky-test evidence, and coverage or mutation reports if they exist.
-**If code or CI evidence is unavailable, say which conclusions are provisional.** Do not fabricate
-suite characteristics — a described suite is a hypothesis, not a measurement.
+**Inspect before concluding.** A described suite is a hypothesis, not a measurement — never
+fabricate suite characteristics, and **if code or CI evidence is unavailable, say which conclusions
+are provisional.**
 
-1. **Map the suite as it is.** Count and runtime by level, what each level actually touches
-   (resources matter more than folder names), fixture scope, mock density, ownership.
+1. **Map the suite as it is.** Walk the inspection list in `references/decision-tree.md` **Step 7 —
+   Suite-health branch**: counts and runtime by level, CI wall-clock and stage layout, what each
+   level actually touches (resources matter more than folder names), parallelism and isolation,
+   fixture scope, mock density and assertion quality, flaky retries and who owns them, escaped
+   production defects and the layer that should have caught each, coverage and mutation evidence if
+   it exists, and test ownership.
 2. **Run the review cues** from `references/catalog.md` — the anti-pattern list is a lens, not a form
    to fill. Translate each cue to what the suite actually is; report a genuine problem even if no cue
    names it.
@@ -105,8 +119,8 @@ Output:
 ```
 ## Test-suite review
 
-**Observed suite:** unit <n, runtime> · integration <n, runtime> · E2E <n, runtime> ·
-evals <n> · CI wall-clock <…> *(measured / reported / unknown)*
+**Observed suite:** unit <n, runtime> · integration <n, runtime> · E2E <n, runtime> |
+overlay: evals <n> | CI wall-clock <…> *(measured / reported / unknown)*
 
 **Shape:** <only if a shape name adds information — otherwise skip it.>
 
@@ -129,13 +143,12 @@ evals <n> · CI wall-clock <…> *(measured / reported / unknown)*
 
 ## The generated-test guardrail (both modes)
 
-**A test is not trusted because it passes or because coverage went up.** Require an independent
-oracle from at least one of: a requirement, an acceptance example, an invariant, a specification, a
-known-good reference, a reviewed golden case, a metamorphic relation, or an externally observed
-contract. Review generated tests for reproducing *current* behavior instead of *intended* behavior
-(the documented failure mode of generated oracles), locking in an existing defect, mock-heavy
-implementation coupling, tautological assertions, happy-path-only coverage, and assertions that
-would still pass after meaningful breakage. The review question:
+**A test is not trusted because it passes or because coverage went up** — require an independent
+oracle (a requirement, an invariant, a specification, a reviewed golden case; the full list is in
+`references/decision-tree.md`, "The generated-test gate"). Review every generated test against the
+defects listed there, starting with reproducing *current* behavior instead of *intended* behavior —
+**a** documented failure mode of generated oracles, and the one that quietly promotes an existing
+defect to a specification. The review question:
 
 > **What requirement would this test detect if the implementation changed?**
 
@@ -143,11 +156,11 @@ would still pass after meaningful breakage. The review question:
 
 A strategy that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the portfolio, write
-`docs/adr/NNNN-test-strategy-<short-title>.md` (lowercase words joined by hyphens, e.g.
-`0002-test-strategy-thin-llm-service.md`) — a 4-digit number, one past the highest existing ADR in
-`docs/adr/` (else `0001`). Create `docs/adr/` if absent. Follow the repository's existing ADR
-template if it has one; otherwise this MADR-style shape:
+**Greenfield → an ADR.** After presenting the portfolio, write `docs/adr/NNNN-short-title.md`
+(lowercase words joined by hyphens, e.g. `0002-risk-led-test-portfolio-thin-llm-service.md`) — a
+4-digit number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/`
+if absent. Follow the repository's existing ADR template if it has one; otherwise this MADR-style
+shape:
 
 ```
 # NNNN. <decision title, e.g. "Risk-led test portfolio for the summarization service">
@@ -168,7 +181,7 @@ release cadence, reversibility, regulation, team shape, environment ownership.>
 (runtime budget, who owns fixtures/environments/evals); and the reopening signals.>
 ```
 
-**Existing suite → a review report.** Write it to `docs/test-patterns-review-<YYYY-MM-DD>.md`
+**Existing suite → a review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent) with the Mode B sections above. If the suite is already well balanced,
 say so plainly and keep the report short — a clean bill of health is a valid outcome, not a failure
 to find work. If a rebalancing move is a direction the user commits to, offer to capture it as its
@@ -176,11 +189,6 @@ own ADR.
 
 Write the file and report its path. Ask first only if the repo layout is unclear or the user is
 clearly still exploring rather than deciding.
-
-## The guardrail that outranks the rest
-
-> **Do not add a broader layer merely to make the diagram look balanced. Add it because a named
-> failure cannot be detected reliably at a cheaper boundary.**
 
 ## Why this shape
 

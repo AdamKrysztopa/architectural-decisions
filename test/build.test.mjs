@@ -19,6 +19,88 @@ const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const canonicalSkills = join(repositoryRoot, "skills");
 const builder = join(repositoryRoot, "builders/build.mjs");
 
+// Hardcoded on purpose. Shipping a skill has to cost a deliberate edit here,
+// otherwise the inventory tests below would grade the build against itself.
+const expectedSkillNames = [
+  "agentic-patterns",
+  "decide-architecture",
+  "design-patterns",
+  "test-patterns",
+];
+
+// Terms a user-visible surface may use to advertise each skill. Release
+// metadata legitimately avoids the literal directory name — the marketplace
+// card says "testing strategy", not "test-patterns" — so a skill counts as
+// advertised when any one of its terms shows up as a whole token.
+const advertisedTerms = {
+  "agentic-patterns": ["agentic-patterns", "agentic-system", "agentic", "llm-agent"],
+  "decide-architecture": ["decide-architecture", "software architecture", "architecture"],
+  "design-patterns": ["design-patterns", "design pattern"],
+  "test-patterns": ["test-patterns", "testing strategy", "testing"],
+};
+
+// A description short enough to be blank, a stub, or a placeholder cannot
+// trigger its skill; docs/README.md names this field as the trigger surface.
+const descriptionFloor = 40;
+
+const documentationFiles = ["README.md", "llms.txt"];
+
+function escapeForRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Whole-token match: a hyphen counts as part of the token, so "patterns" never
+// satisfies "design-patterns" and "test" never satisfies "test-patterns". A
+// trailing plural is tolerated so "architecture" still matches "architectures".
+function mentions(text, term) {
+  return new RegExp(`(?<![\\w-])${escapeForRegExp(term)}s?(?![\\w-])`, "i").test(text);
+}
+
+function assertAdvertises(label, text, name) {
+  const terms = advertisedTerms[name];
+  assert.ok(terms?.length > 0, `no advertised terms are declared for ${name}`);
+  assert.ok(
+    terms.some((term) => mentions(text, term)),
+    `${label} advertises ${name} by none of ${JSON.stringify(terms)}`,
+  );
+}
+
+// Reads the leading YAML block well enough to see which keys are declared and
+// how much description text each carries, including folded/literal scalars.
+function parseFrontmatter(text, label) {
+  const block = /^---\n([\s\S]*?)\n---\n/.exec(text);
+  assert.ok(block, `${label} does not open with a frontmatter block`);
+
+  const keys = [];
+  const values = {};
+  let current = null;
+  for (const line of block[1].split("\n")) {
+    const field = /^([A-Za-z][\w-]*):(.*)$/.exec(line);
+    if (field) {
+      current = field[1];
+      keys.push(current);
+      values[current] = field[2].trim();
+    } else if (current) {
+      values[current] = `${values[current]} ${line.trim()}`;
+    }
+  }
+
+  for (const key of keys) {
+    values[key] = values[key]
+      .replace(/^[>|][-+]?\s*/, "")
+      .replace(/^["']|["']$/g, "")
+      .trim();
+  }
+  return { keys, values };
+}
+
+async function canonicalSkillNames() {
+  return (await readdir(canonicalSkills, { withFileTypes: true }))
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+}
+
 async function readJson(path) {
   return JSON.parse(await readFile(path, "utf8"));
 }
@@ -97,20 +179,26 @@ test("generated skill payloads are byte-identical to the canonical skills", asyn
 });
 
 test("skill names and progressive-disclosure references remain valid", async () => {
-  const skillNames = (await readdir(canonicalSkills, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name)
-    .sort();
-  assert.deepEqual(skillNames, [
-    "agentic-patterns",
-    "decide-architecture",
-    "design-patterns",
-    "test-patterns",
-  ]);
+  const skillNames = await canonicalSkillNames();
+  assert.deepEqual(skillNames, expectedSkillNames);
 
   for (const name of skillNames) {
     const text = await readFile(join(canonicalSkills, name, "SKILL.md"), "utf8");
     assert.match(text, new RegExp(`^---\\nname: ${name}\\n`, "m"));
+
+    const frontmatter = parseFrontmatter(text, `${name}/SKILL.md`);
+    assert.deepEqual(
+      [...frontmatter.keys].sort(),
+      ["description", "name"],
+      `${name}/SKILL.md frontmatter must declare only name and description`,
+    );
+    assert.equal(frontmatter.values.name, name);
+    const description = frontmatter.values.description ?? "";
+    assert.ok(
+      description.length >= descriptionFloor,
+      `${name}/SKILL.md description is ${description.length} chars — too short to trigger the skill`,
+    );
+
     for (const reference of ["decision-tree.md", "catalog.md"]) {
       assert.match(text, new RegExp(`references/${reference.replace(".", "\\.")}`));
       const contents = await readFile(join(canonicalSkills, name, "references", reference), "utf8");
@@ -148,21 +236,56 @@ test("manifests and installer catalogs agree on identity, version, and target", 
 });
 
 test("generated metadata advertises every canonical skill", async () => {
-  const skillNames = (await readdir(canonicalSkills, { withFileTypes: true }))
-    .filter((entry) => entry.isDirectory())
-    .map((entry) => entry.name);
+  const skillNames = await canonicalSkillNames();
+  assert.deepEqual(
+    Object.keys(advertisedTerms).sort(),
+    skillNames,
+    "the advertised-term map must be updated whenever a skill is added or removed",
+  );
+
   const claudeManifest = await readJson(join(repositoryRoot, "build/claude/.claude-plugin/plugin.json"));
   const claudeMarketplace = await readJson(join(repositoryRoot, ".claude-plugin/marketplace.json"));
   const codexManifest = await readJson(join(repositoryRoot, "build/codex/.codex-plugin/plugin.json"));
 
+  const keywords = claudeMarketplace.plugins[0].keywords;
+  assert.ok(
+    Array.isArray(keywords) && keywords.length > 0,
+    "claude marketplace plugin publishes no keywords",
+  );
+
   const surfaces = [
-    ["claude manifest", claudeManifest.description],
-    ["claude marketplace", claudeMarketplace.plugins[0].description],
-    ["codex manifest", codexManifest.description],
+    ["claude manifest description", claudeManifest.description],
+    ["claude marketplace card description", claudeMarketplace.metadata.description],
+    ["claude marketplace plugin description", claudeMarketplace.plugins[0].description],
+    ["claude marketplace plugin keywords", keywords.join(" ")],
+    ["codex manifest description", codexManifest.description],
+    ["codex interface longDescription", codexManifest.interface.longDescription],
   ];
-  for (const [label, description] of surfaces) {
+  for (const [label, text] of surfaces) {
+    assert.ok(typeof text === "string" && text.length > 0, `${label} is empty`);
     for (const name of skillNames) {
-      assert.ok(description.includes(name), `${label} description omits ${name}`);
+      assertAdvertises(label, text, name);
+    }
+  }
+
+  const prompts = codexManifest.interface.defaultPrompt;
+  assert.ok(Array.isArray(prompts), "codex interface defaultPrompt must be an array");
+  assert.ok(
+    prompts.every((prompt) => typeof prompt === "string" && prompt.trim().length > 0),
+    "codex interface defaultPrompt contains an empty prompt",
+  );
+  assert.ok(
+    prompts.length >= skillNames.length,
+    `codex interface defaultPrompt offers ${prompts.length} prompts for ${skillNames.length} skills`,
+  );
+});
+
+test("shipped documentation names every canonical skill", async () => {
+  const skillNames = await canonicalSkillNames();
+  for (const file of documentationFiles) {
+    const text = await readFile(join(repositoryRoot, file), "utf8");
+    for (const name of skillNames) {
+      assert.ok(mentions(text, name), `${file} never names ${name}`);
     }
   }
 });

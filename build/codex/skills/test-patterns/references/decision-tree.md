@@ -116,8 +116,9 @@ lifecycle can fail despite correct local logic?*
 
 ### Contract tests *(a specialized integration strategy, not a level)*
 - **Add consumer/provider or schema contracts when:** independently deployed services or teams share
-  a boundary; compatibility failures are a recurring risk; broad E2E is being used mainly to
-  discover interface drift.
+  a boundary **and** compatibility failures across it are a recurring risk. The recurrence clause is
+  what earns the contract — a boundary alone does not; two boxes on a diagram are not a force. Broad
+  E2E being used mainly to discover interface drift is that same recurrence showing up as cost.
 - **Keep light when:** the boundary is inside one deployable owned by one team — a narrow integration
   test is cheaper and equally truthful.
 - **They do not prove the journey.** Keep a few E2E checks if deployment, routing, identity, or
@@ -138,6 +139,30 @@ reliably by lower-level tests?*
 - **Reopen when:** a critical cross-system defect escapes, or the system acquires a journey whose
   full wiring carries material risk.
 
+### Mutation testing *(a technique, not a level)*
+- **Add when:** the suite is already reliable and green, and you need evidence about *assertion
+  strength* in a specific critical area — not repository-wide.
+- **Keep light when:** the suite is small, low-risk, or still flaky. Ask the mutation *question*
+  ("would this test fail if the code were subtly wrong?") without buying the tool. Fix reliability
+  first.
+- **Reopen when:** a defect escapes through a module whose tests were green, or assertion quality
+  becomes contested in a critical area.
+
+### Performance, load, and resilience *(integration- or E2E-scoped concerns, not levels)*
+- **Add when:** a named latency, throughput, or capacity requirement exists **and** a regression
+  against it would be user-visible or contractual. Then test the shape that requirement implies:
+  load at expected volume, stress beyond it to find the breaking point, a soak run where leaks and
+  drift surface, or a failover / chaos exercise against a named dependency whose loss the system is
+  claimed to survive.
+- **Keep light when:** no such number has been named — which is most systems, most of the time.
+  Production observability (latency percentiles, error rates, saturation) usually answers "is it
+  fast enough?" more cheaply and more truthfully than a synthetic rig, and a benchmark on
+  unrepresentative data, hardware, or concurrency misleads with confidence. One cheap guard on a
+  known-hot path beats a load-testing programme nobody reads.
+- **Reopen when:** a number becomes real (SLO, contract, capacity plan), traffic shape shifts by an
+  order of magnitude, an incident traces to saturation or to a failover that did not work, or
+  latency regressions start reaching users.
+
 ## Step 5 — Apply the domain overlay
 Overlays are **added to** Step 4, never substituted for it. Deterministic code and wiring still get
 ordinary unit / integration / E2E tests.
@@ -146,20 +171,75 @@ ordinary unit / integration / E2E tests.
 Keep three concerns separate — they fail differently and are owned differently:
 1. **Transformation-code tests** — deterministic examples for the logic (unit level).
 2. **Data-quality assertions** — run against *data*, not code: schema, nullability, uniqueness,
-   referential integrity, ranges, freshness, volume, distribution. Pick only the ones tied to a real
-   downstream consequence.
-3. **Data contracts + production monitoring** — where ownership crosses a team boundary, and where
-   yesterday's good data says nothing about today's.
+   referential integrity, ranges, freshness, volume, distribution.
+   - **Add when:** a specific assertion is tied to a real downstream consequence — a wrong report, a
+     wrong decision, a failed load — and a named person will act when it fires.
+   - **Keep light when:** the consumer is exploratory, the table is not yet load-bearing, or the
+     assertion would trip on normal variation. An unowned, noisy assertion is worse than none.
+   - **Reopen when:** bad data reaches a consumer, a source changes shape, or a new consumer takes a
+     hard dependency on the table.
+3. **Data contracts + production monitoring**
+   - **Add when:** ownership crosses a team boundary **and** upstream changes have broken you before;
+     or the pipeline runs continuously, where yesterday's good data says nothing about today's.
+   - **Keep light when:** producer and consumer are the same team inside one deployable — a schema
+     assertion at the load step is cheaper and equally truthful.
+   - **Reopen when:** an upstream schema or semantic change breaks a consumer, or a second team
+     starts producing into the same table.
+
+Name the failure surfaces that actually break pipelines — they are rarely the transform itself:
+**idempotency / re-runnability** (does the second run change the result?), **backfill and replay**
+over historical windows, **late-arriving and duplicate records**, and **partition or orchestration
+failure** (a partial run, a retried task, a skipped upstream dependency). Each is reproducible
+deterministically on small fixtures; reach for that before reaching for a bigger run.
+
+**A full pipeline run on sample data** is the pipeline analogue of E2E and carries the same costs —
+**usually not warranted**. Add one only when orchestration wiring, partitioning, or cross-step
+contracts are themselves the named risk and no narrower test reproduces the failure.
 
 Tools (dbt tests, Great Expectations, and equivalents) are *examples*, not mandatory architecture.
 
 ### ML models
-Keep the ordinary code and pipeline tests, then add model-specific evidence as the risk warrants:
-data validation · leakage and split checks · invariance and metamorphic checks · slice performance
-(not just an aggregate metric) · behavioral test cases for known-important cases · reproducibility
-controls (seeds, versions, data snapshots) · training/serving consistency · monitoring for drift and
-quality degradation. The ML Test Score is a useful rubric to *cite*, not a checklist to copy
-mechanically into every project.
+Keep the ordinary code and pipeline tests, then add model-specific evidence in four gated clusters —
+each bought separately, none implied by the others. The ML Test Score is a useful rubric to *cite*,
+not a checklist to copy mechanically into every project.
+
+**1. Data validation + leakage and split checks**
+- **Add when:** the model is retrained on data that keeps arriving, or the split has structure —
+  time, group, entity, geography — that a random split would silently violate.
+- **Keep light when:** it is a one-shot model on a fixed, understood dataset with an obviously
+  independent split; one documented assertion about the split is then enough.
+- **Reopen when:** offline metrics outrun online results, retraining becomes automated, or a new
+  feature source appears.
+
+**2. Slice performance + behavioral cases for known-important cases**
+- **Add when:** an aggregate metric hides a population you are accountable to (a paying segment,
+  fairness, safety), or specific cases have been named as must-not-regress. Add invariance and
+  metamorphic checks *here*, and only when a property genuinely should hold under a transformation
+  you can name.
+- **Keep light when:** nobody has named a slice that matters and nobody has named a case that must
+  not break — aggregate metrics plus a handful of spot-checked examples are then the honest
+  portfolio. **"You do not need metamorphic checks yet" is a correct, common answer.**
+- **Reopen when:** a stakeholder names a segment, a complaint traces to one subpopulation, or a
+  release regresses a case someone cared about.
+- **Baseline comparison / champion-challenger** — before promoting any model, compare it to the
+  incumbent (or to a trivial baseline) on the same held-out data and refuse a silent regression.
+  Cheapest real release gate there is; earn it as soon as you ship a *second* model.
+
+**3. Reproducibility controls (seeds, versions, data snapshots) + training/serving consistency**
+- **Add when:** someone other than the author will retrain it, a result must be reconstructible later
+  (audit, incident, publication), or features are computed by different code in training and serving.
+- **Keep light when:** it is exploratory work by one person, or one code path computes features for
+  both training and serving — the consistency risk does not exist yet.
+- **Reopen when:** a result cannot be reproduced, serving metrics diverge from training metrics, or a
+  second person takes over retraining.
+
+**4. Drift and quality-degradation monitoring**
+- **Add when:** the model runs continuously against live data whose distribution can move, **and** a
+  degraded prediction has consequences before a human would notice unaided.
+- **Keep light when:** it is a batch or one-off scoring job whose output a human already reviews, or
+  labels arrive fast enough that ordinary outcome reporting already exposes decay.
+- **Reopen when:** the model enters a continuous or automated decision path, upstream data ownership
+  changes, or performance visibly decays between retrains.
 
 ### LLM and agentic systems
 Split the system in two and use the right instrument on each half.
@@ -168,14 +248,27 @@ Split the system in two and use the right instrument on each half.
 schemas, tool dispatch, permissions, state transitions, retry and timeout logic, persistence,
 routing, guardrails. **Suppress real model calls in unit tests** — a unit test that hits a provider
 is neither fast nor deterministic nor free. (In PydanticAI projects, `TestModel`, `FunctionModel`,
-`Agent.override`, and `ALLOW_MODEL_REQUESTS=False` are the idiomatic tools; other stacks have
-equivalents.)
+`Agent.override`, and the module-level `pydantic_ai.models.ALLOW_MODEL_REQUESTS = False` are the
+idiomatic tools; other stacks have equivalents.)
 
 **Stochastic behavior — evaluate, don't assert.** Representative cases · explicit rubrics ·
 deterministic evaluators wherever the property allows one · human-reviewed reference labels ·
 regression thresholds · reported uncertainty (a score from a handful of cases is noise). Temperature
 zero reduces variation; it does **not** make model output deterministic, so don't build a suite that
 assumes it does.
+
+**Size the eval dataset to the risk** — a three-case smoke set and a versioned dataset with CI
+regression thresholds are entirely different purchases.
+- **Add a versioned dataset with CI regression thresholds when:** the output is user-facing or
+  decision-bearing, the prompt / model / tool surface changes more than occasionally, and a quality
+  regression would otherwise ship unnoticed. Version it with the code and record who labelled it.
+- **Keep light when:** the system is a prototype, internal, or human-reviewed in the loop — three to
+  ten hand-written cases run by hand before shipping is a legitimate and complete answer at that
+  stage. Do not manufacture a hundred synthetic cases to look rigorous; unreviewed cases encode
+  whatever the generator believed, which is the generated-oracle problem in another costume.
+- **Reopen when:** someone who did not write the prompt starts changing it, a quality regression
+  reaches users, the system moves into an automated decision path, or the question becomes
+  "is version B better than version A?" rather than "is this good enough?".
 
 **Add an LLM-as-judge only when:** the quality in question is genuinely semantic; deterministic
 criteria are insufficient; the judge has been calibrated against human-reviewed cases; and you
@@ -208,26 +301,24 @@ Inspect, then conclude. Where evidence is missing, say the conclusion is provisi
 - coverage trends as a navigation signal (never as a target); mutation evidence if it exists
 - test ownership — orphaned suites decay
 
-Then name the anti-patterns (see `catalog.md` §VI) and pick **one highest-leverage move**, e.g.:
-replace ten overlapping E2E checks with one journey plus narrow integration coverage · replace
-mock-heavy service tests with a real database boundary test · add a consumer contract where broad
-E2E is only detecting schema drift · quarantine flaky tests **with an owner and an expiry** instead
-of silently retrying · require independent expected behavior before accepting generated tests ·
-split deterministic agent wiring tests from semantic evals. One move, then re-measure. No blanket
-rewrite.
+Then name the anti-patterns (see `catalog.md` §VI) and pick **one highest-leverage rebalancing move**
+— the typical shapes are listed in `SKILL.md`; choose the one this inspection actually points at,
+not the one that sounds most thorough. One move, then re-measure. No blanket rewrite.
 
 ## The generated-test gate (applies in every branch)
 Passing and raising coverage are **not** evidence that a test is worth keeping. Before accepting any
 generated test, require an independent oracle: a requirement, an acceptance example, an invariant, a
 specification, a known-good reference, a reviewed golden case, a metamorphic relation, or an
-externally observed contract. Generated oracles are known to reproduce an implementation's *actual*
-behavior rather than its *intended* behavior — which quietly promotes a current bug to a
+externally observed contract. Generated oracles are **prone to** reproducing an implementation's
+*actual* behavior rather than its *intended* behavior (Konstantinou, Degiovanni & Papadakis,
+arXiv:2410.21136 — measured across 24 Java repositories) — which quietly promotes a current bug to a
 specification. Ask of every one: **what requirement would this test detect if the implementation
 changed?** Mutation thinking helps answer that; a mutation *tool* is not mandatory to ask it.
 
 ## Composing the portfolio
-Stack the picks: `QA practices` → `baseline static feedback` → `unit` → `integration (+ contracts)`
-→ `E2E` → `domain overlay` → `shape summary, if useful`. Each row names its force, the cost
-accepted, the heavier option deliberately skipped, and the signal that would reopen it. Close with
-the smallest-portfolio check — and remember that **removing** a layer is as valid an outcome as
-adding one.
+Compose the rows in this order — **this is a writing order, not an escalation ladder**: QA practices
+(dimension 1, each gated on its own force) · baseline static feedback · unit → integration
+(+ contracts) → E2E (dimension 2, and this arrow *is* an escalation) · domain overlay (dimension 3,
+additive) · shape summary, if useful. Each row names its force, the cost accepted, the heavier option
+deliberately skipped, and the signal that would reopen it. Close with the smallest-portfolio check —
+and remember that **removing** a layer is as valid an outcome as adding one.

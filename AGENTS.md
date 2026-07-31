@@ -38,7 +38,9 @@ are the local knowledge source, not runtime inputs.
 ## Conventions
 
 - Greenfield decisions are recorded as MADR-style ADRs in `docs/adr/NNNN-short-title.md`.
-- Refactoring reviews are written to `docs/<skill>-review-<date>.md`.
+- Refactoring reviews are written to a *topic*-named report in `docs/`, one per skill:
+  `architecture-review-<date>.md`, `design-pattern-review-<date>.md`, `agentic-review-<date>.md`,
+  `test-suite-review-<date>.md`.
 - Full usage docs: [`docs/README.md`](docs/README.md). Examples: [`docs/examples/`](docs/examples/).
 
 ## Packaging boundaries
