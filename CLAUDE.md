@@ -29,9 +29,21 @@ Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces
 
 Each skill branches on project status: **greenfield → selection interview** (compose a
 recommendation) or **refactoring → code review** against the catalog. Each skill is a lean
-`SKILL.md` workflow plus two `references/` files read on demand (progressive disclosure):
-`decision-tree.md` (the interview/decision logic) and `catalog.md` (patterns with when/cost +
-code-review cues). Convention mirrors the sibling `ds-crew` plugin.
+`SKILL.md` workflow plus `references/` files read on demand (progressive disclosure). Two are
+required of every skill: `decision-tree.md` (the interview/decision logic) and `catalog.md`
+(patterns with when/cost + code-review cues). Convention mirrors the sibling `ds-crew` plugin.
+
+A skill may add **topic references** when a single catalog would force the model to load material
+most runs never need. `test-patterns` does: `references/evaluation.md` (the data / ML / LLM-agent
+evaluation overlay, dimension 3) and `references/oracles.md` (the cross-cutting generated-test
+oracle guardrail). Its `SKILL.md` carries a decision → reference table, and `test/build.test.mjs`
+enforces both directions: every shipped reference must be cited by `SKILL.md`, and every cited
+reference must exist. Do not add a topic reference for cosmetic reasons — size that actually harms
+selective retrieval is the bar.
+
+Validation has two layers, documented in [`docs/validating-skills.md`](docs/validating-skills.md):
+the package contract (`test/build.test.mjs`) and the force-driven scenario sets
+(`test/scenarios/*.json`), which grade a skill's gate outcomes without numeric scoring.
 
 ### The HTML knowledge source (local only, not shipped)
 

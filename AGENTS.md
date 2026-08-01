@@ -21,7 +21,7 @@ architecture that meets the requirement:
 | choosing/structuring a new system, or questioning an existing architecture (monolith vs microservices, layering, events, CQRS, data pipeline) | `arch-crew:decide-architecture` |
 | choosing an object/class design pattern, or reviewing one (factory, strategy, observer, decorator, repository), especially in Python | `arch-crew:design-patterns` |
 | designing or reviewing an LLM-agent system (one agent vs many, reasoning loop, tools, memory, human approval, multi-agent topology) | `arch-crew:agentic-patterns` |
-| deciding what to test or rebalancing a suite (unit vs integration vs E2E, pyramid vs trophy, QA's role, flaky or slow CI, contract / property-based / mutation / golden tests, testing data pipelines, models, LLMs, and agents) | `arch-crew:test-patterns` |
+| deciding what evidence a system needs or rebalancing a suite (unit vs integration vs contract vs E2E, pyramid vs trophy, QA's role, flaky or slow CI, escaped defects, mock-heavy suites, property-based / mutation / golden tests, data-quality checks, ML evaluation, LLM and agent evaluation, or whether AI-generated tests rest on a trustworthy oracle) — **not** for implementing one ordinary test | `arch-crew:test-patterns` |
 
 Each skill branches on project status: **greenfield → a selection interview**; **existing code →
 a code review** against the catalog. Trigger them even when the user does not name a pattern.
@@ -32,6 +32,10 @@ a code review** against the catalog. Trigger them even when the user does not na
 - `skills/<name>/references/decision-tree.md` — the interview / decision logic.
 - `skills/<name>/references/catalog.md` — patterns with when-to-use, cost, and code-review cues.
 
+`test-patterns` adds two topic references loaded only when their branch fires:
+`references/evaluation.md` (data / ML / LLM-agent evaluation) and `references/oracles.md` (the
+generated-test oracle guardrail). Its `SKILL.md` carries a table mapping decision → reference.
+
 Read `SKILL.md`, then the referenced files on demand. Don't load the `html/` source files — they
 are the local knowledge source, not runtime inputs.
 
@@ -41,7 +45,10 @@ are the local knowledge source, not runtime inputs.
 - Refactoring reviews are written to a *topic*-named report in `docs/`, one per skill:
   `architecture-review-<date>.md`, `design-pattern-review-<date>.md`, `agentic-review-<date>.md`,
   `test-suite-review-<date>.md`.
+- `test-patterns` honours read-only requests ("review only", "dry run", "don't modify files"): it
+  presents the full recommendation and names the path it would have written, without writing.
 - Full usage docs: [`docs/README.md`](docs/README.md). Examples: [`docs/examples/`](docs/examples/).
+  Validation: [`docs/validating-skills.md`](docs/validating-skills.md).
 
 ## Packaging boundaries
 

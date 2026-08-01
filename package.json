@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "type": "module",
   "license": "MIT",
   "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",
@@ -10,8 +10,9 @@
   },
   "scripts": {
     "build": "node builders/build.mjs",
-    "test": "node --test test/build.test.mjs",
-    "test:build": "node --test test/build.test.mjs"
+    "test": "node --test test/build.test.mjs test/scenarios.test.mjs",
+    "test:build": "node --test test/build.test.mjs",
+    "test:scenarios": "node --test test/scenarios.test.mjs"
   },
   "agentPackaging": {
     "canonicalSkills": "skills",
@@ -36,7 +37,7 @@
     "targets": {
       "claude": {
         "adapter": "adapters/claude.mjs",
-        "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across QA practice, unit / integration / end-to-end tests, and data / ML / LLM evaluation). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves."
+        "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation, with an oracle-independence guardrail over generated tests). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves."
       },
       "codex": {
         "adapter": "adapters/codex.mjs",

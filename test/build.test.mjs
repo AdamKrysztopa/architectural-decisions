@@ -43,7 +43,36 @@ const advertisedTerms = {
 // trigger its skill; docs/README.md names this field as the trigger surface.
 const descriptionFloor = 40;
 
+// Every skill ships at least these two; a skill may add topic references when a
+// single catalog would be too large to retrieve selectively (test-patterns does).
+const requiredReferences = ["decision-tree.md", "catalog.md"];
+
 const documentationFiles = ["README.md", "llms.txt"];
+
+// Prose that counts the skills goes stale silently. Any "<count> … skills"
+// claim in these files must match what is actually packaged.
+const skillCountedDocumentation = [
+  "README.md",
+  "llms.txt",
+  "AGENTS.md",
+  "docs/README.md",
+  "docs/building-packages.md",
+  "docs/examples/README.md",
+];
+
+const numberWords = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+  "eight",
+  "nine",
+  "ten",
+];
 
 function escapeForRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -199,10 +228,88 @@ test("skill names and progressive-disclosure references remain valid", async () 
       `${name}/SKILL.md description is ${description.length} chars — too short to trigger the skill`,
     );
 
-    for (const reference of ["decision-tree.md", "catalog.md"]) {
-      assert.match(text, new RegExp(`references/${reference.replace(".", "\\.")}`));
-      const contents = await readFile(join(canonicalSkills, name, "references", reference), "utf8");
-      assert.ok(contents.length > 0, `${name}/${reference} is empty`);
+    const references = await listFiles(join(canonicalSkills, name, "references"));
+    for (const reference of requiredReferences) {
+      assert.ok(references.includes(reference), `${name} does not ship references/${reference}`);
+    }
+
+    // Both directions: a reference nothing loads is dead weight, and a
+    // reference SKILL.md sends the model to must exist in the package.
+    for (const reference of references) {
+      const contents = await readFile(
+        join(canonicalSkills, name, "references", reference),
+        "utf8",
+      );
+      assert.ok(contents.length > 0, `${name}/references/${reference} is empty`);
+      assert.match(
+        text,
+        new RegExp(`references/${escapeForRegExp(reference)}`),
+        `${name}/SKILL.md never tells the model when to load references/${reference}`,
+      );
+    }
+
+    for (const [, cited] of text.matchAll(/`?references\/([\w.-]+\.md)`?/g)) {
+      assert.ok(
+        references.includes(cited),
+        `${name}/SKILL.md points at references/${cited}, which does not exist`,
+      );
+    }
+  }
+});
+
+test("every canonical skill reaches every target with all of its references", async () => {
+  const skillNames = await canonicalSkillNames();
+  for (const target of ["claude", "codex"]) {
+    for (const name of skillNames) {
+      const packaged = await listFiles(join(repositoryRoot, "build", target, "skills", name));
+      assert.ok(packaged.includes("SKILL.md"), `${target} package is missing ${name}/SKILL.md`);
+      const canonical = await listFiles(join(canonicalSkills, name));
+      assert.deepEqual(
+        packaged.sort(),
+        canonical.sort(),
+        `${target} package does not carry every file of ${name}`,
+      );
+    }
+  }
+});
+
+test("manifests point at paths that exist", async () => {
+  const codexManifest = await readJson(
+    join(repositoryRoot, "build/codex/.codex-plugin/plugin.json"),
+  );
+  const claudeMarketplace = await readJson(
+    join(repositoryRoot, ".claude-plugin/marketplace.json"),
+  );
+  const codexMarketplace = await readJson(join(repositoryRoot, ".agents/plugins/marketplace.json"));
+
+  const declared = [
+    ["codex manifest skills", join("build/codex", codexManifest.skills)],
+    ["claude marketplace source", claudeMarketplace.plugins[0].source],
+    ["codex marketplace source", codexMarketplace.plugins[0].source.path],
+  ];
+  for (const [label, path] of declared) {
+    const files = await listFiles(join(repositoryRoot, path));
+    assert.ok(files.length > 0, `${label} points at an empty or missing path: ${path}`);
+  }
+});
+
+test("documentation claims the same number of skills as are packaged", async () => {
+  const skillNames = await canonicalSkillNames();
+  const expected = String(skillNames.length);
+  const expectedWord = numberWords[skillNames.length];
+  const counted = new RegExp(
+    `\\b(${numberWords.join("|")}|\\d+)\\s+(?:[\\w-]+\\s+){0,3}skills\\b`,
+    "gi",
+  );
+
+  for (const file of skillCountedDocumentation) {
+    const text = await readFile(join(repositoryRoot, file), "utf8");
+    for (const [phrase, count] of text.matchAll(counted)) {
+      const normalized = count.toLowerCase();
+      assert.ok(
+        normalized === expected || normalized === expectedWord,
+        `${file} says "${phrase.trim()}" but ${skillNames.length} skills are packaged`,
+      );
     }
   }
 });
