@@ -13,6 +13,7 @@ are not supported until they have an adapter, an installer catalog, and validati
 | `skills/` | Canonical workflows and references | Edit here for any skill-content change. |
 | `docs/` and `docs/examples/` | Canonical shared documentation and examples | Edit here, not in a package copy. |
 | `builders/adapters/<target>.mjs` | Thin target adapter | Change only for a target's layout or metadata contract. |
+| `test/` | Package contract suite and force-driven scenario sets | Edit here when a skill gains a reference, a gate, or a scenario. |
 | `build/<target>/` | Deterministic, target-only distributable package | Generated and committed; never hand-edit. |
 | `.claude-plugin/` | Claude Code compatibility façade | Preserve existing marketplace behavior and plugin identity. |
 
@@ -34,10 +35,20 @@ git diff --check
 git status --short
 ```
 
-Build only the affected target while iterating; run `all` before release. Validation must confirm
-that each target contains its expected manifest and canonical skill files, contains no files from
-another agent, and that the Claude skill trees match the canonical `skills/` files byte-for-byte.
-A clean rebuild of committed artifacts should leave no diff.
+Build only the affected target while iterating; run `all` before release. `npm test` runs both
+suites (`npm run test:build` and `npm run test:scenarios` run them individually). Validation must
+confirm that each target contains its expected manifest and canonical skill files, contains no files
+from another agent, and that the Claude skill trees match the canonical `skills/` files
+byte-for-byte. A clean rebuild of committed artifacts should leave no diff.
+
+The package-contract suite fails when a canonical skill is missing from either target's output, when
+a required reference is absent, when `SKILL.md` points at a reference that does not exist (or ships a
+reference it never tells the model to load), when a manifest points at a missing path, when plugin
+and marketplace versions disagree, when the root Claude façade differs from the generated manifest it
+mirrors, or when prose in the shipped docs claims a different number of skills than are packaged. CI
+additionally rebuilds and fails on any diff. See
+[validating the skills](validating-skills.md) for the second layer — the force-driven scenario sets
+that grade the skills' reasoning rather than their packaging.
 
 ### Host validation before release
 

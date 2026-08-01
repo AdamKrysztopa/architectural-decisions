@@ -1,5 +1,5 @@
 const marketplaceDescription =
-  "Four architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), and test-patterns (compose a risk-led testing portfolio across QA practice, unit / integration / end-to-end tests, and data / ML / LLM evaluation). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
+  "Four architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), and test-patterns (compose a risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
 
 const keywords = [
   "architecture",

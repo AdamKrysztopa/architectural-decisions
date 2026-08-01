@@ -16,7 +16,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm test
+      # Skills reach both targets with every reference; manifests, versions, the
+      # Claude compatibility façade, and the shipped docs' skill count agree.
+      - name: Package contract
+        run: npm run test:build
+      # Every gate a scenario grades still exists in the canonical references.
+      - name: Skill scenario integrity
+        run: npm run test:scenarios
       - run: npm run build -- --target all
       - name: Verify all committed generated files are current
         run: |

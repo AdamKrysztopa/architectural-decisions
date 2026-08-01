@@ -1,0 +1,321 @@
+{
+  "skill": "test-patterns",
+  "about": "Force-driven gating scenarios for the test-patterns skill. Each scenario names the forces present in a system and the gates that must therefore open or stay shut. Gate names resolve to headings in the skill's canonical references, so renaming or deleting a gate fails this suite. There is no numeric scoring: a run passes when the reasoning reaches the stated gate outcomes for the stated reasons, and the criteria below hold of the output.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "risk-first",
+      "statement": "The output starts from concrete risks or claims named in the system's own terms, not from a system label or a suite shape."
+    },
+    {
+      "id": "no-shape-first",
+      "statement": "No shape (pyramid, trophy, honeycomb) is used to generate the portfolio. A shape name may appear only as a summary written after the picks are justified."
+    },
+    {
+      "id": "no-ratios",
+      "statement": "No numerical ratio of unit to integration to E2E tests is prescribed. Measured counts may be reported; targets may not."
+    },
+    {
+      "id": "every-row-justified",
+      "statement": "Every selected evidence type names the specific failure or claim it answers."
+    },
+    {
+      "id": "cost-and-ownership",
+      "statement": "Every selected evidence type names its cost — runtime, environment ownership, calendar time, maintenance, model spend, or alert ownership."
+    },
+    {
+      "id": "deliberate-omissions",
+      "statement": "The output states which heavier evidence was deliberately not bought, and why."
+    },
+    {
+      "id": "reopening-signals",
+      "statement": "Every row carries a concrete signal that would reopen the decision."
+    },
+    {
+      "id": "tests-vs-evaluations",
+      "statement": "Where a stochastic surface exists, deterministic tests and stochastic evaluations are kept distinct, and neither is offered as a substitute for the other."
+    },
+    {
+      "id": "oracle-independence",
+      "statement": "Where tests are generated, recorded, or snapshotted, the oracle behind each is named and assessed for independence from the implementation."
+    },
+    {
+      "id": "one-primary-move",
+      "statement": "In review mode, exactly one primary highest-leverage move is recommended. Secondary observations are permitted as an ordered list, never as a rewrite."
+    },
+    {
+      "id": "no-change-permitted",
+      "statement": "'The suite is proportionate; no change is currently justified' is available as a complete conclusion and is reached when the evidence supports it."
+    },
+    {
+      "id": "justified-e2e-and-assurance",
+      "statement": "E2E and independent assurance are recommended when their forces genuinely fire, and refused when they do not. Neither dogmatic avoidance nor reflexive inclusion passes."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "pure-math-library",
+      "title": "Pure mathematical library",
+      "mode": "greenfield",
+      "prompt": "I'm writing a small numerical library — matrix decompositions, a couple of interpolation routines, some statistical estimators. No I/O, no server, published to a package index. What should I test?",
+      "forces": [
+        "All behavior is pure computation with no environment",
+        "Real invariants exist: round-trips, idempotence, symmetry, conservation",
+        "No user journey, no deployment wiring, no external consumer contract"
+      ],
+      "gatesOpen": ["Unit tests", "Static analysis and typing", "Code review"],
+      "gatesClosed": [
+        "Integration tests",
+        "End-to-end tests",
+        "Contract tests",
+        "Independent assurance / sign-off",
+        "Performance"
+      ],
+      "expect": "Mostly deterministic unit tests, with property-based tests reached for explicitly because a real invariant exists and gives an oracle independent of the implementation. No E2E: neither half of the E2E gate can be named. Reference-implementation comparison is an acceptable additional oracle.",
+      "failsIf": [
+        "An E2E or integration layer is recommended with no named journey or boundary",
+        "A pyramid is prescribed as the starting point",
+        "Property-based testing is offered as a substitute for example-based tests rather than a complement"
+      ]
+    },
+    {
+      "id": "crud-service-real-database",
+      "title": "CRUD service using a real database",
+      "mode": "greenfield",
+      "prompt": "A CRUD service over PostgreSQL — a REST API, an ORM, migrations, not much logic beyond validation and a couple of status rules. How should we test it?",
+      "forces": [
+        "Thin application logic over a framework and a database",
+        "Queries, migrations, constraints, and type coercion fail only against the real engine",
+        "One team, one deployable, no independently released consumer"
+      ],
+      "gatesOpen": ["Integration tests", "Unit tests", "Static analysis and typing", "Security testing"],
+      "gatesClosed": ["Contract tests", "End-to-end tests", "Mutation testing"],
+      "expect": "Narrow integration evidence against a real ephemeral PostgreSQL at the persistence seam carries the most value per test. Unit tests stay light because the code is mostly wiring. Negative authorization cases are asserted at the seam that enforces them.",
+      "failsIf": [
+        "The persistence layer is verified only against a mocked driver or an in-memory substitute of a different engine",
+        "A pyramid-shaped unit-heavy portfolio is recommended for glue code",
+        "Contract tests are recommended for an internal, co-deployed boundary"
+      ]
+    },
+    {
+      "id": "independently-released-services",
+      "title": "Independently released services",
+      "mode": "greenfield",
+      "prompt": "Two services owned by two teams, released on their own schedules. The consumer keeps breaking when the provider renames fields, and we're catching it in a staging E2E suite. What evidence do we actually need?",
+      "forces": [
+        "Producer and consumer can be released independently",
+        "Compatibility drift has broken the consumer before — the recurrence clause is satisfied",
+        "Broad E2E is currently being used to discover interface renames"
+      ],
+      "gatesOpen": ["Contract tests", "Integration tests", "Unit tests"],
+      "gatesClosed": ["End-to-end tests"],
+      "expect": "Contract testing is justified: the independence question answers yes and drift is a demonstrated, recurring risk. The E2E tests currently detecting schema drift are relocated to the contract; a small number may remain if deployment, routing, or identity is a distinct risk, which must be named separately.",
+      "failsIf": [
+        "Contract testing is justified by the existence of a service boundary alone",
+        "The recommendation claims contracts prove the journey works",
+        "A large E2E suite is retained alongside the contract with no distinct named wiring risk"
+      ]
+    },
+    {
+      "id": "internal-monolith",
+      "title": "Internal monolith",
+      "mode": "greenfield",
+      "prompt": "We have a modular monolith — billing, catalog, and orders modules calling each other in-process, one deployment, one team. Should we add contract tests between the modules?",
+      "forces": [
+        "Producer and consumer ship together in one deployable owned by one team",
+        "A compile step and shared types already catch signature drift",
+        "No independent release cadence anywhere in the system"
+      ],
+      "gatesOpen": ["Unit tests", "Integration tests"],
+      "gatesClosed": ["Contract tests", "End-to-end tests"],
+      "expect": "Contract testing is refused with its reason: the independence gate does not open, so a shared type or a narrow integration test is cheaper and equally truthful. The reopening signal is a second team or a second deployable taking on the interface.",
+      "failsIf": [
+        "Contract tests are recommended because module boundaries exist",
+        "The refusal is offered without the signal that would reverse it"
+      ]
+    },
+    {
+      "id": "glue-shaped-ui-product",
+      "title": "Browser extension / UI-glue-shaped product",
+      "mode": "greenfield",
+      "prompt": "We're building a browser extension that reads the page, injects a panel, and syncs a few settings. Almost all the code is DOM wiring against sites we don't control. What's the right testing strategy?",
+      "forces": [
+        "The product's value is the wiring — logic of its own is thin",
+        "Failures are host-page and browser-integration failures that no narrower test reproduces",
+        "Named journeys exist and depend on complete wiring"
+      ],
+      "gatesOpen": ["End-to-end tests", "Unit tests"],
+      "gatesClosed": ["Contract tests", "Mutation testing"],
+      "expect": "A significant E2E share is proportionate and correct here — both halves of the E2E gate are satisfied and the risk genuinely lives at the top. The output must also buy determinism deliberately (hermetic fixtures, stable selectors, injected clocks) so the portfolio does not degrade into an ice-cream cone, and must still place any genuinely tricky parser or state machine at unit scope.",
+      "failsIf": [
+        "E2E is discouraged on principle or capped by a shape heuristic",
+        "The portfolio is called an ice-cream cone without distinguishing justified journey weight from misplaced logic coverage",
+        "No flakiness-control measures accompany the E2E recommendation"
+      ]
+    },
+    {
+      "id": "etl-analytical-pipeline",
+      "title": "ETL or analytical pipeline",
+      "mode": "greenfield",
+      "prompt": "Nightly batch job: read three source tables, join and aggregate, write a reporting table that finance looks at every morning. Backfills are routine. What do we test?",
+      "forces": [
+        "Transformation logic is deterministic and testable on small fixtures",
+        "The data itself varies legitimately and is not under our control",
+        "Replay and backfill are routine, so idempotency is a real risk",
+        "Producer and consumer of the source tables are the same team"
+      ],
+      "gatesOpen": [
+        "Transformation-code tests",
+        "Data-quality assertions",
+        "Production monitoring of the pipeline",
+        "Unit tests"
+      ],
+      "gatesClosed": ["Data contracts", "End-to-end tests"],
+      "expect": "Code tests and data-quality evidence stay distinct: deterministic assertions over transformation code, threshold-bearing assertions over data. Build-time assertions over the candidate artifact may block the publish; data-cadence assertions page an owner instead. Idempotency, late-arriving records, and backfill are tested deterministically on fixtures. A full pipeline run on sample data is the E2E analogue and is not bought.",
+      "failsIf": [
+        "Code tests and data-quality checks are merged into one bucket",
+        "A data contract is recommended for a single-team, single-codebase boundary",
+        "Auto-generated or profiled expectations are accepted without a named consumer and owner",
+        "A full pipeline run on sample data is recommended without orchestration being the named risk"
+      ]
+    },
+    {
+      "id": "ml-inference-service",
+      "title": "ML inference service",
+      "mode": "greenfield",
+      "prompt": "We're deploying a churn model behind an API. Feature computation in Python, a scikit-learn model, retrained monthly. It decides who gets a retention offer. What evidence do we need before and after release?",
+      "forces": [
+        "Deterministic feature computation and serving code exist and are testable",
+        "Model quality is stochastic and must be measured, not asserted",
+        "Output drives an automated decision, so consequence is real",
+        "Retraining is recurring, so the split and the data keep moving"
+      ],
+      "gatesOpen": [
+        "Unit tests",
+        "Integration tests",
+        "Data validation, leakage, and split checks",
+        "Release evidence — baseline comparison and rollback",
+        "Drift and quality-degradation monitoring"
+      ],
+      "gatesClosed": ["Slice performance and behavioral cases", "Calibrated model-based judges"],
+      "expect": "Software tests and model evaluation stay distinct: feature computation, serving, and persistence are asserted; discrimination and calibration are evaluated. Baseline comparison applies to the first model too — against a trivial or rules-based alternative — and rollback is gated separately on deployment consequence. Slice evidence stays light until a stakeholder names a segment.",
+      "failsIf": [
+        "Model metrics are offered as evidence that the serving code is correct",
+        "Deterministic tests are offered as evidence of model quality",
+        "The first model is exempted from baseline comparison",
+        "Comparison and rollback are bundled into a single gate"
+      ]
+    },
+    {
+      "id": "llm-agentic-system",
+      "title": "LLM or agentic system",
+      "mode": "greenfield",
+      "prompt": "An assistant that answers from our docs and can call two tools, one of which sends an email. What should we test and what should we evaluate?",
+      "forces": [
+        "Tool dispatch, permissions, retries, and output parsing are deterministic",
+        "Answer quality is semantic and irreducibly stochastic",
+        "One tool has an external side effect",
+        "Deterministic evaluators can decide most checkable properties"
+      ],
+      "gatesOpen": [
+        "Deterministic scaffold — test with ordinary assertions",
+        "Golden evaluation datasets",
+        "Deterministic evaluators",
+        "Unit tests"
+      ],
+      "gatesClosed": ["Calibrated model-based judges", "End-to-end tests"],
+      "expect": "The system is split explicitly: deterministic scaffolding is asserted with real model calls suppressed; semantic quality is evaluated against a small reviewed case set with deterministic evaluators applied first. A judge stays shut until a named claim, an insufficiency argument, a human-labelled calibration set, and drift monitoring are all available.",
+      "failsIf": [
+        "Evaluations are offered as a substitute for scaffold tests",
+        "Exact-string assertions are recommended against model output",
+        "An LLM judge is recommended without all four of: named claim, insufficiency of deterministic evidence, human calibration, drift monitoring",
+        "Unit tests are allowed to call a real provider"
+      ]
+    },
+    {
+      "id": "generated-tests-no-oracle",
+      "title": "Tests generated solely from the implementation",
+      "mode": "review",
+      "prompt": "We pointed an AI at our repo and it wrote 600 tests. Coverage went from 41% to 88% and everything passes. Is our suite good now?",
+      "forces": [
+        "Expected values were inferred from the implementation under test",
+        "The same defect could have influenced both the code and the expected output",
+        "Coverage is being cited as the evidence of quality"
+      ],
+      "oracleGate": true,
+      "gatesOpen": ["Acceptance criteria / example-based specification", "Mutation testing"],
+      "gatesClosed": [],
+      "expect": "The generated suite is rejected or flagged for missing oracle independence, and the five-question gate is run rather than asserted. Coverage is named as execution, not verification. The repair is an independent oracle — written acceptance examples, a specification, an invariant, a reference model, historical defect cases — and mutation or manual fault injection to demonstrate assertion strength. Labelled characterization tests remain a legitimate exception.",
+      "failsIf": [
+        "The suite is accepted because it passes or because coverage rose",
+        "Generated tests are rejected wholesale without distinguishing labelled characterization tests and reviewed snapshots",
+        "No independent oracle is proposed as the repair"
+      ]
+    },
+    {
+      "id": "healthy-existing-suite",
+      "title": "Healthy existing suite",
+      "mode": "review",
+      "prompt": "Review our test suite. 900 unit tests in 20 seconds, 60 integration tests against ephemeral containers in 3 minutes, 4 E2E journeys in 6 minutes, no reruns configured, no flaky quarantine list, and no production defect in the last two quarters that a test should have caught.",
+      "forces": [
+        "Evidence is placed where the risks are and runs fast",
+        "No escaped-defect class points at a missing layer",
+        "No flakiness, no retry masking, no unowned tests"
+      ],
+      "expectNoChange": true,
+      "gatesOpen": [],
+      "gatesClosed": ["End-to-end tests", "Mutation testing", "Contract tests"],
+      "expect": "The correct result is no change. The report is short, names what is already right, and does not manufacture findings. Any observation offered is explicitly marked as optional rather than promoted to a highest-leverage move.",
+      "failsIf": [
+        "Findings are invented to fill the template",
+        "A rebalancing move is recommended with no evidence of a problem",
+        "Mutation testing or a coverage target is added as busywork"
+      ]
+    },
+    {
+      "id": "safety-critical-regulated",
+      "title": "Safety-critical or regulated system",
+      "mode": "greenfield",
+      "prompt": "Firmware and a companion service for an infusion pump. There's a regulatory submission, a hazard analysis, and an auditor who will ask us to show evidence for each requirement. How should we plan the testing?",
+      "forces": [
+        "Independence is itself a requirement — a regulator will ask who produced the evidence",
+        "Each enumerated obligation must map to retained evidence",
+        "Failures are irreversible and safety-relevant"
+      ],
+      "gatesOpen": [
+        "Independent assurance / sign-off",
+        "Traceability to obligations",
+        "User acceptance / release evidence",
+        "Unit tests",
+        "Integration tests"
+      ],
+      "gatesClosed": [],
+      "expect": "Independent assurance and traceability legitimately override the default assumption that developers own all the evidence — this is a real force, and the output must say so plainly rather than defending whole-team ownership against a regulator. Evidence must be named, owned, retained, and mapped to obligations. Regulation still does not automatically buy a large E2E suite; that must be earned on its own gate.",
+      "failsIf": [
+        "Whole-team ownership is defended as a principle against a stated regulatory obligation",
+        "A large E2E suite is recommended as an inference from 'it's regulated'",
+        "Traceability is treated as test volume rather than as mapped, retained evidence"
+      ]
+    },
+    {
+      "id": "performance-sensitive-system",
+      "title": "Performance-sensitive system",
+      "mode": "greenfield",
+      "prompt": "Our API has a p99 latency commitment of 200 ms in the customer contract, and the hot path is a custom serializer. How should we test performance?",
+      "forces": [
+        "A named, contractual latency claim exists",
+        "A specific hot path exists whose cost is a property of the code",
+        "Capacity behavior is per-service, not emergent across the system"
+      ],
+      "gatesOpen": ["Performance", "Unit tests", "Production feedback and observability"],
+      "gatesClosed": ["End-to-end tests", "Resilience and failure behavior"],
+      "expect": "Performance evidence corresponds to the named claim: a deterministic microbenchmark or complexity guard over the serializer at unit scope, plus integration-scoped load against the service API where the p99 commitment lives. Load testing is not treated as automatically E2E. Production percentiles are named as the truthful ongoing signal. Bounds and relative regressions are asserted, never wall-clock absolutes on shared CI hardware.",
+      "failsIf": [
+        "A load rig is recommended that defends no named number",
+        "Load testing is classified as an inherently E2E activity",
+        "Resilience evidence is bundled into the performance gate without a separate continuity claim",
+        "Wall-clock absolutes are asserted on shared CI hardware"
+      ]
+    }
+  ]
+}

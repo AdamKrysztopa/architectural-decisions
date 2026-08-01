@@ -11,19 +11,20 @@
 - [decide-architecture](skills/decide-architecture/SKILL.md): software architecture — structure, topology, data, overlays. Greenfield → composed stack + ADR; existing code → review + targeted moves.
 - [design-patterns](skills/design-patterns/SKILL.md): GoF + Python-idiomatic design patterns. Greenfield → one recommended pattern + its Pythonic form; existing code → smell-to-pattern review.
 - [agentic-patterns](skills/agentic-patterns/SKILL.md): LLM-agent systems — autonomy level, reasoning loop, memory, governance, multi-agent topology. Greenfield → layered design + ADR; existing code → seven-defect review.
-- [test-patterns](skills/test-patterns/SKILL.md): testing strategy — QA as a process discipline, executable unit/integration/E2E levels, and data/ML/LLM evaluation overlays kept distinct. Greenfield → risk-led testing portfolio + ADR; existing test code → suite review + one highest-leverage rebalancing move. Routes questions like "unit vs integration vs E2E", "pyramid or trophy", "why is my suite flaky or slow", "do I need QA", "how do I test this pipeline / model / agent", "contract, property-based, mutation, or golden tests".
+- [test-patterns](skills/test-patterns/SKILL.md): testing strategy across three evidence dimensions — quality practices, deterministic executable testing (unit/integration/contract/E2E), and stochastic evaluation (data/ML/LLM) — plus one cross-cutting oracle-independence guardrail. Greenfield → risk-led evidence portfolio + ADR; existing test code → suite review + one highest-leverage rebalancing move. Routes questions like "unit vs integration vs E2E", "do we need contract tests", "pyramid or trophy", "why is my suite flaky or slow", "do I need QA", "how do I test this pipeline / model / agent", "are these AI-generated tests any good". Not for implementing one ordinary test.
 
 ## Reference knowledge (per skill)
 
 - [architecture decision tree](skills/decide-architecture/references/decision-tree.md) and [catalog](skills/decide-architecture/references/catalog.md)
 - [design-patterns decision tree](skills/design-patterns/references/decision-tree.md) and [catalog](skills/design-patterns/references/catalog.md)
 - [agentic decision tree](skills/agentic-patterns/references/decision-tree.md) and [catalog](skills/agentic-patterns/references/catalog.md)
-- [testing decision tree](skills/test-patterns/references/decision-tree.md) (risk-led interview with asymmetric escalation gates) and [catalog](skills/test-patterns/references/catalog.md) (practices, levels, shapes, techniques, domain overlays, review anti-patterns)
+- [testing decision tree](skills/test-patterns/references/decision-tree.md) (risk-led interview with asymmetric escalation gates), [catalog](skills/test-patterns/references/catalog.md) (quality practices, levels, shapes, techniques, cross-level concerns, review anti-patterns), [evaluation overlay](skills/test-patterns/references/evaluation.md) (data / ML / LLM and agent evaluation), and [oracle guardrail](skills/test-patterns/references/oracles.md) (generated-test trust)
 
 ## Docs
 
 - [Documentation — how to use](docs/README.md)
-- [Worked examples](docs/examples/README.md) — including [a thin LLM service whose right test portfolio is deliberately small](docs/examples/test-patterns-thin-llm-service.md)
+- [Worked examples](docs/examples/README.md) — including four `test-patterns` runs: [an invoicing service](docs/examples/test-patterns/invoicing-service.md), [a legacy E2E-heavy suite](docs/examples/test-patterns/legacy-e2e-heavy-suite.md), [a data pipeline](docs/examples/test-patterns/data-pipeline.md), [a RAG agent](docs/examples/test-patterns/rag-agent.md), and [a thin LLM service whose right test portfolio is deliberately small](docs/examples/test-patterns/thin-llm-service.md)
+- [Validating the skills](docs/validating-skills.md)
 - [For coding agents](AGENTS.md)
 
 ## Install
