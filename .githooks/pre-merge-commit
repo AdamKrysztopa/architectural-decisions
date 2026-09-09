@@ -1,0 +1,9 @@
+#!/bin/sh
+# arch-crew keeps a linear history. A merge commit is never correct here.
+# Land work with `git merge --ff-only` or `git merge --squash`, or rebase.
+# This hook fires only when a merge commit is about to be created, so
+# fast-forward and squash merges pass through untouched.
+echo "pre-merge-commit: refused — this repository keeps a LINEAR history." >&2
+echo "Use: git merge --ff-only <branch>   (or)   git merge --squash <branch>" >&2
+echo "     git rebase main                (to linearise a diverged branch)" >&2
+exit 1

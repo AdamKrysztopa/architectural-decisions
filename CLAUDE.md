@@ -72,6 +72,26 @@ is self-contained: all CSS lives in one inline `<style>`, all behavior in one in
 The hard constraint across every file: **no external libraries, no build step, stays a single
 portable HTML document.**
 
+## Git conventions
+
+**This repository keeps a LINEAR history.** No merge commits, ever. Land work with
+`git merge --ff-only`, `git merge --squash`, or `git rebase`. A branch's commits are squashed into
+one commit per deliverable before landing on `main`.
+
+Enforcement is mechanical, not advisory: `.githooks/pre-merge-commit` refuses any merge commit, and
+`core.hooksPath` must point at it. After cloning, run once:
+
+```sh
+git config core.hooksPath .githooks
+git config merge.ff only
+git config pull.rebase true
+```
+
+`merge.ff only` and `pull.rebase` catch the common cases; the hook catches an explicit `--no-ff`,
+which overrides config. Do not bypass it with `--no-verify`.
+
+Do not push or tag without being asked. Tags are cut only after a human review.
+
 ## Working on the files
 
 "Run" = open the file in a browser (`open html/architecture-patterns.html`). There is nothing to compile.
