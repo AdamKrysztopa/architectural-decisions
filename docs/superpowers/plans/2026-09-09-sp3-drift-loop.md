@@ -503,7 +503,7 @@ All three exit 0 unconditionally. This is the task where "a hook must never brea
 - Consumes: `queue.mjs`.
 - Produces: three executables reading hook JSON on stdin.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/drift.test.mjs`:
 
@@ -658,9 +658,9 @@ test("no hook script emits a mutating hook output field", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
-- [ ] **Step 3: Implement `runtime/drift/observe.mjs`**
+- [x] **Step 3: Implement `runtime/drift/observe.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -701,7 +701,7 @@ main().catch(() => {}).finally(() => {
 });
 ```
 
-- [ ] **Step 4: Implement `runtime/drift/inject-rules.mjs`**
+- [x] **Step 4: Implement `runtime/drift/inject-rules.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -817,7 +817,7 @@ main().catch(() => {}).finally(() => {
 });
 ```
 
-- [ ] **Step 5: Implement `runtime/drift/notify.mjs`**
+- [x] **Step 5: Implement `runtime/drift/notify.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -861,7 +861,7 @@ main().catch(() => {}).finally(() => {
 
 Note: `drainQueue` is imported nowhere in `notify.mjs`; remove the unused import before committing — the Stop hook counts and never drains.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/drift.test.mjs`
 
@@ -879,7 +879,7 @@ The centre of the design. `packet.mjs` is a pure function so the `judgement` map
 - Consumes: `globs.mjs`, `queue.mjs`, `runtime/baseline/decisions.mjs` (`parseDecision`, `validateDecisions`), `runtime/checkers/check-rules.mjs` (as a subprocess only).
 - Produces: `JUDGEMENT`, `buildPacket({ root, base, decisions, paths, queue, checkerRows })`; `run(argv, cwd)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/drift.test.mjs`:
 
@@ -1031,7 +1031,7 @@ test("status reports the queue path it resolved", async () => {
 });
 ```
 
-- [ ] **Step 2: Build the fixture repository**
+- [x] **Step 2: Build the fixture repository**
 
 Create `test/fixtures/drift/docs/architecture/decisions/0004-events-over-shared-db.md` (an `active` decision carrying the three rules used above — one `deterministic` bound to `import-linter#svc-db-isolation`, one `review` scoped to `src/domain/**`, one `narrative` with an empty scope), and `test/fixtures/drift/.arch-crew/drift-queue.jsonl`:
 
@@ -1044,7 +1044,7 @@ not a json line
 
 The fixture directory is **not** a git repository, so the drain's git lane is absent and `base` is `null` — which makes this fixture the layer-1 proof of the Codex degradation path as well as the golden-packet case. Write `expected-packet.json` after Step 3 by running the CLI once and reviewing every line of it.
 
-- [ ] **Step 3: Implement `runtime/drift/packet.mjs`**
+- [x] **Step 3: Implement `runtime/drift/packet.mjs`**
 
 ```js
 import { matchesScope } from "./globs.mjs";
@@ -1117,7 +1117,7 @@ export function buildPacket({ root, base, decisions, paths, queue, checkerRows }
 }
 ```
 
-- [ ] **Step 4: Implement `runtime/drift/drift.mjs`**
+- [x] **Step 4: Implement `runtime/drift/drift.mjs`**
 
 ```js
 #!/usr/bin/env node
@@ -1321,7 +1321,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 
 `--json` is accepted and is currently the only output shape; it is kept as an explicit flag so a later human-readable default can be added without changing the CI contract. **There is no exit code 2**: no drift finding may fail a build.
 
-- [ ] **Step 5: Generate the golden packet and review it line by line**
+- [x] **Step 5: Generate the golden packet and review it line by line**
 
 ```bash
 node runtime/drift/drift.mjs drain --root test/fixtures/drift --json > test/fixtures/drift/expected-packet.json
@@ -1338,9 +1338,9 @@ git checkout test/fixtures/drift/.arch-crew/drift-queue.jsonl
 
 The golden test must re-create the queue before draining. Add a `beforeEach` to the drain-CLI test that copies a checked-in `drift-queue.fixture.jsonl` into place, so the suite is re-runnable.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
-- [ ] **Step 7: Register the suite**
+- [x] **Step 7: Register the suite**
 
 In `package.json`, extend the `test` script:
 
@@ -1361,7 +1361,7 @@ In `package.json`, extend the `test` script:
 **Interfaces:**
 - Produces: `assertTargetFileContract(target, targetFiles, generatedTargetFiles)`, `assertTargetFileBoundaries(target, generatedTargetFiles, runtimeTrees)`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `test/build.test.mjs`, extend the import from `builders/build.mjs` with the two new guards and add:
 
@@ -1405,9 +1405,9 @@ test("generated target files are allowlisted, unique, and outside every runtime 
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
-- [ ] **Step 3: Add the guards to `builders/build.mjs`**
+- [x] **Step 3: Add the guards to `builders/build.mjs`**
 
 ```js
 export function assertTargetFileContract(target, targetFiles, generatedTargetFiles) {
@@ -1459,7 +1459,7 @@ export function assertTargetFileBoundaries(target, generatedTargetFiles, runtime
 }
 ```
 
-- [ ] **Step 4: Wire them into `buildTarget`**
+- [x] **Step 4: Wire them into `buildTarget`**
 
 In `loadContext`, add `generatedTargetFiles` to the required-keys guard. In `buildTarget`, after the existing root-file assertions:
 
@@ -1507,7 +1507,7 @@ async function assertGeneratedTargetInventory(
 }
 ```
 
-- [ ] **Step 5: Add the allowlist to `package.json`**
+- [x] **Step 5: Add the allowlist to `package.json`**
 
 Beside `generatedRootFiles`:
 
@@ -1522,7 +1522,7 @@ Beside `generatedRootFiles`:
 
 An empty Codex allowlist is not an omission: it exercises the empty path and states mechanically that the drift loop's Codex behaviour needs no registration.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run `node --test test/build.test.mjs`. Both adapters still declare no `targetFiles`, so the Claude build fails on the contract assertion — expected, and fixed by Task 6.
 
@@ -1533,7 +1533,7 @@ Run `node --test test/build.test.mjs`. Both adapters still declare no `targetFil
 **Files:**
 - Modify: `builders/adapters/claude.mjs`, `builders/adapters/codex.mjs`, `test/build.test.mjs`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `test/build.test.mjs`, replace the body of *"target inventories contain only their manifest, canonical skills, and the runtime"* and add a hook-manifest test:
 
@@ -1596,9 +1596,9 @@ test("codex ships the drift runtime and registers no hooks", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
-- [ ] **Step 3: Add the hook manifest to `builders/adapters/claude.mjs`**
+- [x] **Step 3: Add the hook manifest to `builders/adapters/claude.mjs`**
 
 ```js
 // Registered per the Claude Code hooks reference. Exec form (`command` plus
@@ -1639,7 +1639,7 @@ and add to the default export, after `manifest`:
   targetFiles: [{ path: "hooks/hooks.json", render: hooks }],
 ```
 
-- [ ] **Step 4: Make the Codex adapter explicit**
+- [x] **Step 4: Make the Codex adapter explicit**
 
 In `builders/adapters/codex.mjs`, add to the default export:
 
@@ -1649,7 +1649,7 @@ In `builders/adapters/codex.mjs`, add to the default export:
   targetFiles: [],
 ```
 
-- [ ] **Step 5: Build and verify**
+- [x] **Step 5: Build and verify**
 
 ```bash
 npm run build -- --target all
@@ -1669,7 +1669,7 @@ Expected: `build/claude/hooks/hooks.json` exists, `build/codex/hooks/` does not,
 - Modify: `builders/sync-shared.mjs`, `skills/*/SKILL.md` (×5, body only)
 - Generated: `skills/*/references/observing-drift.md`
 
-- [ ] **Step 1: Write `shared/observing-drift.md`**
+- [x] **Step 1: Write `shared/observing-drift.md`**
 
 The six class names must be `###` headings — Task 8's scenario set resolves against them, so a rename fails `npm test`.
 
@@ -1766,7 +1766,7 @@ into a tool's config. Promote a status. The only file this step may create is on
 at `status: proposed`, and only after the user agrees.
 ```
 
-- [ ] **Step 2: Register the fan-out**
+- [x] **Step 2: Register the fan-out**
 
 In `builders/sync-shared.mjs`:
 
@@ -1777,7 +1777,7 @@ const SHARED = [
 ];
 ```
 
-- [ ] **Step 3: Cite it from all five `SKILL.md` bodies**
+- [x] **Step 3: Cite it from all five `SKILL.md` bodies**
 
 Frontmatter is untouched. After each skill's existing "Record the decision" step, add:
 
@@ -1789,7 +1789,7 @@ observations and classify them: `references/observing-drift.md`. Report a violat
 tool actually failed.
 ```
 
-- [ ] **Step 4: Sync, and extend the sync test**
+- [x] **Step 4: Sync, and extend the sync test**
 
 ```bash
 npm run sync:shared
@@ -1798,7 +1798,7 @@ npm run sync:check
 
 In `test/build.test.mjs`, generalise *"the shared capture reference is in sync across every skill"* to iterate both shared files, and add `"observing-drift.md"` to `requiredReferences`.
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 `npm test` must show every skill shipping six references, each cited by its `SKILL.md`, with no frontmatter change.
 
@@ -1812,7 +1812,7 @@ Layer 2 grades what only judgement can settle. It must contain the outcomes that
 - Create: `test/scenarios/drift-drain.json`
 - Modify: `test/scenarios.test.mjs`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `test/scenarios.test.mjs`:
 
@@ -1884,7 +1884,7 @@ test("the drift scenario set is complete and anchored in the shared reference", 
 });
 ```
 
-- [ ] **Step 2: Write `test/scenarios/drift-drain.json`**
+- [x] **Step 2: Write `test/scenarios/drift-drain.json`**
 
 Follow the shape of `baseline-capture.json`. The eight scenarios, in the order the ids sort:
 
@@ -1909,9 +1909,9 @@ The seven criteria statements, each over 20 characters:
 - `proposed-not-defect` — legitimate evolution and stale documentation produce a proposed decision after asking, never a defect report.
 - `no-silent-writes` — no run modifies code, documentation, a rule, an existing decision's prose, `constitution.md`, or a tool config.
 
-- [ ] **Step 3: Run the tests to verify they pass**
+- [x] **Step 3: Run the tests to verify they pass**
 
-- [ ] **Step 4: Register the set**
+- [x] **Step 4: Register the set**
 
 In `docs/validating-skills.md`, add `test/scenarios/drift-drain.json` beside the two existing sets, described as grading the drain classifier shared by all five skills.
 
@@ -1923,7 +1923,7 @@ In `docs/validating-skills.md`, add `test/scenarios/drift-drain.json` beside the
 - Modify: `package.json`, `docs/building-packages.md`, `docs/validating-skills.md`, `README.md`, `CLAUDE.md`
 - Create: `docs/release-0.3.5.md`
 
-- [ ] **Step 1: Dogfood on this repository**
+- [x] **Step 1: Dogfood on this repository**
 
 ```bash
 node runtime/drift/drift.mjs status --root .
@@ -1932,11 +1932,11 @@ node runtime/drift/drift.mjs drain --root . --json | head -40
 
 Expected: `status` prints this repository's queue path and the gitignore sentence; `drain` produces a packet whose `rules` reflect `docs/architecture/constitution.md`'s three `review` rules, with `judgement: "required"` on each, `narrativeSkipped: 0`, and `base` resolved from the merge base with `main`. Add `.arch-crew/` to this repository's own `.gitignore` **by hand** — the tool does not do it, and neither should this step pretend otherwise.
 
-- [ ] **Step 2: Bump the version**
+- [x] **Step 2: Bump the version**
 
 In `package.json`, set `"version": "0.3.5"`, then `npm run build -- --target all` so every manifest picks it up.
 
-- [ ] **Step 3: Document the commands**
+- [x] **Step 3: Document the commands**
 
 In `docs/building-packages.md`, add to the validation commands:
 
@@ -1966,7 +1966,7 @@ finding fails a build, and on Codex — which has no hooks — the same drain ru
 In `CLAUDE.md`, extend the `runtime/` sentence: `runtime/drift/` holds the hook scripts and the
 drain, shipped identically to both targets; only the Claude hook registration is adapter-generated.
 
-- [ ] **Step 4: Write `docs/release-0.3.5.md`**
+- [x] **Step 4: Write `docs/release-0.3.5.md`**
 
 Model it on `docs/release-0.3.1.md`. It must state, as known limitations: the queue's marginal value
 over `git status --porcelain` is modest by design; the model classifying `review` rules is the
@@ -1974,7 +1974,7 @@ weakest link and is mitigated but not eliminated; and there is a one-unlink-wide
 drained slice could be reported twice after a crash. It must record the three corrections to the
 hooks contract, because a future reader will otherwise reintroduce `$CLAUDE_TOOL_INPUT_PATH`.
 
-- [ ] **Step 5: Run everything**
+- [x] **Step 5: Run everything**
 
 ```bash
 npm run build -- --target all

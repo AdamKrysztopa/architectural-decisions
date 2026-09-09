@@ -22,6 +22,8 @@ skill bytes must remain compatible with the existing Claude release.
 `shared/` holds canonical content copied into several skills; `builders/sync-shared.mjs` performs
 that copy and its output is committed, so `skills/*/references/recording-decisions.md` must never be
 edited directly. `runtime/` holds the zero-dependency Node code shipped to every target.
+`runtime/drift/` holds the hook scripts and the drain, shipped identically to both targets; only
+the Claude hook registration is adapter-generated.
 
 Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 

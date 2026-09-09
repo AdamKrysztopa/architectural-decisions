@@ -19,6 +19,11 @@ Since sub-project 2, the `no-invented-bindings` criterion is also checkable mech
 `runtime/checkers/check-rules.mjs` against the scenario's stated repository state confirms whether
 a `verified_by` binding actually resolves, rather than resting on a reviewer's judgement alone.
 
+`test/scenarios/drift-drain.json` is the third scenario set: it grades the drift-drain classifier
+shared by all four skills (`shared/observing-drift.md`) — classifying observed changes against active
+rules and deciding when to write a proposed decision — without ever asserting a violation the evidence
+does not support.
+
 ## The scenario set
 
 `test/scenarios/test-patterns.json` is the force-driven gating set for `test-patterns`. It follows

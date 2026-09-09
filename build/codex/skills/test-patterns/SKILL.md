@@ -324,3 +324,9 @@ the existing constitution, write one decision file with `status: proposed`, clas
 the output contract already asks for, in the schema the baseline can read.
 
 Do not record when the run only answered a question without recommending anything.
+
+## Notice drift later
+
+At a checkpoint — before a commit, or when a session start notice says edits are queued — drain the
+observations and classify them: `references/observing-drift.md`. Report a violation only where a
+tool actually failed.

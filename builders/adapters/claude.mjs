@@ -23,6 +23,37 @@ const keywords = [
   "python",
 ];
 
+// Registered per the Claude Code hooks reference. Exec form (`command` plus
+// `args`) is what the reference recommends for a path placeholder: each element
+// is passed as one argument with no shell and no quoting. Verified 2026-09-09:
+// there is no MultiEdit tool, hook input arrives on stdin rather than in
+// $CLAUDE_TOOL_INPUT_PATH, and exit 2 on Stop would block the turn.
+function hooks() {
+  const handler = (name, extra = {}) => ({
+    type: "command",
+    command: "node",
+    args: [`\${CLAUDE_PLUGIN_ROOT}/runtime/drift/${name}`],
+    timeout: 10,
+    ...extra,
+  });
+
+  return {
+    description:
+      "arch-crew drift-observation loop: inject the active architectural rules at session start, queue edited paths, and notice when the queue is non-empty. Advisory only — no hook here can block a tool call or a turn.",
+    hooks: {
+      // No matcher: an explicit source list would silently stop injecting if the
+      // host ever adds a sixth SessionStart source.
+      SessionStart: [{ hooks: [handler("inject-rules.mjs", { timeout: 5 })] }],
+      // Exact-string matcher, not a regular expression: the value stays inside
+      // the letters/digits/_/-/space/,/| set so it is matched exactly.
+      PostToolUse: [
+        { matcher: "Write|Edit|NotebookEdit", hooks: [handler("observe.mjs", { async: true })] },
+      ],
+      Stop: [{ hooks: [handler("notify.mjs", { timeout: 5 })] }],
+    },
+  };
+}
+
 function manifest({ metadata, targetConfig }) {
   return {
     name: metadata.name,
@@ -63,6 +94,7 @@ export default {
   ],
   manifestPath: ".claude-plugin/plugin.json",
   manifest,
+  targetFiles: [{ path: "hooks/hooks.json", render: hooks }],
   rootFiles: [
     { path: ".claude-plugin/plugin.json", render: manifest },
     { path: ".claude-plugin/marketplace.json", render: marketplace },

@@ -52,6 +52,14 @@ under `--run`):
 
     node runtime/checkers/check-rules.mjs --dir docs/architecture/decisions
 
+Inspect the drift queue and drain it into an evidence packet:
+
+    node runtime/drift/drift.mjs status --root .
+    node runtime/drift/drift.mjs drain --root . --json
+
+`build/claude/hooks/hooks.json` is a generated target file, declared in package.json's
+`agentPackaging.generatedTargetFiles`, and is never hand-edited.
+
 Validation must
 confirm that each target contains its expected manifest and canonical skill files, contains no files
 from another agent, and that the Claude skill trees match the canonical `skills/` files

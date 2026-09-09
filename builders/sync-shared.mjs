@@ -5,7 +5,10 @@ import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SHARED = [{ source: "shared/recording-decisions.md", reference: "recording-decisions.md" }];
+const SHARED = [
+  { source: "shared/recording-decisions.md", reference: "recording-decisions.md" },
+  { source: "shared/observing-drift.md", reference: "observing-drift.md" },
+];
 
 async function skillNames() {
   return (await readdir(join(repositoryRoot, "skills"), { withFileTypes: true }))

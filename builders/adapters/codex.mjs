@@ -53,5 +53,8 @@ export default {
   ],
   manifestPath: ".codex-plugin/plugin.json",
   manifest,
+  // Codex has no hook system. The drift runtime still ships in runtime/, inert,
+  // and the drain works from the git lane alone.
+  targetFiles: [],
   rootFiles: [{ path: ".agents/plugins/marketplace.json", render: marketplace }],
 };

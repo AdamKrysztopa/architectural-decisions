@@ -11,6 +11,8 @@ import {
   assertRelativePath,
   assertRootFileBoundaries,
   assertRootFileContract,
+  assertTargetFileBoundaries,
+  assertTargetFileContract,
   validateRuntimeTrees,
 } from "../builders/build.mjs";
 
@@ -45,7 +47,12 @@ const descriptionFloor = 40;
 
 // Every skill ships at least these two; a skill may add topic references when a
 // single catalog would be too large to retrieve selectively (test-patterns does).
-const requiredReferences = ["decision-tree.md", "catalog.md", "recording-decisions.md"];
+const requiredReferences = [
+  "decision-tree.md",
+  "catalog.md",
+  "recording-decisions.md",
+  "observing-drift.md",
+];
 
 const documentationFiles = ["README.md", "llms.txt"];
 
@@ -58,6 +65,7 @@ const skillCountedDocumentation = [
   "docs/README.md",
   "docs/building-packages.md",
   "docs/examples/README.md",
+  "docs/validating-skills.md",
 ];
 
 const numberWords = [
@@ -179,20 +187,61 @@ test("repeated builds are idempotent", async () => {
   assert.equal(second, first);
 });
 
-test("target inventories contain only their manifest, canonical skills, and the runtime", async () => {
+// Hardcoded on purpose, exactly like expectedSkillNames: removing a generated
+// target file must cost a deliberate edit here as well as in package.json.
+const expectedGeneratedTargetFiles = { claude: ["hooks/hooks.json"], codex: [] };
+
+test("target inventories contain only their manifest, generated target files, skills, and the runtime", async () => {
+  const metadata = await readJson(join(repositoryRoot, "package.json"));
+  assert.deepEqual(metadata.agentPackaging.generatedTargetFiles, expectedGeneratedTargetFiles);
+
   const skillFiles = (await listFiles(canonicalSkills)).map((file) => `skills/${file}`);
   const runtimeFiles = (await listFiles(join(repositoryRoot, "runtime"))).map((file) => `runtime/${file}`);
-  const claudeFiles = await listFiles(join(repositoryRoot, "build/claude"));
-  const codexFiles = await listFiles(join(repositoryRoot, "build/codex"));
 
   assert.deepEqual(
-    [...claudeFiles].sort(),
-    [".claude-plugin/plugin.json", ...skillFiles, ...runtimeFiles].sort(),
+    (await listFiles(join(repositoryRoot, "build/claude"))).sort(),
+    [".claude-plugin/plugin.json", ...expectedGeneratedTargetFiles.claude, ...skillFiles, ...runtimeFiles].sort(),
   );
   assert.deepEqual(
-    [...codexFiles].sort(),
-    [".codex-plugin/plugin.json", ...skillFiles, ...runtimeFiles].sort(),
+    (await listFiles(join(repositoryRoot, "build/codex"))).sort(),
+    [".codex-plugin/plugin.json", ...expectedGeneratedTargetFiles.codex, ...skillFiles, ...runtimeFiles].sort(),
   );
+});
+
+test("the claude hook manifest registers the drift loop and nothing that can block", async () => {
+  const hooks = await readJson(join(repositoryRoot, "build/claude/hooks/hooks.json"));
+  assert.deepEqual(Object.keys(hooks.hooks).sort(), ["PostToolUse", "SessionStart", "Stop"]);
+  assert.ok(!("PreToolUse" in hooks.hooks), "the drift loop must never register a PreToolUse hook");
+
+  const [postToolUse] = hooks.hooks.PostToolUse;
+  assert.equal(postToolUse.matcher, "Write|Edit|NotebookEdit");
+  assert.ok(!/MultiEdit/.test(JSON.stringify(hooks)), "MultiEdit is not a tool Claude Code documents");
+  assert.equal(postToolUse.hooks[0].async, true, "the observer must not sit on the edit critical path");
+
+  const [sessionStart] = hooks.hooks.SessionStart;
+  assert.equal(sessionStart.matcher, undefined, "an explicit source list would silently stop injecting");
+
+  const handlers = Object.values(hooks.hooks).flatMap((groups) => groups.flatMap((group) => group.hooks));
+  for (const handler of handlers) {
+    assert.equal(handler.type, "command");
+    assert.equal(handler.command, "node");
+    assert.equal(handler.args.length, 1);
+    assert.match(handler.args[0], /^\$\{CLAUDE_PLUGIN_ROOT\}\/runtime\/drift\/[a-z-]+\.mjs$/);
+    assert.ok(Number.isInteger(handler.timeout) && handler.timeout <= 30);
+  }
+
+  // The scripts the manifest points at must actually ship in the package.
+  for (const handler of handlers) {
+    const relativePath = handler.args[0].replace("${CLAUDE_PLUGIN_ROOT}/", "");
+    await assert.doesNotReject(readFile(join(repositoryRoot, "build/claude", relativePath), "utf8"));
+  }
+});
+
+test("codex ships the drift runtime and registers no hooks", async () => {
+  const files = await listFiles(join(repositoryRoot, "build/codex"));
+  assert.ok(files.includes("runtime/drift/drift.mjs"), "the drain must ship to codex");
+  assert.ok(files.includes("runtime/drift/observe.mjs"), "the hook scripts ship, inert, to codex");
+  assert.ok(!files.some((file) => file.startsWith("hooks/")), "codex has no hook system to register with");
 });
 
 test("generated skill payloads are byte-identical to the canonical skills", async () => {
@@ -454,13 +503,52 @@ test("adapter contracts require runtime trees and exact root-file allowlists", (
   );
 });
 
-test("the shared capture reference is in sync across every skill", async () => {
-  const source = await readFile(join(repositoryRoot, "shared/recording-decisions.md"));
-  for (const name of await canonicalSkillNames()) {
-    const copy = await readFile(
-      join(canonicalSkills, name, "references/recording-decisions.md"),
-    );
-    assert.ok(source.equals(copy), `${name}/references/recording-decisions.md has drifted from shared/`);
+test("generated target files are allowlisted, unique, and outside every runtime tree", () => {
+  const runtimeTrees = [
+    { source: "skills", destination: "skills" },
+    { source: "runtime", destination: "runtime" },
+  ];
+  const targetFiles = [{ path: "hooks/hooks.json" }];
+  const allowlist = ["hooks/hooks.json"];
+
+  assert.doesNotThrow(() => assertTargetFileContract("test", targetFiles, allowlist));
+  assert.doesNotThrow(() => assertTargetFileBoundaries("test", allowlist, runtimeTrees));
+
+  assert.doesNotThrow(() => assertTargetFileContract("test", [], []));
+  assert.throws(
+    () => assertTargetFileContract("test", [], allowlist),
+    /differ from generatedTargetFiles/,
+  );
+  assert.throws(
+    () => assertTargetFileContract("test", [...targetFiles, ...targetFiles], allowlist),
+    /duplicate target file/,
+  );
+  assert.throws(
+    () => assertTargetFileContract("test", targetFiles, [...allowlist, ...allowlist]),
+    /contains a duplicate/,
+  );
+  assert.throws(() => assertTargetFileContract("test", [{ path: "../x.json" }], ["../x.json"]), /must stay inside/);
+
+  // The guard that keeps byte-identity meaningful: a generated file may not be
+  // injected into a tree that assertCopiedExactly owns.
+  assert.throws(
+    () => assertTargetFileBoundaries("test", ["runtime/drift/hooks.json"], runtimeTrees),
+    /inside a runtime tree/,
+  );
+  assert.throws(
+    () => assertTargetFileBoundaries("test", ["skills/x.json"], runtimeTrees),
+    /inside a runtime tree/,
+  );
+});
+
+test("the shared references are in sync across every skill", async () => {
+  const sharedFiles = ["recording-decisions.md", "observing-drift.md"];
+  for (const reference of sharedFiles) {
+    const source = await readFile(join(repositoryRoot, "shared", reference));
+    for (const name of await canonicalSkillNames()) {
+      const copy = await readFile(join(canonicalSkills, name, "references", reference));
+      assert.ok(source.equals(copy), `${name}/references/${reference} has drifted from shared/`);
+    }
   }
 });
 

@@ -1,0 +1,112 @@
+{
+  "skill": "shared:observing-drift",
+  "about": "Force-driven scenarios for the drift-drain classifier shared by all four skills. Each scenario names what edits a run encountered, how they relate to active rules, and whether the drain should write a proposed decision. There is no numeric scoring: a run passes when it reaches the stated classification for the stated reason, and the criteria below hold of what it reported.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "violation-is-reserved",
+      "statement": "The word 'violation' appears only where checker.status is fail. No run writes violation about a review rule, however confident the evidence."
+    },
+    {
+      "id": "no-model-for-a-tool",
+      "statement": "Where judgement is forbidden, the run reports the checker's status verbatim and substitutes no opinion. Unavailable and unbound are not findings."
+    },
+    {
+      "id": "evidence-gate",
+      "statement": "Every suspected drift names rule id, file, line and the contradicting text; a finding missing any one of the four is downgraded to insufficient evidence."
+    },
+    {
+      "id": "insufficient-evidence-is-normal",
+      "statement": "The run does not inflate weak evidence to reach a finding, and nothing to report is an available conclusion reached as often as justified."
+    },
+    {
+      "id": "no-scores",
+      "statement": "No score, percentage, ranking, or headline count mixes classes. One tool failure and two impressions are not 3 findings."
+    },
+    {
+      "id": "proposed-not-defect",
+      "statement": "Legitimate evolution and stale documentation produce a proposed decision after asking, never a defect report."
+    },
+    {
+      "id": "no-silent-writes",
+      "statement": "No run modifies code, documentation, a rule, an existing decision's prose, constitution.md, or a tool config. Only new proposed decisions after user agreement."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "impression-only",
+      "forces": "A review rule exists on a scoped file; the diff touches the file but the reviewer can name no line and no contradicting structure — only that the change 'feels layered wrong' and 'seems to violate the rule'.",
+      "expect": {
+        "class": "Insufficient evidence",
+        "downgraded": true,
+        "writes": false,
+        "notes": "Impression without specific text or line downgrades to insufficient evidence. This is the outcome easiest to lose."
+      }
+    },
+    {
+      "id": "narrative-rule-touched",
+      "forces": "A path under a narrative rule's subject changes; the rule is never classified, only counted in narrativeSkipped.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "Narrative rules are never classified. The packet counts them and nothing else."
+      }
+    },
+    {
+      "id": "new-boundary",
+      "forces": "A new services/notifications/ package with its own client appears; no active rule covers it. constitution.md remains byte-unchanged.",
+      "expect": {
+        "class": "Legitimate evolution",
+        "writes": true,
+        "status": "proposed",
+        "notes": "A new architectural boundary is proposed for review, not written silently. constitution.md is never modified by the run itself."
+      }
+    },
+    {
+      "id": "nothing-to-report",
+      "forces": "Four edits, all to README.md and test fixtures; no active rule's scope matches any changed path.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "When no rule is scoped to the changes, report nothing. This is the most common correct outcome."
+      }
+    },
+    {
+      "id": "rule-outlived-its-subject",
+      "forces": "An active review rule names src/legacy/gateway, a directory deleted six commits ago. The evidence comes from git, not the run's assertions.",
+      "expect": {
+        "class": "Stale or contradictory documentation",
+        "writes": true,
+        "status": "proposed",
+        "notes": "The rule is wrong, not the code. A decision superseding the rule is proposed for user review."
+      }
+    },
+    {
+      "id": "specific-contradiction",
+      "forces": "A review rule forbids the domain importing infrastructure; the diff adds 'from app.db import Session' at src/domain/order.py:14.",
+      "expect": {
+        "class": "Suspected drift",
+        "writes": false,
+        "notes": "Rule id, file, line 14, and the specific import text are all named. Nothing is written; this is a finding for human review."
+      }
+    },
+    {
+      "id": "tool-failed",
+      "forces": "A deterministic rule bound to a real import-linter contract; check-rules --run reports fail.",
+      "expect": {
+        "class": "Violation",
+        "writes": false,
+        "notes": "Violation is reserved for tool failures. A model never stands in for a tool that ran and lost."
+      }
+    },
+    {
+      "id": "tool-unavailable",
+      "forces": "The same rule, with import-linter not on PATH; checker.status is unavailable.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "Where judgement is forbidden, the run reports the checker's status verbatim — unavailable — and offers no judgement of its own. This is correct."
+      }
+    }
+  ]
+}

@@ -102,6 +102,54 @@ export function assertRootFileBoundaries(
   }
 }
 
+export function assertTargetFileContract(target, targetFiles, generatedTargetFiles) {
+  if (!Array.isArray(targetFiles)) {
+    throw new Error(`${target} adapter targetFiles must be an array`);
+  }
+  if (!Array.isArray(generatedTargetFiles)) {
+    throw new Error(`${target} generatedTargetFiles must be an array`);
+  }
+
+  for (const path of generatedTargetFiles) {
+    assertRelativePath(path, `${target} generated target file`);
+  }
+  if (new Set(generatedTargetFiles).size !== generatedTargetFiles.length) {
+    throw new Error(`${target} generatedTargetFiles contains a duplicate path`);
+  }
+
+  const declaredPaths = targetFiles.map((targetFile) => {
+    assertRelativePath(targetFile?.path, `${target} target file`);
+    return targetFile.path;
+  });
+  if (new Set(declaredPaths).size !== declaredPaths.length) {
+    throw new Error(`${target} adapter declares a duplicate target file`);
+  }
+
+  const declared = [...declaredPaths].sort();
+  const managed = [...generatedTargetFiles].sort();
+  if (JSON.stringify(declared) !== JSON.stringify(managed)) {
+    throw new Error(`${target} adapter target files differ from generatedTargetFiles`);
+  }
+}
+
+// A generated target file may never land inside a tree that assertCopiedExactly
+// owns. Without this, an adapter could inject a file into the copied skills/ or
+// runtime/ tree and the byte-identity assertion would start comparing a tree it
+// does not own.
+export function assertTargetFileBoundaries(target, generatedTargetFiles, runtimeTrees) {
+  for (const path of generatedTargetFiles) {
+    assertRelativePath(path, `${target} generated target file`);
+    for (const runtimeTree of runtimeTrees) {
+      const relativePath = relative(runtimeTree.destination, path);
+      if (relativePath === "" || (!relativePath.startsWith("..") && !isAbsolute(relativePath))) {
+        throw new Error(
+          `${target} generated target file '${path}' is inside a runtime tree ('${runtimeTree.destination}')`,
+        );
+      }
+    }
+  }
+}
+
 async function listFiles(root, prefix = "") {
   const entries = await readdir(join(root, prefix), { withFileTypes: true });
   const files = [];
@@ -157,6 +205,24 @@ async function assertGeneratedRootInventory(
   }
 }
 
+async function assertGeneratedTargetInventory(
+  target,
+  outputRoot,
+  manifestPath,
+  generatedTargetFiles,
+  runtimeTrees,
+) {
+  const expected = [manifestPath, ...generatedTargetFiles];
+  for (const runtimeTree of runtimeTrees) {
+    const files = await listFiles(join(outputRoot, runtimeTree.destination));
+    expected.push(...files.map((file) => `${runtimeTree.destination}/${file}`));
+  }
+  const actual = await listFiles(outputRoot);
+  if (JSON.stringify(actual.sort()) !== JSON.stringify(expected.sort())) {
+    throw new Error(`${target} output inventory differs from its declared contents`);
+  }
+}
+
 async function loadContext() {
   const packagePath = join(repositoryRoot, "package.json");
   const metadata = await readJson(packagePath);
@@ -168,6 +234,7 @@ async function loadContext() {
     !packaging?.buildDirectory ||
     !packaging?.generatedRootDirectories ||
     !packaging?.generatedRootFiles ||
+    !packaging?.generatedTargetFiles ||
     !packaging?.targets
   ) {
     throw new Error("package.json is missing agentPackaging configuration");
@@ -216,6 +283,11 @@ async function buildTarget(target, context) {
   );
   assertRootFileBoundaries(target, generatedRootFiles, generatedRootDirectories);
 
+  const targetFiles = adapter.targetFiles ?? [];
+  const generatedTargetFiles = context.packaging.generatedTargetFiles[target] ?? [];
+  assertTargetFileContract(target, targetFiles, generatedTargetFiles);
+  assertTargetFileBoundaries(target, generatedTargetFiles, runtimeTrees);
+
   assertRelativePath(adapter.manifestPath, `${target} manifestPath`);
   await rm(outputRoot, { recursive: true, force: true });
   await mkdir(outputRoot, { recursive: true });
@@ -228,6 +300,17 @@ async function buildTarget(target, context) {
   }
 
   await writeJson(join(outputRoot, adapter.manifestPath), adapter.manifest(adapterContext));
+
+  for (const targetFile of targetFiles) {
+    await writeJson(join(outputRoot, targetFile.path), targetFile.render(adapterContext));
+  }
+  await assertGeneratedTargetInventory(
+    target,
+    outputRoot,
+    adapter.manifestPath,
+    generatedTargetFiles,
+    runtimeTrees,
+  );
 
   for (const rootFile of rootFiles) {
     await writeJson(join(repositoryRoot, rootFile.path), rootFile.render(adapterContext));

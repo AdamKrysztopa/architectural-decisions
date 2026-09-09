@@ -35,6 +35,15 @@ A `deterministic` rule's binding is resolved against the repository's real tool 
 `runtime/checkers/check-rules.mjs` — no tool installation required to catch a rule bound to a
 contract that does not exist; `--run` opts into actually evaluating it.
 
+## Noticing drift
+
+On Claude Code, arch-crew injects the active rules at session start and quietly records which files
+were edited. At a checkpoint you drain those observations: a runtime matches the changed paths
+against the active rules, copies each deterministic checker's verdict verbatim, and hands the model
+only the rules judgement is actually allowed on. A tool failure is a violation; everything else is a
+finding, an honest "insufficient evidence", or a proposed decision. No hook can block an edit, no
+finding fails a build, and on Codex — which has no hooks — the same drain runs from git.
+
 ## Install for Claude Code
 
 Add the marketplace and install the plugin:

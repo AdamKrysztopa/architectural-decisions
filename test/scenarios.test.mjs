@@ -242,3 +242,69 @@ test("every capture criterion is anchored in the shared reference", async () => 
     assert.ok(reference.includes(anchor), `shared/recording-decisions.md never mentions ${anchor}`);
   }
 });
+
+const driftScenarioFile = join(repositoryRoot, "test/scenarios/drift-drain.json");
+const driftReference = join(repositoryRoot, "shared/observing-drift.md");
+
+const requiredDriftScenarioIds = [
+  "impression-only",
+  "narrative-rule-touched",
+  "new-boundary",
+  "nothing-to-report",
+  "rule-outlived-its-subject",
+  "specific-contradiction",
+  "tool-failed",
+  "tool-unavailable",
+];
+
+const requiredDriftCriteriaIds = [
+  "evidence-gate",
+  "insufficient-evidence-is-normal",
+  "no-model-for-a-tool",
+  "no-scores",
+  "no-silent-writes",
+  "proposed-not-defect",
+  "violation-is-reserved",
+];
+
+test("the drift scenario set is complete and anchored in the shared reference", async () => {
+  const set = JSON.parse(await readFile(driftScenarioFile, "utf8"));
+  assert.equal(set.skill, "shared:observing-drift");
+  assert.ok(set.about?.length > 0);
+  await assert.doesNotReject(readFile(join(repositoryRoot, set.howToRun), "utf8"));
+
+  const ids = set.scenarios.map((scenario) => scenario.id);
+  assert.equal(new Set(ids).size, ids.length, "a drift scenario id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredDriftScenarioIds);
+  assert.deepEqual(set.criteria.map((criterion) => criterion.id).sort(), requiredDriftCriteriaIds);
+
+  const reference = await readFile(driftReference, "utf8");
+  const classes = new Set([...reference.matchAll(/^### (.+)$/gm)].map(([, heading]) => heading.trim()));
+  assert.deepEqual([...classes].sort(), [
+    "Insufficient evidence",
+    "Legitimate evolution",
+    "Stale or contradictory documentation",
+    "Suspected drift",
+    "Violation",
+  ]);
+
+  for (const scenario of set.scenarios) {
+    assert.ok(scenario.forces?.length > 40, `${scenario.id} names no forces`);
+    assert.equal(typeof scenario.expect.writes, "boolean", `${scenario.id} does not say whether it writes`);
+    if (scenario.expect.class !== null) {
+      assert.ok(classes.has(scenario.expect.class), `${scenario.id} expects a class that is not a heading`);
+    }
+    if (scenario.expect.writes) {
+      assert.equal(scenario.expect.status, "proposed", `${scenario.id} must write only proposed`);
+    }
+  }
+
+  assert.ok(
+    set.scenarios.some((scenario) => scenario.expect.class === null && scenario.expect.writes === false),
+    "no scenario whose correct outcome is 'nothing to report'",
+  );
+  assert.ok(
+    set.scenarios.some((scenario) => scenario.expect.downgraded === true),
+    "no scenario exercising the evidence-gate downgrade",
+  );
+});

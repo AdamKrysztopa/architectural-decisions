@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.3.2",
+  "version": "0.3.5",
   "type": "module",
   "license": "MIT",
   "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",
@@ -12,7 +12,7 @@
     "build": "node builders/sync-shared.mjs && node builders/build.mjs",
     "sync:shared": "node builders/sync-shared.mjs",
     "sync:check": "node builders/sync-shared.mjs --check",
-    "test": "node --test test/build.test.mjs test/baseline.test.mjs test/checkers.test.mjs test/scenarios.test.mjs",
+    "test": "node --test test/build.test.mjs test/baseline.test.mjs test/checkers.test.mjs test/drift.test.mjs test/scenarios.test.mjs",
     "test:build": "node --test test/build.test.mjs",
     "test:scenarios": "node --test test/scenarios.test.mjs"
   },
@@ -36,6 +36,12 @@
       "codex": [
         ".agents/plugins/marketplace.json"
       ]
+    },
+    "generatedTargetFiles": {
+      "claude": [
+        "hooks/hooks.json"
+      ],
+      "codex": []
     },
     "targets": {
       "claude": {
