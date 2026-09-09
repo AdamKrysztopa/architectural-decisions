@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-This repo is the **`arch-crew` cross-agent skill package** — four architectural-decision skills —
+This repo is the **`arch-crew` cross-agent skill package** — five architectural-decision skills —
 plus the local HTML knowledge source three of them were distilled from. Claude Code and Codex have
 generated packages; no Cursor or GitHub Copilot package is supported yet.
 
@@ -27,13 +27,16 @@ the Claude hook registration is adapter-generated. `runtime/migration/` adds con
 reverse-discovery tooling on top of the SP1 baseline; `promote` on
 `runtime/baseline/build-constitution.mjs` flips a decision from `proposed` to `active`.
 
-Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
+Five shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 
 - `decide-architecture` — software architecture (structure/topology/data/overlays).
 - `design-patterns` — GoF + Python-idiomatic design patterns.
 - `agentic-patterns` — LLM-agent control-flow design.
 - `test-patterns` — testing strategy: QA as a process discipline, executable unit/integration/E2E
   levels, and data/ML/LLM evaluation overlays kept as three distinct dimensions.
+- `threat-model` — architecture-level security: trust boundaries, authentication, authorization,
+  secrets, data protection, supply chain, and agent/tool permissions. It never scans; every
+  deterministic claim binds to a checker the repository already runs.
 
 Each skill branches on project status: **greenfield → selection interview** (compose a
 recommendation) or **refactoring → code review** against the catalog. Each skill is a lean
@@ -47,7 +50,9 @@ evaluation overlay, dimension 3) and `references/oracles.md` (the cross-cutting 
 oracle guardrail). Its `SKILL.md` carries a decision → reference table, and `test/build.test.mjs`
 enforces both directions: every shipped reference must be cited by `SKILL.md`, and every cited
 reference must exist. Do not add a topic reference for cosmetic reasons — size that actually harms
-selective retrieval is the bar.
+selective retrieval is the bar. `threat-model` does too: `references/evidence.md` (the
+finding-evidence guardrail) and `references/agent-agency.md` (tool permissions and excessive
+agency, loaded only when the system has an agent).
 
 Validation has two layers, documented in [`docs/validating-skills.md`](docs/validating-skills.md):
 the package contract (`test/build.test.mjs`) and the force-driven scenario sets
@@ -58,8 +63,8 @@ the package contract (`test/build.test.mjs`) and the force-driven scenario sets
 Three sibling **single-file, zero-dependency HTML reference documents** — interactive pattern
 catalogs, each ending in a clickable decision wizard. These are the **source of truth** three of the
 skills' references were burned in from; they are NOT part of the installable plugin (`test-patterns`
-has **no** HTML source — its references are authored directly, so there is no wizard to keep in
-sync and no coverage invariant for it):
+and `threat-model` have **no** HTML source — their references are authored directly, so there is no
+wizard to keep in sync and no coverage invariant for either):
 
 - `html/architecture-patterns.html` — architecture patterns + a "build your stack" wizard → `decide-architecture`.
 - `html/python-design-patterns.html` — GoF + Python-idiomatic patterns + a "which pattern?" wizard → `design-patterns`.

@@ -16,6 +16,24 @@ Shared Markdown is copied byte-for-byte; no prose templating engine is introduce
 - Verified by review — needs judgement, and may be graded as a soft signal.
 - Source: [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md)
 
+### no-security-scoring
+
+No security output carries a maturity score, rating, grade, percentage, or control count. Findings are grouped by evidence class, never ranked into one list.
+
+- Severity: blocking
+- Scope: `skills/threat-model/**`, `test/scenarios/security.json`
+- Verified by review — needs judgement, and may be graded as a soft signal.
+- Source: [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md)
+
+### security-claims-are-bound
+
+A security claim that a tool could decide is bound to a checker the repository already runs, or it is recorded as narrative. arch-crew never scans, and never writes into a tool's config.
+
+- Severity: blocking
+- Scope: `skills/threat-model/**`
+- Verified by review — needs judgement, and may be graded as a soft signal.
+- Source: [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md)
+
 ### skill-frontmatter-is-frozen
 
 The four skills' name and description frontmatter must not change; triggering is part of the shipped release.
@@ -37,3 +55,4 @@ The shipped runtime uses Node builtins only.
 ## Active decisions
 
 - [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md) — decide-architecture
+- [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md) — threat-model

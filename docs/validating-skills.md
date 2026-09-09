@@ -11,7 +11,7 @@ Neither replaces the other. A perfectly packaged skill can still recommend an E2
 needs, and a well-reasoned skill that ships without its references is useless.
 
 `test/scenarios/baseline-capture.json` is the second scenario set: it grades the decision-capture
-step shared by all four skills (`shared/recording-decisions.md`) — when a run must write a decision
+step shared by all five skills (`shared/recording-decisions.md`) — when a run must write a decision
 file, at what status, and how a rule earns a `deterministic` classification — rather than any one
 skill's domain reasoning.
 
@@ -19,12 +19,18 @@ Since sub-project 2, the `no-invented-bindings` criterion is also checkable mech
 `runtime/checkers/check-rules.mjs` against the scenario's stated repository state confirms whether
 a `verified_by` binding actually resolves, rather than resting on a reviewer's judgement alone.
 
-`test/scenarios/drift-drain.json` is the third scenario set: it grades the drift-drain classifier
-shared by all four skills (`shared/observing-drift.md`) — classifying observed changes against active
+`test/scenarios/security.json` is the third set: it grades `threat-model`'s gate outcomes and, more
+importantly, its refusals — that a committed secret is attributed to `gitleaks` rather than to the
+model's reading, that a control with no binding stays `narrative`, and that a request for a maturity
+score is declined rather than answered. Its gate names resolve to `###` headings in
+`skills/threat-model/references/decision-tree.md` and `references/agent-agency.md`.
+
+`test/scenarios/drift-drain.json` is the fourth scenario set: it grades the drift-drain classifier
+shared by all five skills (`shared/observing-drift.md`) — classifying observed changes against active
 rules and deciding when to write a proposed decision — without ever asserting a violation the evidence
 does not support.
 
-`test/scenarios/migration.json` is the fourth scenario set: it grades consolidation and reverse
+`test/scenarios/migration.json` is the fifth scenario set: it grades consolidation and reverse
 discovery (`shared/migrating-decisions.md`) — listing candidates without adopting them, classifying
 confirmed inputs, citing sources honestly, and capping how many decisions one reverse-discovery pass
 may propose.

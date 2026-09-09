@@ -95,6 +95,11 @@ existing agent code.
   cost, tool latency. The line between a demo and production. *Review cue:* no tracing — failures are
   un-diagnosable.
 
+> **Permissions and blast radius belong to `arch-crew:threat-model`.** This section decides *whether*
+> a loop needs oversight as a control-flow property. What an agent's credentials actually reach, what
+> one wrong autonomous action costs, and whether untrusted content can steer the loop are security
+> decisions with a named actor and impact — hand those to `threat-model`, which owns them.
+
 ## VI. Enterprise integration
 - **Sidecar** `#ap-sidecar` — bolt AI alongside an app without touching its core. Lowest-risk seam.
 - **Cognitive Middleware** `#ap-cognitive-middleware` — route each request between a deterministic

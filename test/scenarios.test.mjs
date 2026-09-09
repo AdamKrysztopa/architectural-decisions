@@ -361,3 +361,179 @@ test("every migration criterion is anchored in the shared reference or its recor
     );
   }
 });
+
+const securityScenarioFile = join(repositoryRoot, "test/scenarios/security.json");
+const threatModelRoot = join(repositoryRoot, "skills/threat-model");
+
+// Gates live in the decision tree and, for the agency overlay, in agent-agency.md
+// — never in the catalog, which describes controls rather than gating them.
+const securityGateSources = ["references/decision-tree.md", "references/agent-agency.md"];
+
+// Hardcoded on purpose, like every other inventory in this suite.
+const requiredSecurityScenarioIds = [
+  "agentic-support-bot",
+  "already-hardened-service",
+  "committed-secret-found-by-tool",
+  "internal-crud-service",
+  "legacy-monolith-trusted-network",
+  "maturity-score-request",
+  "multi-tenant-saas",
+  "no-scanner-installed",
+  "oss-library-supply-chain",
+  "payments-card-data",
+  "public-api-surface-change",
+  "read-only-summariser-agent",
+];
+
+const requiredSecurityCriteriaIds = [
+  "agent-agency-handoff",
+  "asset-actor-impact-control",
+  "boundary-first",
+  "control-cost-named",
+  "deliberate-omissions",
+  "evidence-class-declared",
+  "no-change-permitted",
+  "no-invented-bindings",
+  "no-scores",
+  "no-simulated-scanning",
+  "one-primary-move",
+  "reopening-signals",
+];
+
+async function canonicalSecurityGates() {
+  const gates = new Set();
+  for (const source of securityGateSources) {
+    const text = await readFile(join(threatModelRoot, source), "utf8");
+    for (const [, heading] of text.matchAll(/^### (.+)$/gm)) {
+      gates.add(gateName(heading));
+    }
+  }
+  return gates;
+}
+
+async function readSecurityScenarios() {
+  return JSON.parse(await readFile(securityScenarioFile, "utf8"));
+}
+
+test("the security scenario set declares the skill it grades and how to run it", async () => {
+  const set = await readSecurityScenarios();
+  assert.equal(set.skill, "threat-model");
+  assert.ok(set.about?.length > 0, "the security scenario set has no description");
+  const howToRun = join(repositoryRoot, set.howToRun);
+  await assert.doesNotReject(
+    readFile(howToRun, "utf8"),
+    `howToRun points at a missing file: ${set.howToRun}`,
+  );
+});
+
+test("every required security scenario is present exactly once", async () => {
+  const { scenarios } = await readSecurityScenarios();
+  const ids = scenarios.map((scenario) => scenario.id);
+  assert.equal(new Set(ids).size, ids.length, "a security scenario id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredSecurityScenarioIds);
+});
+
+test("every required security criterion is present exactly once", async () => {
+  const { criteria } = await readSecurityScenarios();
+  const ids = criteria.map((criterion) => criterion.id);
+  assert.equal(new Set(ids).size, ids.length, "a security criterion id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredSecurityCriteriaIds);
+  for (const criterion of criteria) {
+    assert.ok(
+      criterion.statement?.length > 20,
+      `criterion ${criterion.id} has no usable statement`,
+    );
+  }
+});
+
+test("every security scenario states a prompt, its forces, and what the run must produce", async () => {
+  const { scenarios } = await readSecurityScenarios();
+  for (const scenario of scenarios) {
+    const label = `security scenario ${scenario.id}`;
+    assert.ok(["greenfield", "review"].includes(scenario.mode), `${label} has no valid mode`);
+    assert.ok(scenario.title?.length > 0, `${label} has no title`);
+    assert.ok(scenario.prompt?.length > 40, `${label} has no usable prompt`);
+    assert.ok(scenario.expect?.length > 40, `${label} does not say what the run must produce`);
+    assert.ok(
+      Array.isArray(scenario.forces) && scenario.forces.length > 0,
+      `${label} names no forces — gating without forces is scoring`,
+    );
+    assert.ok(
+      Array.isArray(scenario.failsIf) && scenario.failsIf.length > 0,
+      `${label} names no failure conditions`,
+    );
+    assert.ok(
+      Array.isArray(scenario.gatesOpen) && Array.isArray(scenario.gatesClosed),
+      `${label} must declare gatesOpen and gatesClosed, even if empty`,
+    );
+  }
+});
+
+test("every security scenario exercises at least one gate outcome", async () => {
+  const { scenarios } = await readSecurityScenarios();
+  for (const scenario of scenarios) {
+    const exercised =
+      scenario.gatesOpen.length > 0 ||
+      scenario.gatesClosed.length > 0 ||
+      scenario.expectNoChange === true ||
+      scenario.refusesScore === true ||
+      scenario.insufficientEvidence === true ||
+      scenario.toolBoundGate === true;
+    assert.ok(exercised, `security scenario ${scenario.id} asserts nothing`);
+  }
+});
+
+test("a security scenario never opens and closes the same gate", async () => {
+  const { scenarios } = await readSecurityScenarios();
+  for (const scenario of scenarios) {
+    const closed = new Set(scenario.gatesClosed);
+    const contradictions = scenario.gatesOpen.filter((gate) => closed.has(gate));
+    assert.deepEqual(contradictions, [], `security scenario ${scenario.id} contradicts itself`);
+  }
+});
+
+test("every referenced security gate resolves to a canonical gate heading", async () => {
+  const gates = await canonicalSecurityGates();
+  const { scenarios } = await readSecurityScenarios();
+  for (const scenario of scenarios) {
+    for (const gate of [...scenario.gatesOpen, ...scenario.gatesClosed]) {
+      assert.ok(
+        gates.has(gate),
+        `security scenario ${scenario.id} references '${gate}', which is not a gate in ${securityGateSources.join(" or ")}`,
+      );
+    }
+  }
+});
+
+test("the security outcomes that are easy to lose are covered", async () => {
+  const { scenarios } = await readSecurityScenarios();
+  const modes = new Set(scenarios.map((scenario) => scenario.mode));
+  assert.ok(modes.has("greenfield"), "no greenfield security scenario");
+  assert.ok(modes.has("review"), "no review security scenario");
+  assert.ok(
+    scenarios.some((scenario) => scenario.expectNoChange === true),
+    "no security scenario whose correct answer is 'no change'",
+  );
+  assert.ok(
+    scenarios.some((scenario) => scenario.refusesScore === true),
+    "no security scenario exercising the score-refusal guardrail",
+  );
+  assert.ok(
+    scenarios.some((scenario) => scenario.insufficientEvidence === true),
+    "no security scenario exercising the insufficient-evidence outcome",
+  );
+  assert.ok(
+    scenarios.some((scenario) => scenario.toolBoundGate === true),
+    "no security scenario exercising a tool-bound (deterministic) finding",
+  );
+  for (const gate of ["Encryption at rest", "Tenant isolation", "Human approval on irreversible actions"]) {
+    assert.ok(
+      scenarios.some((scenario) => scenario.gatesOpen.includes(gate)),
+      `no security scenario where '${gate}' is justified open`,
+    );
+    assert.ok(
+      scenarios.some((scenario) => scenario.gatesClosed.includes(gate)),
+      `no security scenario where '${gate}' must stay closed`,
+    );
+  }
+});

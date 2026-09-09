@@ -1,6 +1,6 @@
 # arch-crew
 
-A suite of **architectural-decision skills** for supported coding agents. Four skills help you
+A suite of **architectural-decision skills** for supported coding agents. Five skills help you
 *choose* an architecture, a pattern, or a testing strategy for new work, or *audit* what you already
 have — each branching automatically on whether you're greenfield or refactoring.
 
@@ -18,10 +18,11 @@ have — each branching automatically on whether you're greenfield or refactorin
 | `arch-crew:design-patterns` | Pick or assess **GoF / Python-idiomatic design patterns** | Which-pattern interview → one recommendation (+ Pythonic form) | Smell → pattern review |
 | `arch-crew:agentic-patterns` | Design or assess an **LLM-agent system** | Layered design interview (autonomy → … → integration) | Seven-defect agent review |
 | `arch-crew:test-patterns` | Decide which **evidence** a system needs — quality practices, executable tests (unit/integration/contract/E2E), and data/ML/LLM evaluation | Risk-led evidence portfolio + ADR | Test-suite review + one highest-leverage rebalancing move |
+| `arch-crew:threat-model` | Decide or audit the **security of a design** — trust boundaries, authorization placement, secrets, data protection, supply chain, agent/tool permissions | Boundary-first threat interview → findings with asset, actor, impact, control + cost | Security review → one highest-leverage move |
 
 Each skill first works out **where you are** — greenfield (a new design) or refactoring (existing
 code) — then either runs a short selection interview or reviews your code against the catalog. The
-through-line in all four: recommend the **least architecture that meets the requirement**, and name
+through-line in all five: recommend the **least architecture that meets the requirement**, and name
 the cost of every pick.
 
 ## The baseline
@@ -120,8 +121,9 @@ decision you need to make.
 
 The decision logic and pattern catalogs for `decide-architecture`, `design-patterns`, and
 `agentic-patterns` are distilled from three single-file HTML references (`html/`, kept locally as
-the source of truth, not shipped) into each skill's `references/`. `test-patterns` has no HTML
-source; its references were written directly. Every skill ships these two:
+the source of truth, not shipped) into each skill's `references/`. `test-patterns` and
+`threat-model` have no HTML source; their references were written directly. Every skill ships these
+two:
 
 - `references/decision-tree.md` — the selection interview / decision tree.
 - `references/catalog.md` — the patterns with when-to-use, cost, and code-review cues.
@@ -151,6 +153,7 @@ skills/
   design-patterns/        SKILL.md + references/{decision-tree,catalog}.md
   agentic-patterns/       SKILL.md + references/{decision-tree,catalog}.md
   test-patterns/          SKILL.md + references/{decision-tree,catalog,evaluation,oracles}.md
+  threat-model/           SKILL.md + references/{decision-tree,catalog,evidence,agent-agency}.md
 builders/
   build.mjs               shared deterministic builder
   adapters/               thin target packaging adapters

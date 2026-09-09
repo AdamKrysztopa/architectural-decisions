@@ -28,6 +28,7 @@ const expectedSkillNames = [
   "decide-architecture",
   "design-patterns",
   "test-patterns",
+  "threat-model",
 ];
 
 // Terms a user-visible surface may use to advertise each skill. Release
@@ -39,6 +40,7 @@ const advertisedTerms = {
   "decide-architecture": ["decide-architecture", "software architecture", "architecture"],
   "design-patterns": ["design-patterns", "design pattern"],
   "test-patterns": ["test-patterns", "testing strategy", "testing"],
+  "threat-model": ["threat-model", "threat model", "security"],
 };
 
 // A description short enough to be blank, a stub, or a placeholder cannot

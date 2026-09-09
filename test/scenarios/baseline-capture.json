@@ -1,6 +1,6 @@
 {
   "skill": "shared:recording-decisions",
-  "about": "Force-driven scenarios for the decision-capture step shared by all four skills. Each scenario names what a run produced and whether a decision file must therefore be written, with which status and which verification classification. There is no numeric scoring: a run passes when it reaches the stated capture outcome for the stated reason, and the criteria below hold of what it wrote.",
+  "about": "Force-driven scenarios for the decision-capture step shared by all five skills. Each scenario names what a run produced and whether a decision file must therefore be written, with which status and which verification classification. There is no numeric scoring: a run passes when it reaches the stated capture outcome for the stated reason, and the criteria below hold of what it wrote.",
   "howToRun": "docs/validating-skills.md",
   "criteria": [
     {

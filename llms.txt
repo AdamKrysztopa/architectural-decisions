@@ -1,6 +1,6 @@
 # arch-crew
 
-> A cross-agent package of four architectural-decision skills. Each helps you choose an architecture,
+> A cross-agent package of five architectural-decision skills. Each helps you choose an architecture,
 > pattern, or testing strategy for new work (a short selection interview) or audit existing code (a
 > review against a catalog), and records the decision as an ADR or review report. The bias
 > throughout: recommend the least architecture that meets the requirement, and name the cost of
@@ -12,6 +12,7 @@
 - [design-patterns](skills/design-patterns/SKILL.md): GoF + Python-idiomatic design patterns. Greenfield → one recommended pattern + its Pythonic form; existing code → smell-to-pattern review.
 - [agentic-patterns](skills/agentic-patterns/SKILL.md): LLM-agent systems — autonomy level, reasoning loop, memory, governance, multi-agent topology. Greenfield → layered design + ADR; existing code → seven-defect review.
 - [test-patterns](skills/test-patterns/SKILL.md): testing strategy across three evidence dimensions — quality practices, deterministic executable testing (unit/integration/contract/E2E), and stochastic evaluation (data/ML/LLM) — plus one cross-cutting oracle-independence guardrail. Greenfield → risk-led evidence portfolio + ADR; existing test code → suite review + one highest-leverage rebalancing move. Routes questions like "unit vs integration vs E2E", "do we need contract tests", "pyramid or trophy", "why is my suite flaky or slow", "do I need QA", "how do I test this pipeline / model / agent", "are these AI-generated tests any good". Not for implementing one ordinary test.
+- [threat-model](skills/threat-model/SKILL.md): architecture-level security — trust boundaries, authentication and authorization placement, secrets, data protection and classification, supply-chain trust, and agent/tool permissions (excessive agency). Greenfield → a boundary-first threat model + decision file; existing code → a security review + one highest-leverage move. Every deterministic claim is bound to a scanner the repository already runs (gitleaks, semgrep, oasdiff); the skill never enumerates CVEs, grades dependency versions, or produces a maturity score. Not for agent control-flow design, system structure, or choosing tests.
 
 ## Reference knowledge (per skill)
 
@@ -19,6 +20,7 @@
 - [design-patterns decision tree](skills/design-patterns/references/decision-tree.md) and [catalog](skills/design-patterns/references/catalog.md)
 - [agentic decision tree](skills/agentic-patterns/references/decision-tree.md) and [catalog](skills/agentic-patterns/references/catalog.md)
 - [testing decision tree](skills/test-patterns/references/decision-tree.md) (risk-led interview with asymmetric escalation gates), [catalog](skills/test-patterns/references/catalog.md) (quality practices, levels, shapes, techniques, cross-level concerns, review anti-patterns), [evaluation overlay](skills/test-patterns/references/evaluation.md) (data / ML / LLM and agent evaluation), and [oracle guardrail](skills/test-patterns/references/oracles.md) (generated-test trust)
+- [threat-model decision tree](skills/threat-model/references/decision-tree.md) (boundary-first interview, 15 gates), [catalog](skills/threat-model/references/catalog.md) (controls with force, cost, and review cue), [evidence guardrail](skills/threat-model/references/evidence.md) (the four-part finding shape and the three evidence classes), and [agent-agency overlay](skills/threat-model/references/agent-agency.md) (tool permissions and excessive agency)
 
 ## Docs
 

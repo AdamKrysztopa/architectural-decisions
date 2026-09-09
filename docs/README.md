@@ -1,6 +1,6 @@
 # arch-crew — documentation
 
-Four architectural-decision skills that make **architectural decisions** with you, then write them down.
+Five architectural-decision skills that make **architectural decisions** with you, then write them down.
 Greenfield? They run a short selection interview and recommend a design. Existing code? They review
 it against a pattern catalog. Every recommendation carries its cost; the bias is always toward the
 **least architecture that meets the requirement.**
@@ -28,7 +28,7 @@ codex plugin add arch-crew@arch-crew
 
 Start a new Codex session after installation.
 
-## The four skills
+## The five skills
 
 | Invoke | For | Greenfield → | Existing code → |
 |--------|-----|--------------|-----------------|
@@ -36,6 +36,7 @@ Start a new Codex session after installation.
 | `arch-crew:design-patterns` | GoF + Python-idiomatic design patterns | which-pattern interview → one recommendation + Pythonic form | smell → pattern review |
 | `arch-crew:agentic-patterns` | LLM-agent systems (autonomy, loops, memory, governance) | layered design interview → "your agentic design" + ADR | seven-defect agent review |
 | `arch-crew:test-patterns` | testing strategy — quality practices vs. deterministic executable testing vs. stochastic evaluation, plus the oracle guardrail over all three | risk-led evidence portfolio → risk/evidence/cost table + ADR | suite review → one highest-leverage rebalancing move |
+| `arch-crew:threat-model` | architecture-level security (trust boundaries, authN/authZ, secrets, data protection, supply chain, agent permissions) | boundary-first threat interview → findings with asset/actor/impact/control + cost | security review → one highest-leverage move |
 
 ## How to use
 
@@ -46,6 +47,7 @@ You usually don't name the skill — just describe the decision and the right on
 - *"Which pattern fits — I've got a growing if/elif picking an algorithm?"* → `design-patterns`
 - *"Should this be one agent or several? How do I add human approval?"* → `agentic-patterns`
 - *"Why does our suite take 45 minutes and still miss database failures?"* → `test-patterns`
+- *"We're putting this admin API on the internet — is the design safe?"* → `threat-model`
 
 Or name it explicitly:
 
@@ -132,14 +134,16 @@ agent — are in [`examples/test-patterns/`](examples/test-patterns/).
 ## Where the knowledge comes from
 
 The decision logic and catalogs live in each skill's `references/` (the model reads these on
-demand). For `decide-architecture`, `design-patterns`, and `agentic-patterns` they are distilled
-from three single-file HTML pattern references kept locally as the source of truth;
-`test-patterns` has no HTML source and its references were written directly. `SKILL.md` stays a
+demand). `decide-architecture`, `design-patterns`, and `agentic-patterns` are distilled from three
+single-file HTML pattern references kept locally as the source of truth; `test-patterns` and
+`threat-model` have no HTML source and their references were written directly. `SKILL.md` stays a
 lean workflow either way.
 
 Every skill ships `decision-tree.md` and `catalog.md`. `test-patterns` adds `evaluation.md` (the
 data/ML/LLM overlay) and `oracles.md` (the generated-test guardrail), because a single catalog was
-large enough that most runs would load material they never need. `SKILL.md` carries a table saying
+large enough that most runs would load material they never need. `threat-model` adds
+`evidence.md` (the finding-evidence guardrail) and `agent-agency.md` (tool permissions and
+excessive agency, loaded only when the system has an agent). `SKILL.md` carries a table saying
 which file answers which decision.
 
 ## For coding agents and maintainers

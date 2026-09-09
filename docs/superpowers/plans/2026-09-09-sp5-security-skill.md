@@ -21,7 +21,7 @@
 - **`references/recording-decisions.md` is generated**, by `builders/sync-shared.mjs`. Never hand-write or hand-edit it in a skill directory.
 - **Deterministic output.** No timestamps, no SHAs, no host paths in generated Markdown.
 - **Code style:** ESM, 2-space indent, double-quoted strings, named exports — match `builders/build.mjs`.
-- **Version target:** `0.3.4` in `package.json` (the builder propagates it into every manifest). `0.4.0` is reserved for SP6 and must not appear anywhere.
+- **Version target:** `0.3.7` in `package.json` (the builder propagates it into every manifest — the actual landed order was SP2=0.3.2, SP3=0.3.5, SP4=0.3.6, so 0.3.7 is the next free patch; the plan originally targeted `0.3.4`, which the build order made stale). `0.4.0` is reserved for SP6 and must not appear anywhere.
 - **Test command:** `npm test` runs `node --test test/build.test.mjs test/baseline.test.mjs test/scenarios.test.mjs`. No new suite file is added; SP5's assertions extend the existing two.
 - **SP3 does not exist.** Nothing written here may mention hooks, the drift queue, `SessionStart`, `PostToolUse`, or the drain.
 
@@ -63,7 +63,7 @@ Start red. The two hardcoded inventories in `build.test.mjs` are the package's s
 **Interfaces:**
 - Produces: two failing assertions naming exactly what is missing. Consumes nothing.
 
-- [ ] **Step 1: Add the skill to the hardcoded inventory**
+- [x] **Step 1: Add the skill to the hardcoded inventory**
 
 In `test/build.test.mjs`, change:
 
@@ -88,7 +88,7 @@ const expectedSkillNames = [
 ];
 ```
 
-- [ ] **Step 2: Add its advertised terms**
+- [x] **Step 2: Add its advertised terms**
 
 Append to `advertisedTerms`:
 
@@ -100,7 +100,7 @@ Note for the implementer: `mentions()` matches whole tokens with a tolerated tra
 hyphen counts as part of the token. `"threat-modeling"` does **not** satisfy `"threat-model"`, so
 every surface must carry one of the three terms literally.
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 ```bash
 node --test test/build.test.mjs
@@ -131,7 +131,7 @@ the headings right first; the prose under them can be revised without breaking t
 - Produces: 15 gate headings, listed verbatim in Step 2. Consumed by `test/scenarios/security.json` and `test/scenarios.test.mjs`.
 - Consumes: nothing.
 
-- [ ] **Step 1: Write the file's frame**
+- [x] **Step 1: Write the file's frame**
 
 ```markdown
 # Compose a security decision — the boundary-first interview
@@ -153,7 +153,7 @@ and a finding that cannot name an asset, an actor, an impact, and a control with
 downgraded to an observation.
 ```
 
-- [ ] **Step 2: Write the eight steps with these exact headings**
+- [x] **Step 2: Write the eight steps with these exact headings**
 
 The heading text is contract. Copy it character-for-character.
 
@@ -166,6 +166,7 @@ The heading text is contract. Copy it character-for-character.
 ### Service-to-service identity
 ### Tenant isolation
 ### Input validation at the boundary
+### Credential verification and storage
 ## Step 4 — Data protection gates
 ### Data classification
 ### Encryption in transit
@@ -186,7 +187,7 @@ Step 6 has **no `###` headings of its own** — it is a two-paragraph pointer th
 contains an agent, an automated actor, or a tool-calling loop, read `references/agent-agency.md` and
 walk its six gates; otherwise skip it, and say in the output that there was no agency surface.
 
-- [ ] **Step 3: Write Step 2, the step everything else depends on**
+- [x] **Step 3: Write Step 2, the step everything else depends on**
 
 ```markdown
 ## Step 2 — Name the assets, the actors, and the boundaries
@@ -215,7 +216,7 @@ If you cannot name at least one asset and one actor, the honest output is *"this
 security decision to make yet"* — say it and stop.
 ```
 
-- [ ] **Step 4: Write every gate to this shape**
+- [x] **Step 4: Write every gate to this shape**
 
 Each `###` gate carries exactly these five paragraphs, in this order. Example, written out in full so
 the remaining fourteen can be matched to it:
@@ -258,7 +259,7 @@ paraphrase away:
 - **`Tenant isolation`** must say: *"Closed for a single-tenant system, and single-tenant is the
   common case. Do not open this gate because the word 'SaaS' appeared."*
 
-- [ ] **Step 5: Write Step 7 — the binding step**
+- [x] **Step 5: Write Step 7 — the binding step**
 
 ```markdown
 ## Step 7 — Bind each control to its evidence class
@@ -283,7 +284,7 @@ If the question has become *"which tests buy this evidence?"*, hand off to the `
 that is its `Security testing` gate, not this one.
 ```
 
-- [ ] **Step 6: Write Step 8 — the review inspection list**
+- [x] **Step 6: Write Step 8 — the review inspection list**
 
 A numbered list of what to actually read in an existing system, in this order: authentication
 middleware and its bypasses; every route's authorization decision and where it is made; how tenant
@@ -302,7 +303,7 @@ Inventing findings to look thorough is itself a failure mode, and in security it
 one, because someone buys the control.
 ```
 
-- [ ] **Step 7: Verify the heading contract**
+- [x] **Step 7: Verify the heading contract**
 
 ```bash
 grep -c '^### ' skills/threat-model/references/decision-tree.md
@@ -328,7 +329,7 @@ never needs.
 - Produces: 6 gate headings, listed verbatim below. The second gate source for `test/scenarios.test.mjs`.
 - Consumes: `references/decision-tree.md` Step 6 points here.
 
-- [ ] **Step 1: Write the frame and the seam with `agentic-patterns`**
+- [x] **Step 1: Write the frame and the seam with `agentic-patterns`**
 
 ```markdown
 # Agent and tool permissions — the agency overlay
@@ -347,7 +348,7 @@ The through-line: **an agent is an actor with credentials, and it is the one act
 can be argued into using them.**
 ```
 
-- [ ] **Step 2: Write the six gates with these exact headings**
+- [x] **Step 2: Write the six gates with these exact headings**
 
 ```
 ### Tool permission scoping
@@ -372,7 +373,7 @@ first** / **Evidence class** / **Reopen when**). Three of them carry a line the 
   and what its task requires. Name both. A token with organization-wide write, used by an agent that
   only reads one repository, is a finding with an actor and an impact — not a hygiene note."*
 
-- [ ] **Step 3: Verify**
+- [x] **Step 3: Verify**
 
 ```bash
 grep -c '^### ' skills/threat-model/references/agent-agency.md   # expect 6
@@ -392,7 +393,7 @@ The file that stops this skill from producing theatre. It is to `threat-model` w
 - Produces: the finding shape, the three evidence classes, and the scanner-binding table, all cited from `SKILL.md` and `decision-tree.md` Step 7.
 - Consumes: SP2's `runtime/checkers/check-rules.mjs` and `KNOWN_TOOLS` — **check `osv-scanner`'s presence before writing the supply-chain row** (see Global Constraints).
 
-- [ ] **Step 1: Write the file**
+- [x] **Step 1: Write the file**
 
 This is the complete content. It is short on purpose — a guardrail nobody reads guards nothing.
 
@@ -460,7 +461,7 @@ exists** in this repository's config. Read the config file and name what you fou
 
 Then resolve and evaluate with the checker that ships in this package:
 
-    node <plugin-root>/runtime/checkers/check-rules.mjs --dir <decisions dir>
+    node <plugin-root>/runtime/checkers/check-rules.mjs --dir <decisions dir> --run
 
 `<plugin-root>` is `$CLAUDE_PLUGIN_ROOT` in Claude Code and the installed plugin's directory in Codex.
 `unbound`, `unreadable-config` and `unavailable` are **not** passes — report the status the checker
@@ -503,7 +504,7 @@ Both are correct outcomes and both must survive to the output.
   report short, and name the signal that would reopen it.
 ```
 
-- [ ] **Step 2: Fill the supply-chain row honestly**
+- [x] **Step 2: Fill the supply-chain row honestly**
 
 If `grep -n "osv-scanner" runtime/baseline/decisions.mjs` returns a line, add to the binding table:
 
@@ -525,7 +526,7 @@ Dependency advisories are not checkable through a binding here. A supply-chain r
 CI. arch-crew will not run one and will not guess.
 ```
 
-- [ ] **Step 3: Verify no gate headings leaked in**
+- [x] **Step 3: Verify no gate headings leaked in**
 
 ```bash
 grep -c '^### ' skills/threat-model/references/evidence.md   # expect 0
@@ -545,7 +546,7 @@ would make a scenario name unresolvable in a confusing way.
 - Produces: control entries with force / cost / review cue. Consumed by both modes of `SKILL.md`.
 - Consumes: nothing. **Not a gate source.**
 
-- [ ] **Step 1: Write the frame**
+- [x] **Step 1: Write the frame**
 
 ```markdown
 # Security control catalog — controls, costs, and review cues
@@ -557,7 +558,7 @@ A control in this catalog is not a recommendation. It is an option with a price.
 decides whether the price is worth paying for a named asset, actor, and impact.
 ```
 
-- [ ] **Step 2: Write six sections**
+- [x] **Step 2: Write six sections**
 
 ```
 ## I. Identity and access
@@ -604,7 +605,7 @@ Cover at minimum: `Boundary authentication`, `Policy decision point at the resou
 `Third-party service data-sharing review`; `Untrusted-by-default internal network`,
 `Egress restriction`, `Defence in depth at a boundary`.
 
-- [ ] **Step 3: Write §VI, the review anti-patterns**
+- [x] **Step 3: Write §VI, the review anti-patterns**
 
 A short list with a cue for each: the edge-only authorization check with a second caller path; the
 secret in an environment variable that is also in the image; the tenant id taken from a request
@@ -614,7 +615,7 @@ records reads and not writes; the agent whose tool list grew and never shrank; a
 meta-anti-pattern — **the control that exists because a framework put it there, protecting against an
 actor nobody listed.**
 
-- [ ] **Step 4: Verify**
+- [x] **Step 4: Verify**
 
 ```bash
 grep -c '^## ' skills/threat-model/references/catalog.md    # expect 6
@@ -637,13 +638,13 @@ lines, that is a selective-retrieval finding, not a nit — split or cut before 
 - Consumes: all four references from Tasks 2–5.
 - Produces: the citation contract `build.test.mjs` enforces in both directions — every shipped reference cited, every cited reference present.
 
-- [ ] **Step 1: Write the frontmatter exactly**
+- [x] **Step 1: Write the frontmatter exactly**
 
 Copy the `description` verbatim from the spec's "Frontmatter" section. It is a single-line
 double-quoted YAML scalar. Two properties the tests check: the frontmatter declares **only** `name`
 and `description`, and `name` matches the directory.
 
-- [ ] **Step 2: Write the body**
+- [x] **Step 2: Write the body**
 
 Follow `skills/test-patterns/SKILL.md`'s shape:
 
@@ -660,7 +661,7 @@ Follow `skills/test-patterns/SKILL.md`'s shape:
 11. **Recording the outcome** — a dated review report at `docs/security-review-<YYYY-MM-DD>.md` for a review, an ADR for a greenfield decision.
 12. **Record the decision** — the closing capture step citing `references/recording-decisions.md`.
 
-- [ ] **Step 3: Write the output contract literally**
+- [x] **Step 3: Write the output contract literally**
 
 ```markdown
 ## The output contract (both modes)
@@ -698,7 +699,7 @@ named actors require — or naming a control to drop.>
 **Never publish a score, a percentage, a grade, or a count that spans the three sections.**
 ```
 
-- [ ] **Step 4: Generate the shared capture reference**
+- [x] **Step 4: Generate the shared capture reference**
 
 ```bash
 npm run sync:shared
@@ -712,7 +713,7 @@ diff shared/recording-decisions.md skills/threat-model/references/recording-deci
 npm run sync:check
 ```
 
-- [ ] **Step 5: Run the package contract**
+- [x] **Step 5: Run the package contract**
 
 ```bash
 node --test test/build.test.mjs
@@ -726,7 +727,7 @@ Expected now: the two Task 1 failures are gone, and what remains are the *metada
 If instead you see `threat-model/SKILL.md never tells the model when to load references/<x>.md`, the
 references table in Step 2 is missing a row — fix it there, not by deleting the reference.
 
-- [ ] **Step 6: Verify the trigger vocabulary is disjoint**
+- [x] **Step 6: Verify the trigger vocabulary is disjoint**
 
 ```bash
 for f in skills/{decide-architecture,design-patterns,agentic-patterns,test-patterns}/SKILL.md; do
@@ -756,7 +757,7 @@ frontmatter, so triggering is bit-for-bit unchanged.
 **Files:**
 - Modify: `skills/agentic-patterns/references/catalog.md`
 
-- [ ] **Step 1: Append to §V (Governance & human oversight)**
+- [x] **Step 1: Append to §V (Governance & human oversight)**
 
 Add at the end of that section, before `## VI. Enterprise integration`:
 
@@ -767,7 +768,7 @@ Add at the end of that section, before `## VI. Enterprise integration`:
 > decisions with a named actor and impact — hand those to `threat-model`, which owns them.
 ```
 
-- [ ] **Step 2: Verify nothing else moved**
+- [x] **Step 2: Verify nothing else moved**
 
 ```bash
 git diff --stat skills/agentic-patterns/
@@ -792,18 +793,18 @@ git commit -m "Point agentic-patterns' governance section at threat-model for pe
 - Modify: `builders/adapters/claude.mjs`, `builders/adapters/codex.mjs`, `package.json`
 
 **Interfaces:**
-- Produces: the six advertised surfaces `build.test.mjs` checks, plus `version` `0.3.4` propagated into every manifest by the builder.
+- Produces: the six advertised surfaces `build.test.mjs` checks, plus `version` `0.3.7` propagated into every manifest by the builder.
 
-- [ ] **Step 1: `builders/adapters/claude.mjs` — the marketplace plugin description**
+- [x] **Step 1: `builders/adapters/claude.mjs` — the marketplace plugin description**
 
 Replace `marketplaceDescription` with:
 
 ```js
 const marketplaceDescription =
-  "Five architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), test-patterns (compose a risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation), and threat-model (architecture-level security — trust boundaries, authorization placement, secrets, data protection, supply chain, and agent permissions — with every claim bound to a scanner the repository already runs, never simulated). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
+  "Five architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), test-patterns (compose a risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation), and threat-model (architecture-level security — trust boundaries, authorization placement, secrets, data protection, supply chain, and agent permissions — every deterministic claim bound to a checker the repository already runs, and no maturity score in the output). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.";
 ```
 
-- [ ] **Step 2: `builders/adapters/claude.mjs` — keywords and the card description**
+- [x] **Step 2: `builders/adapters/claude.mjs` — keywords and the card description**
 
 Append to `keywords`, after `"code-review"`:
 
@@ -824,7 +825,7 @@ In `marketplace()`, replace `metadata.description` with:
         "Architectural-decision skills for Claude Code — pick or audit software architecture, design patterns, agentic-system designs, testing strategy, and the security of a design (threat-model).",
 ```
 
-- [ ] **Step 3: `builders/adapters/codex.mjs` — longDescription and a fifth prompt**
+- [x] **Step 3: `builders/adapters/codex.mjs` — longDescription and a fifth prompt**
 
 ```js
       longDescription:
@@ -839,10 +840,11 @@ Append to `defaultPrompt`:
 
 The assertion is `prompts.length >= skillNames.length` — four prompts for five skills fails.
 
-- [ ] **Step 4: `package.json` — the two target descriptions and the version**
+- [x] **Step 4: `package.json` — the two target descriptions and the version**
 
-`version`: `"0.3.1"` → `"0.3.4"`. (SP2 shipped `0.3.2` and SP4 `0.3.3`; if the working tree says
-otherwise, stop — the build order in the decisions doc C1 was not followed.)
+`version`: `"0.3.6"` → `"0.3.7"`. (SP2 shipped `0.3.2`, SP3 shipped `0.3.5`, and SP4 shipped `0.3.6`;
+the working tree at execution time showed `0.3.6`, so `0.3.7` is the next free patch — not the `0.3.4`
+originally targeted above, which the actual build order made stale.)
 
 `targets.claude.description` — append before the final "Each skill branches…" sentence:
 
@@ -856,7 +858,7 @@ otherwise, stop — the build order in the decisions doc C1 was not followed.)
 "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, agentic-patterns, test-patterns, and threat-model. Each skill guides a selection interview for new work or a focused review of existing code."
 ```
 
-- [ ] **Step 5: Rebuild and check the surfaces**
+- [x] **Step 5: Rebuild and check the surfaces**
 
 ```bash
 npm run build -- --target all
@@ -873,7 +875,7 @@ If a surface still fails, print it and check the token, not the sentence:
 node -e 'const m=require("./.claude-plugin/marketplace.json");console.log(m.plugins[0].keywords.join(" "))'
 ```
 
-- [ ] **Step 6: Confirm the reserved version is still free**
+- [x] **Step 6: Confirm the reserved version is still free**
 
 ```bash
 grep -rn "0\.4\.0" package.json build/ .claude-plugin/ .agents/ docs/ ; echo "exit: $?"
@@ -885,7 +887,7 @@ Expected: no matches (`exit: 1`). `0.4.0` is reserved for SP6.
 
 ```bash
 git add builders package.json build .claude-plugin .agents
-git commit -m "Advertise threat-model on both targets and bump to 0.3.4"
+git commit -m "Advertise threat-model on both targets and bump to 0.3.7"
 ```
 
 ---
@@ -900,7 +902,7 @@ Twelve files, enumerated. The count regex in `build.test.mjs` is
 - Modify: `README.md`, `llms.txt`, `AGENTS.md`, `docs/README.md`, `docs/building-packages.md`, `docs/validating-skills.md`, `CLAUDE.md`, `test/scenarios/baseline-capture.json`
 - Verify only, change nothing: `docs/examples/README.md`
 
-- [ ] **Step 1: `README.md`**
+- [x] **Step 1: `README.md`**
 
 Line 3: `Four skills help you` → `Five skills help you`.
 
@@ -919,7 +921,7 @@ In "How the knowledge is sourced": `test-patterns` has no HTML source → `test-
   threat-model/           SKILL.md + references/{decision-tree,catalog,evidence,agent-agency}.md
 ```
 
-- [ ] **Step 2: `llms.txt`**
+- [x] **Step 2: `llms.txt`**
 
 Line 3: `package of four architectural-decision skills` → `five`.
 
@@ -935,7 +937,7 @@ Add to `## Reference knowledge (per skill)`:
 - [threat-model decision tree](skills/threat-model/references/decision-tree.md) (boundary-first interview, 15 gates), [catalog](skills/threat-model/references/catalog.md) (controls with force, cost, and review cue), [evidence guardrail](skills/threat-model/references/evidence.md) (the four-part finding shape and the three evidence classes), and [agent-agency overlay](skills/threat-model/references/agent-agency.md) (tool permissions and excessive agency)
 ```
 
-- [ ] **Step 3: `AGENTS.md`**
+- [x] **Step 3: `AGENTS.md`**
 
 Line 7: `package of four architectural-decision skills` → `five`.
 
@@ -955,7 +957,7 @@ excessive agency, loaded only when the system contains an agent).
 
 In "Conventions", add `security-review-<date>.md` to the per-skill report list.
 
-- [ ] **Step 4: `docs/README.md`**
+- [x] **Step 4: `docs/README.md`**
 
 Line 3: `Four architectural-decision skills` → `Five`.
 Heading: `## The four skills` → `## The five skills`.
@@ -976,12 +978,12 @@ In "Where the knowledge comes from", update both sentences: three of five skills
 HTML; `test-patterns` **and** `threat-model` have none. Add: `threat-model` adds `evidence.md` and
 `agent-agency.md`.
 
-- [ ] **Step 5: `docs/building-packages.md`**
+- [x] **Step 5: `docs/building-packages.md`**
 
 `the four generated skill trees` → `the five generated skill trees`. (Today's regex does not catch
 "skill trees", so nothing fails — the prose is simply wrong, which is worse.)
 
-- [ ] **Step 6: `docs/validating-skills.md`**
+- [x] **Step 6: `docs/validating-skills.md`**
 
 `shared by all four skills` → `shared by all five skills`.
 
@@ -995,7 +997,7 @@ score is declined rather than answered. Its gate names resolve to `###` headings
 `skills/threat-model/references/decision-tree.md` and `references/agent-agency.md`.
 ```
 
-- [ ] **Step 7: `CLAUDE.md`**
+- [x] **Step 7: `CLAUDE.md`**
 
 Line 7: `four architectural-decision skills` → `five architectural-decision skills`.
 Line 26: `Four shared skills` → `Five shared skills`, and append the bullet:
@@ -1015,12 +1017,12 @@ In the topic-reference paragraph, add: *"`threat-model` does too: `references/ev
 finding-evidence guardrail) and `references/agent-agency.md` (tool permissions and excessive agency,
 loaded only when the system has an agent)."*
 
-- [ ] **Step 8: `test/scenarios/baseline-capture.json`**
+- [x] **Step 8: `test/scenarios/baseline-capture.json`**
 
 In `about`: `shared by all four skills` → `shared by all five skills`. Nothing else in that file
 changes — its scenario ids are hardcoded in `scenarios.test.mjs` and must stay as they are.
 
-- [ ] **Step 9: Verify `docs/examples/README.md` needs nothing**
+- [x] **Step 9: Verify `docs/examples/README.md` needs nothing**
 
 ```bash
 grep -nE '\b(four|4)\b' docs/examples/README.md
@@ -1030,7 +1032,7 @@ Expected: one hit, `Four concerns kept apart: code tests, contracts, data qualit
 description of the data-pipeline example, **not** a skill count, and the regex does not match it
 (no `skills` token follows). **Do not edit it.** A new example for `threat-model` is SP6's rollup.
 
-- [ ] **Step 10: Confirm nothing was rewritten that should not be**
+- [x] **Step 10: Confirm nothing was rewritten that should not be**
 
 ```bash
 git diff --stat docs/release-0.3.1.md docs/architecture/decisions/ docs/superpowers/
@@ -1069,7 +1071,7 @@ Layer 2. Forces in, gate outcomes out, no numeric scoring. The set's own integri
 - Consumes: gate headings from `references/decision-tree.md` (15) and `references/agent-agency.md` (6).
 - Produces: the third force-driven set, run agent-driven per `docs/validating-skills.md`.
 
-- [ ] **Step 1: Write the set's header and criteria**
+- [x] **Step 1: Write the set's header and criteria**
 
 ```json
 {
@@ -1098,7 +1100,7 @@ The twelve criteria, each with a `statement` longer than 20 characters:
 | `agent-agency-handoff` | Agent control-flow questions are handed to `agentic-patterns`; permission scope and blast radius are answered here. Neither is answered in the other's place. |
 | `one-primary-move` | A review returns exactly one primary highest-leverage move, with secondary observations as a short ordered list. |
 
-- [ ] **Step 2: Write the twelve scenarios**
+- [x] **Step 2: Write the twelve scenarios**
 
 Each carries `id`, `mode` (`greenfield` \| `review`), `title`, `prompt` (>40 chars, in the user's own
 words, **never naming the skill**), `forces` (array), `expect` (>40 chars), `failsIf` (array),
@@ -1146,7 +1148,7 @@ Worked example, to be matched by the other eleven:
 }
 ```
 
-- [ ] **Step 3: Extend `test/scenarios.test.mjs`**
+- [x] **Step 3: Extend `test/scenarios.test.mjs`**
 
 Append, following the file's existing shape (the capture-set block at the bottom is the model):
 
@@ -1201,7 +1203,7 @@ Then eight tests, reusing `gateName()` from the top of the file:
 7. `every referenced security gate resolves to a canonical gate heading` — build the gate set from `securityGateSources` and assert membership. **This is the check that catches reference drift**, and it is why Task 2 Step 2's headings are contract.
 8. `the outcomes that are easy to lose are covered` — at least one `expectNoChange`, one `refusesScore`, one `insufficientEvidence`, one `toolBoundGate`; both modes present; and, for each of `Encryption at rest`, `Tenant isolation`, and `Human approval on irreversible actions`, a scenario that opens it **and** a scenario that closes it.
 
-- [ ] **Step 4: Prove the drift check actually fails**
+- [x] **Step 4: Prove the drift check actually fails**
 
 Deliberately break it once, in this order:
 
@@ -1241,7 +1243,7 @@ git commit -m "Add the threat-model scenario set, graded on gate outcomes and re
 - Consumes: everything above.
 - Produces: the repository's own record that the package grew to five, plus a clean end-to-end verification.
 
-- [ ] **Step 1: Write decision 0003**
+- [x] **Step 1: Write decision 0003**
 
 `status: active` — this is a human-authored decision about this repository, not a captured proposal.
 Rule ids must not collide with `0002`'s (`markdown-copied-byte-for-byte`, `zero-runtime-dependencies`,
@@ -1289,7 +1291,7 @@ it is left as written, because it is true of those four and an active decision's
 in place.
 ```
 
-- [ ] **Step 2: Generate and verify the constitution**
+- [x] **Step 2: Generate and verify the constitution**
 
 ```bash
 node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions
@@ -1302,7 +1304,7 @@ Expected: exit 0. The constitution now carries five rules sorted by id — `mark
 `zero-runtime-dependencies` — with the last-named still reading "The four skills' name and
 description frontmatter…", which is correct and deliberate.
 
-- [ ] **Step 3: If SP2's checker exists, resolve the new rules**
+- [x] **Step 3: If SP2's checker exists, resolve the new rules**
 
 ```bash
 node runtime/checkers/check-rules.mjs --dir docs/architecture/decisions
@@ -1327,7 +1329,7 @@ Expected: `npm ci` is a no-op (zero dependencies); `git status --short` shows on
 created; `npm test` green; `sync:check` reports in sync; the reserved-version grep exits 1 with no
 output.
 
-- [ ] **Step 5: Verify the five skills reach both targets**
+- [x] **Step 5: Verify the five skills reach both targets**
 
 ```bash
 ls build/claude/skills build/codex/skills
@@ -1337,7 +1339,7 @@ diff -r skills build/codex/skills && echo CODEX-IDENTICAL
 
 Expected: five directories in each, and both `IDENTICAL` lines.
 
-- [ ] **Step 6: Prove the four are untouched**
+- [x] **Step 6: Prove the four are untouched**
 
 ```bash
 git diff main -- skills/decide-architecture/SKILL.md skills/design-patterns/SKILL.md \
@@ -1366,7 +1368,7 @@ verbatim **without naming the skill**, graded pass/fail with reasons into `test-
 
 ```bash
 git add docs/architecture
-git commit -m "Record the fifth skill in this repository's own baseline (0.3.4)"
+git commit -m "Record the fifth skill in this repository's own baseline (0.3.7)"
 ```
 
 ---
@@ -1391,7 +1393,7 @@ git commit -m "Record the fifth skill in this repository's own baseline (0.3.4)"
 | Packaging: deliberately not edited | 9 (Steps 9–10), 11 (Step 6) |
 | Validation layer 1 | 1, 6 (Step 5), 8 (Step 5), 10 (Step 3), 11 (Steps 4–5) |
 | Validation layer 2 | 10 (Steps 1–2), 11 (Step 7) |
-| Version 0.3.4, 0.4.0 reserved | 8 (Steps 4, 6), 11 (Step 4) |
+| Version 0.3.7, 0.4.0 reserved | 8 (Steps 4, 6), 11 (Step 4) |
 | The repository's own baseline entry | 11 (Steps 1–3) |
 
 **Placeholder scan:** none. Every step carries the literal string to write or the exact command to
