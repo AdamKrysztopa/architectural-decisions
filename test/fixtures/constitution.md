@@ -13,7 +13,7 @@ The domain package must not import infrastructure.
 
 - Severity: blocking
 - Scope: `src/domain/**`
-- Verified by `import-linter#domain-isolation` — binding shape checked; the contract itself is not yet resolved.
+- Verified by `import-linter#domain-isolation` — run the rule checker to resolve this binding and evaluate it.
 - Source: [0001 Layered domain with an isolated core](decisions/0001-layered-domain.md)
 
 ### no-shared-db-writes

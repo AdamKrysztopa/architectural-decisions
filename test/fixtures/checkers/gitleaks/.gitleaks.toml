@@ -1,0 +1,10 @@
+title = "gitleaks config"
+
+[[rules]]
+id = "aws-secret-key"
+description = "AWS Secret Key"
+regex = '''(?i)aws_secret'''
+
+[[rules]]
+id = 'slack-token'
+regex = "xox[abp]"

@@ -63,9 +63,11 @@ alongside it.
 
 ## Known limitations
 
-- A `verified_by` binding is validated for **shape and known tool only**; the named contract is
-  NOT resolved inside the tool's config. Until sub-project 2 lands, a binding is well-formed, not
-  proven — and the generated constitution says exactly that on each deterministic rule's line.
+- ~~A `verified_by` binding is validated for shape and known tool only; the named contract is not
+  resolved inside the tool's config.~~ **Resolved in 0.3.2** — see `docs/release-0.3.2.md` and
+  `runtime/checkers/check-rules.mjs`'s own per-tool limits (some readers, e.g. oasdiff's, resolve
+  against a vendored list rather than a file in the repository; JS dependency-cruiser configs are
+  not statically readable at all).
 - `status: proposed` on capture, and the rollup ignoring proposed rules, are enforced by **prose
   instruction to the model in the shared reference — not mechanically**. Nothing in the runtime
   prevents a skill writing `status: active` directly. Human review of the decision file is the

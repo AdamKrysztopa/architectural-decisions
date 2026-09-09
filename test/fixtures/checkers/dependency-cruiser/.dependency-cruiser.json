@@ -1,0 +1,9 @@
+{
+  // no orphans
+  "forbidden": [
+    { "name": "no-orphans", "severity": "warn", "from": {}, "to": { "orphan": true } }
+  ],
+  "allowed": [
+    { "name": "layered", "from": {}, "to": {} }
+  ]
+}

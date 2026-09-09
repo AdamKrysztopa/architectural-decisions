@@ -31,6 +31,10 @@ repository's decisions directory, with `status: proposed` for a human to promote
 generator rolls the active ones into `constitution.md`, which the skills read before recommending,
 so the crew stops re-litigating decisions it has already made.
 
+A `deterministic` rule's binding is resolved against the repository's real tool config by
+`runtime/checkers/check-rules.mjs` — no tool installation required to catch a rule bound to a
+contract that does not exist; `--run` opts into actually evaluating it.
+
 ## Install for Claude Code
 
 Add the marketplace and install the plugin:

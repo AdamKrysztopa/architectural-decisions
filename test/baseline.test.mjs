@@ -96,6 +96,10 @@ test("rejects a verified_by naming an unknown tool", () => {
   assert.ok(KNOWN_TOOLS.includes("import-linter"));
 });
 
+test("KNOWN_TOOLS includes ast-grep, added alongside its checker adapter", () => {
+  assert.ok(KNOWN_TOOLS.includes("ast-grep"));
+});
+
 test("rejects a narrative rule that claims a binding", () => {
   const text = decisionText(validFrontmatter.replace("verification: deterministic", "verification: narrative"));
   assert.throws(() => parseDecision(text, "0004-events-over-shared-db.md"), /only a deterministic rule/);
@@ -210,6 +214,12 @@ test("output carries no timestamp or commit sha", async () => {
     assert.ok(!rendered.includes(commit), `rendered output leaks commit ${commit}`);
   }
   assert.doesNotMatch(rendered, /\d{4}-\d{2}-\d{2}/);
+});
+
+test("a deterministic rule's note points at the checker, and no longer claims the binding is unresolved", async () => {
+  const rendered = renderConstitution(await fixtureDecisions());
+  assert.match(rendered, /run the rule checker to resolve this binding and evaluate it/);
+  assert.doesNotMatch(rendered, /the contract itself is not yet resolved/);
 });
 
 // --- Task 4: the CLI ---

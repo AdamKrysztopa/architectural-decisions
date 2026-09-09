@@ -1,0 +1,13 @@
+[importlinter]
+root_package = myapp
+
+[importlinter:contract:one]
+name = domain-isolation
+type = layers
+layers=
+    myapp.domain
+    myapp.infra
+
+[importlinter:contract:two]
+name = svc-db-isolation
+type = independence

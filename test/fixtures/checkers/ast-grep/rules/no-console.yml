@@ -1,0 +1,4 @@
+id: no-console-log
+language: TypeScript
+rule:
+  pattern: console.log($$$)

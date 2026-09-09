@@ -1,0 +1,4 @@
+id: fallback-rule
+language: JavaScript
+rule:
+  pattern: eval($$$)

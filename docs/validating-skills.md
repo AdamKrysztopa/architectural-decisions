@@ -15,6 +15,10 @@ step shared by all four skills (`shared/recording-decisions.md`) — when a run 
 file, at what status, and how a rule earns a `deterministic` classification — rather than any one
 skill's domain reasoning.
 
+Since sub-project 2, the `no-invented-bindings` criterion is also checkable mechanically: running
+`runtime/checkers/check-rules.mjs` against the scenario's stated repository state confirms whether
+a `verified_by` binding actually resolves, rather than resting on a reviewer's judgement alone.
+
 ## The scenario set
 
 `test/scenarios/test-patterns.json` is the force-driven gating set for `test-patterns`. It follows

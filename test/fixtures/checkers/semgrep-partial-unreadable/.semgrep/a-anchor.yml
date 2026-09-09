@@ -1,0 +1,3 @@
+rules:
+  - id: &shared-id no-pickle
+    pattern: pickle.loads(...)

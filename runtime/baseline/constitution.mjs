@@ -7,7 +7,7 @@ function pad(id) {
 
 function verificationNote(rule) {
   if (rule.verification === "deterministic") {
-    return `Verified by \`${rule.verifiedBy}\` — binding shape checked; the contract itself is not yet resolved.`;
+    return `Verified by \`${rule.verifiedBy}\` — run the rule checker to resolve this binding and evaluate it.`;
   }
   if (rule.verification === "review") {
     return "Verified by review — needs judgement, and may be graded as a soft signal.";

@@ -46,6 +46,12 @@ Verify a repository's constitution matches its decision files:
 
     node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions --check
 
+Resolve every deterministic rule's binding against this repository's own tool config (no tool
+required; add `--run` to also evaluate, `--require-tools` to make a missing tool binary blocking
+under `--run`):
+
+    node runtime/checkers/check-rules.mjs --dir docs/architecture/decisions
+
 Validation must
 confirm that each target contains its expected manifest and canonical skill files, contains no files
 from another agent, and that the Claude skill trees match the canonical `skills/` files

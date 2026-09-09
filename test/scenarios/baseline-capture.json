@@ -70,7 +70,7 @@
       "expect": {
         "captures": true,
         "status": "proposed",
-        "notes": "The rule stays narrative or review. No verified_by is written."
+        "notes": "The rule stays narrative or review. No verified_by is written — check-rules.mjs (sub-project 2) would report this binding unbound if it were."
       }
     },
     {
@@ -79,7 +79,7 @@
       "expect": {
         "captures": true,
         "status": "proposed",
-        "notes": "verification: deterministic with verified_by: import-linter#domain-isolation."
+        "notes": "verification: deterministic with verified_by: import-linter#domain-isolation — check-rules.mjs (sub-project 2) resolves this binding, so the claim is checker-backed, not merely asserted."
       }
     }
   ]

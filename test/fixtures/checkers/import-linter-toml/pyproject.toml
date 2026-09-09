@@ -1,0 +1,6 @@
+[tool.importlinter]
+root_package = "myapp"
+
+[[tool.importlinter.contracts]]
+name = "domain-isolation"
+type = "layers"

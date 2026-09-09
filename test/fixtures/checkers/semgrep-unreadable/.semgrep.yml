@@ -1,0 +1,5 @@
+rules:
+  - id: no-eval
+    pattern: eval(...)
+  - id: &shared-id no-pickle
+    pattern: pickle.loads(...)

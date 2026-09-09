@@ -58,8 +58,12 @@ Prose holds the reasoning. Never rewrite the prose of an existing decision file.
 - `narrative` — intent, **not** checkable. This is the default. Nothing may grade compliance against it.
 - `review` — needs judgement; may be graded as a soft signal.
 - `deterministic` — a tool proves it. Requires `verified_by: <tool>#<contract>` naming a contract that
-  **already exists** in this repository's tool config. Known tools: `dependency-cruiser`, `gitleaks`,
-  `import-linter`, `oasdiff`, `pytest-archon`, `semgrep`.
+  **already exists** in this repository's tool config. Known tools: `ast-grep`, `dependency-cruiser`,
+  `gitleaks`, `import-linter`, `oasdiff`, `pytest-archon`, `semgrep`.
+
+  Before raising a rule to `deterministic`, run
+  `node <plugin-root>/runtime/checkers/check-rules.mjs` and confirm this rule's row is not `unbound`
+  or `unreadable-config` — do not raise a rule on the strength of believing the contract exists.
 
 Start every rule at `narrative` and raise it only when the binding genuinely exists. Do not invent a
 binding to make a rule look enforced — an unbacked `deterministic` claim is worse than an honest

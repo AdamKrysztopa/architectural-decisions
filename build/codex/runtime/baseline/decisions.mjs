@@ -7,6 +7,7 @@ export const SEVERITIES = ["blocking", "warning"];
 // v1 resolves a binding's shape and its tool, never the contract name inside the
 // tool's config. That resolution belongs to the checker sub-project.
 export const KNOWN_TOOLS = [
+  "ast-grep",
   "dependency-cruiser",
   "gitleaks",
   "import-linter",

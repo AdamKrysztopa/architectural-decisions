@@ -108,7 +108,7 @@ here silently corrupts every adapter built on top of it.
 - Produces: `findConfigFiles(root: string, candidates: string[]): Promise<string[]>` (relative paths,
   deduplicated); `readLines(root: string, relativePath: string): Promise<string[]>`.
 
-- [ ] **Step 1: Write the fixture tree**
+- [x] **Step 1: Write the fixture tree**
 
 ```bash
 mkdir -p test/fixtures/checkers/text/nested/deep/tree
@@ -120,7 +120,7 @@ printf 'id: ignored\n' > test/fixtures/checkers/text/node_modules/ignored.yml
 printf 'id: ignored\n' > test/fixtures/checkers/text/.venv/ignored.yml
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/checkers.test.mjs`:
 
@@ -172,12 +172,12 @@ test("readLines splits a file into lines", async () => {
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/text.mjs'`.
 
-- [ ] **Step 4: Implement the resolver**
+- [x] **Step 4: Implement the resolver**
 
 Create `runtime/checkers/text.mjs`:
 
@@ -287,7 +287,7 @@ export async function readLines(root, relativePath) {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS, 7 tests.
@@ -315,7 +315,7 @@ this, so that outcome is never a crash and never conflated with the contract its
 - Produces: `spawnTool(command: string, args: string[], options?: { cwd?: string }):
   Promise<{ available: boolean, exitCode: number | null, stdout: string, stderr: string }>`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -342,12 +342,12 @@ test("spawnTool captures a nonzero exit code without throwing", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/spawn.mjs'`.
 
-- [ ] **Step 3: Implement the helper**
+- [x] **Step 3: Implement the helper**
 
 Create `runtime/checkers/spawn.mjs`:
 
@@ -375,7 +375,7 @@ export function spawnTool(command, args, options = {}) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS, 10 tests.
@@ -401,7 +401,7 @@ git commit -m "Add the shared spawn helper checker adapters run tools through"
 - Produces: `registerAdapter(adapter)`, `getAdapter(tool): adapter | null`, `registeredTools():
   string[]`, `assertRegistryAgreesWithKnownTools(knownTools: string[]): void` (throws on mismatch).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -454,12 +454,12 @@ test("KNOWN_TOOLS includes ast-grep, added alongside its checker adapter", () =>
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs test/baseline.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/registry.mjs'`, and the `ast-grep` assertion fails.
 
-- [ ] **Step 3: Implement the registry**
+- [x] **Step 3: Implement the registry**
 
 Create `runtime/checkers/registry.mjs`:
 
@@ -528,7 +528,7 @@ export const KNOWN_TOOLS = [
 ];
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs test/baseline.test.mjs`
 Expected: PASS.
@@ -558,7 +558,7 @@ contracts by a `name` field, so one adapter reads both.
 - Produces: default export `{ tool: "import-linter", configCandidates, resolve, run }`; named exports
   `extractContractNamesIni`, `extractContractNamesToml` for direct unit testing.
 
-- [ ] **Step 1: Write the fixtures**
+- [x] **Step 1: Write the fixtures**
 
 `test/fixtures/checkers/import-linter/.importlinter`:
 
@@ -589,7 +589,7 @@ name = "domain-isolation"
 type = "layers"
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -661,12 +661,12 @@ test("import-linter run() reports unavailable when lint-imports is not on PATH",
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/import-linter.mjs'`.
 
-- [ ] **Step 4: Implement the adapter**
+- [x] **Step 4: Implement the adapter**
 
 Create `runtime/checkers/import-linter.mjs`:
 
@@ -824,13 +824,13 @@ async function run(root, contract) {
 export default { tool: "import-linter", configCandidates: CONFIG_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 5: Add the `fixtures()` helper `test/checkers.test.mjs` now needs**
+- [x] **Step 5: Add the `fixtures()` helper `test/checkers.test.mjs` now needs**
 
 Just below the existing `repositoryRoot`/`fixtures` declarations at the top of the file (added in
 Task 1), no change is needed — `fixtures("import-linter")` and `fixtures("import-linter-toml")`
 already resolve correctly through the helper written in Task 1's Step 2.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
@@ -856,7 +856,7 @@ git commit -m "Add the import-linter checker adapter (INI + TOML contract resolu
 - Produces: default export `{ tool: "dependency-cruiser", configCandidates, resolve, run }`; named
   exports `stripJsonComments`, `extractRuleNames`.
 
-- [ ] **Step 1: Write the fixtures**
+- [x] **Step 1: Write the fixtures**
 
 `test/fixtures/checkers/dependency-cruiser/.dependency-cruiser.json`:
 
@@ -878,7 +878,7 @@ git commit -m "Add the import-linter checker adapter (INI + TOML contract resolu
 module.exports = { forbidden: [] };
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -927,12 +927,12 @@ test("dependency-cruiser run() reports unavailable when depcruise is not on PATH
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/dependency-cruiser.mjs'`.
 
-- [ ] **Step 4: Implement the adapter**
+- [x] **Step 4: Implement the adapter**
 
 Create `runtime/checkers/dependency-cruiser.mjs`:
 
@@ -1062,12 +1062,12 @@ async function run(root, contract, resolution) {
 export default { tool: "dependency-cruiser", configCandidates: [...JSON_CANDIDATES, ...JS_CANDIDATES], resolve, run };
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 6: Commit** (left uncommitted per task instructions — do not run git commit)
 
 ```bash
 git add runtime/checkers/dependency-cruiser.mjs test/checkers.test.mjs test/fixtures/checkers/dependency-cruiser test/fixtures/checkers/dependency-cruiser-js
@@ -1093,7 +1093,7 @@ discovered while proving this design — see the design spec's "Worked proof: th
   named export `extractIds` (reused by `ast-grep.mjs`); `ast-grep.mjs` default export
   `{ tool: "ast-grep", configCandidates, resolve, run }`.
 
-- [ ] **Step 1: Write the fixtures**
+- [x] **Step 1: Write the fixtures**
 
 `test/fixtures/checkers/semgrep/.semgrep.yml` — field order deliberately puts `pattern:` before
 `id:` is *not* tested here (that goes in Step 2 as an inline string, to keep the "it works" case
@@ -1122,7 +1122,7 @@ rules:
     pattern: pickle.loads(...)
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -1194,12 +1194,12 @@ test("ast-grep run() always reports unavailable in this release", async () => {
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — modules do not exist yet.
 
-- [ ] **Step 4: Implement `semgrep.mjs`**
+- [x] **Step 4: Implement `semgrep.mjs`**
 
 Create `runtime/checkers/semgrep.mjs`:
 
@@ -1345,7 +1345,7 @@ async function run(root, contract, resolution) {
 export default { tool: "semgrep", configCandidates: CONFIG_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 5: Implement `ast-grep.mjs`**
+- [x] **Step 5: Implement `ast-grep.mjs`**
 
 Create `runtime/checkers/ast-grep.mjs`:
 
@@ -1391,7 +1391,7 @@ async function run() {
 export default { tool: "ast-grep", configCandidates: CONFIG_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
@@ -1417,7 +1417,7 @@ git commit -m "Add the semgrep and ast-grep checker adapters"
 - Produces: default export `{ tool: "gitleaks", configCandidates, resolve, run }`; named export
   `extractIds`.
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `test/fixtures/checkers/gitleaks/.gitleaks.toml`:
 
@@ -1434,7 +1434,7 @@ id = 'slack-token'
 regex = "xox[abp]"
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -1474,12 +1474,12 @@ test("gitleaks run() reports unavailable when gitleaks is not on PATH", async ()
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/gitleaks.mjs'`.
 
-- [ ] **Step 4: Implement the adapter**
+- [x] **Step 4: Implement the adapter**
 
 Create `runtime/checkers/gitleaks.mjs`:
 
@@ -1616,7 +1616,7 @@ async function run(root, contract) {
 export default { tool: "gitleaks", configCandidates: CONFIG_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
@@ -1648,7 +1648,7 @@ design spec and this adapter's own comments).
   export `findTestFunctions`; `oasdiff.mjs` default export `{ tool, configCandidates, resolve, run }`
   and named exports `VENDORED_CHECK_IDS`, `readSpecPaths`.
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `test/fixtures/checkers/pytest-archon/tests/test_layers.py`:
 
@@ -1664,7 +1664,7 @@ def test_domain_does_not_import_infra():
     )
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -1726,12 +1726,12 @@ test("oasdiff run() reports unavailable with no base/revision spec pair to diff"
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — the two modules do not exist yet.
 
-- [ ] **Step 4: Implement `pytest-archon.mjs`**
+- [x] **Step 4: Implement `pytest-archon.mjs`**
 
 Create `runtime/checkers/pytest-archon.mjs`:
 
@@ -1796,7 +1796,7 @@ async function run(root, contract, resolution) {
 export default { tool: "pytest-archon", configCandidates: TEST_FILE_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 5: Implement `oasdiff.mjs`**
+- [x] **Step 5: Implement `oasdiff.mjs`**
 
 Create `runtime/checkers/oasdiff.mjs`:
 
@@ -1891,7 +1891,7 @@ async function run(root, contract, resolution) {
 export default { tool: "oasdiff", configCandidates: CONFIG_CANDIDATES, resolve, run };
 ```
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
@@ -1921,7 +1921,7 @@ four-way exit code. This is the task the design spec's "Worked proof" section wa
 - Produces: `run(argv: string[], cwd: string): Promise<number>` (the exit code), matching
   `build-constitution.mjs`'s own `run()` shape.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/checkers.test.mjs`:
 
@@ -2058,12 +2058,12 @@ test("--dir overrides discovery, matching build-constitution.mjs", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/checkers/check-rules.mjs'`.
 
-- [ ] **Step 3: Implement the CLI**
+- [x] **Step 3: Implement the CLI**
 
 Create `runtime/checkers/check-rules.mjs`:
 
@@ -2239,12 +2239,12 @@ if (process.argv[1] && resolvePath(process.argv[1]) === fileURLToPath(import.met
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/checkers.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 5: Add `check-rules.mjs` and `test/checkers.test.mjs` to the test script**
+- [x] **Step 5: Add `check-rules.mjs` and `test/checkers.test.mjs` to the test script**
 
 In `package.json`, change `"test"` to:
 
@@ -2252,7 +2252,7 @@ In `package.json`, change `"test"` to:
     "test": "node --test test/build.test.mjs test/baseline.test.mjs test/checkers.test.mjs test/scenarios.test.mjs",
 ```
 
-- [ ] **Step 6: Run the full suite**
+- [x] **Step 6: Run the full suite**
 
 ```bash
 npm test
@@ -2282,7 +2282,7 @@ No adapter change: `runtime/` already ships to `build/claude` and `build/codex` 
 - Consumes: the packaged `build/<target>/runtime/checkers/check-rules.mjs`.
 - Produces: nothing programmatic — a proof, not a capability.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `test/build.test.mjs`, immediately after the existing `test("the shipped generator runs from
 each target package", ...)` block, append:
@@ -2305,19 +2305,19 @@ test("the shipped rule checker runs from each target package", async () => {
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `node --test test/build.test.mjs`
 Expected: FAIL — no `runtime/checkers` under `build/claude` or `build/codex` yet (the build has not
 been re-run since Tasks 1–9 added the new directory).
 
-- [ ] **Step 3: Rebuild**
+- [x] **Step 3: Rebuild**
 
 ```bash
 npm run build -- --target all
 ```
 
-- [ ] **Step 4: Run the full suite**
+- [x] **Step 4: Run the full suite**
 
 ```bash
 npm test
@@ -2351,7 +2351,7 @@ Retires 0.3.1's "well-formed, not proven" wording everywhere it appears, now tha
 - Produces: nothing programmatic — a documentation and golden-fixture consistency pass, checked by
   the existing `test/baseline.test.mjs` golden-file test and `npm run sync:check`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Add to `test/baseline.test.mjs`, in the `renderConstitution` block:
 
@@ -2363,13 +2363,13 @@ test("a deterministic rule's note points at the checker, and no longer claims th
 });
 ```
 
-- [ ] **Step 2: Run it to verify it fails**
+- [x] **Step 2: Run it to verify it fails**
 
 Run: `node --test test/baseline.test.mjs`
 Expected: FAIL — the current wording still says "binding shape checked; the contract itself is not
 yet resolved."
 
-- [ ] **Step 3: Change the renderer's wording**
+- [x] **Step 3: Change the renderer's wording**
 
 In `runtime/baseline/constitution.mjs`, in `verificationNote()`:
 
@@ -2380,7 +2380,7 @@ In `runtime/baseline/constitution.mjs`, in `verificationNote()`:
    }
 ```
 
-- [ ] **Step 4: Regenerate the golden fixture, then read it before trusting it**
+- [x] **Step 4: Regenerate the golden fixture, then read it before trusting it**
 
 ```bash
 node -e '
@@ -2399,7 +2399,7 @@ grep "run the rule checker" test/fixtures/constitution.md
 Expected: one match, on the `domain-imports-nothing` rule's line (the only `deterministic` rule in
 the sub-project-1 fixture corpus). Read the whole file — nothing else should have changed.
 
-- [ ] **Step 5: Regenerate this repository's own constitution**
+- [x] **Step 5: Regenerate this repository's own constitution**
 
 ```bash
 node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions
@@ -2411,12 +2411,12 @@ carries only `review`-severity rules today, so `verificationNote()`'s `determini
 never exercised here — confirming the wording change is scoped to the fixture, not a surprise
 elsewhere.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/baseline.test.mjs`
 Expected: PASS.
 
-- [ ] **Step 7: Update `shared/recording-decisions.md` §3**
+- [x] **Step 7: Update `shared/recording-decisions.md` §3**
 
 Change the known-tools line and add one sentence directly after it:
 
@@ -2444,7 +2444,7 @@ Then re-sync it into all four skills:
 npm run sync:shared
 ```
 
-- [ ] **Step 8: Retract the known limitation in `docs/release-0.3.1.md`**
+- [x] **Step 8: Retract the known limitation in `docs/release-0.3.1.md`**
 
 Change:
 
@@ -2459,7 +2459,7 @@ Change:
 +   not statically readable at all).
 ```
 
-- [ ] **Step 9: Update the two capture scenarios' notes**
+- [x] **Step 9: Update the two capture scenarios' notes**
 
 In `test/scenarios/baseline-capture.json`, update `binding-exists` and `no-real-binding`:
 
@@ -2486,7 +2486,7 @@ In `test/scenarios/baseline-capture.json`, update `binding-exists` and `no-real-
      }
 ```
 
-- [ ] **Step 10: Note the new layer-1 coverage in `docs/validating-skills.md`**
+- [x] **Step 10: Note the new layer-1 coverage in `docs/validating-skills.md`**
 
 Add one sentence to the existing paragraph about `test/scenarios/baseline-capture.json`:
 
@@ -2501,7 +2501,7 @@ Add one sentence to the existing paragraph about `test/scenarios/baseline-captur
 +  a `verified_by` binding actually resolves, rather than resting on a reviewer's judgement alone.
 ```
 
-- [ ] **Step 11: Run everything**
+- [x] **Step 11: Run everything**
 
 ```bash
 npm test
@@ -2531,11 +2531,11 @@ git commit -m "Retract the well-formed-not-proven wording now that resolution ex
 - Consumes: everything above.
 - Produces: a version-consistent, documented release.
 
-- [ ] **Step 1: Bump the version**
+- [x] **Step 1: Bump the version**
 
 In `package.json`, set `"version": "0.3.2"`.
 
-- [ ] **Step 2: Add the validation command**
+- [x] **Step 2: Add the validation command**
 
 In `docs/building-packages.md`, directly under the existing constitution `--check` command:
 
@@ -2547,7 +2547,7 @@ under `--run`):
     node runtime/checkers/check-rules.mjs --dir docs/architecture/decisions
 ```
 
-- [ ] **Step 3: Add one sentence to `README.md`**
+- [x] **Step 3: Add one sentence to `README.md`**
 
 Directly after the existing "The baseline" section:
 
@@ -2557,7 +2557,7 @@ A `deterministic` rule's binding is resolved against the repository's real tool 
 contract that does not exist; `--run` opts into actually evaluating it.
 ```
 
-- [ ] **Step 4: Write `docs/release-0.3.2.md`**
+- [x] **Step 4: Write `docs/release-0.3.2.md`**
 
 ```markdown
 # Release 0.3.2 — deterministic compliance checkers
@@ -2625,7 +2625,7 @@ grep -rn "0\.4\.0" package.json build/ .claude-plugin/ .agents/ docs/
 The last command must return nothing.
 ```
 
-- [ ] **Step 5: Run everything**
+- [x] **Step 5: Run everything**
 
 ```bash
 npm run build -- --target all

@@ -474,3 +474,19 @@ test("the shipped generator runs from each target package", async () => {
     );
   }
 });
+
+test("the shipped rule checker runs from each target package", async () => {
+  // Reuses sub-project 1's decision fixtures (test/fixtures/decisions), which
+  // already carry a deterministic rule bound to import-linter#domain-isolation
+  // (test/fixtures/decisions/0001-layered-domain.md). No .importlinter file
+  // exists in that fixture directory, so the rule resolves to "unbound" and
+  // the process exits 2 — a real, deterministic outcome, not a crash.
+  const fixtures = join(repositoryRoot, "test/fixtures/decisions");
+  for (const target of ["claude", "codex"]) {
+    const script = join(repositoryRoot, "build", target, "runtime/checkers/check-rules.mjs");
+    const { stdout } = await execFileAsync(process.execPath, [script, "--dir", fixtures], {
+      cwd: repositoryRoot,
+    }).catch((error) => error);
+    assert.match(stdout ?? "", /domain-imports-nothing\s+unbound/, `${target} checker CLI did not run as expected`);
+  }
+});
