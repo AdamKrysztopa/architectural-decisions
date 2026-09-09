@@ -314,3 +314,13 @@ tests for every internal seam, or replacing ordinary code tests with evals becau
 LLM in it. Leading with the three-dimension split, the risk-first gates, and an explicit oracle
 guardrail keeps the focus where suites actually fail — slow, flaky, untrusted evidence that nobody
 can tie to a requirement.
+
+## Record the decision
+
+If this run made a recommendation — **including an explicit refusal** (a refused E2E suite, a
+"no change needed" review) — record it. Read `references/recording-decisions.md` and follow it: read
+the existing constitution, write one decision file with `status: proposed`, classify each rule's
+`verification` honestly (default `narrative`), and regenerate the constitution. This is the same ADR
+the output contract already asks for, in the schema the baseline can read.
+
+Do not record when the run only answered a question without recommending anything.

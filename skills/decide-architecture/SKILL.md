@@ -151,3 +151,12 @@ is just fashion, and fashion is how teams end up with distributed monoliths and 
 The greenfield/refactoring split matters because the two situations have opposite risks — greenfield
 tempts you to add patterns "for later"; legacy tempts you to rewrite. Both are resisted by the same
 principle: change the architecture only as fast as a real requirement forces it.
+
+## Record the decision
+
+If this run made a recommendation — **including an explicit refusal** — record it. Read
+`references/recording-decisions.md` and follow it: read the existing constitution, write one
+decision file with `status: proposed`, classify each rule's `verification` honestly (default
+`narrative`), and regenerate the constitution.
+
+Do not record when the run only answered a question without recommending anything.

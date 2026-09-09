@@ -59,6 +59,7 @@ export default {
   outputDirectory: "claude",
   runtimeTrees: ({ packaging }) => [
     { source: packaging.canonicalSkills, destination: "skills" },
+    { source: packaging.canonicalRuntime, destination: "runtime" },
   ],
   manifestPath: ".claude-plugin/plugin.json",
   manifest,

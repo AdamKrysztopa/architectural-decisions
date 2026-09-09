@@ -36,7 +36,17 @@ git status --short
 ```
 
 Build only the affected target while iterating; run `all` before release. `npm test` runs both
-suites (`npm run test:build` and `npm run test:scenarios` run them individually). Validation must
+suites (`npm run test:build` and `npm run test:scenarios` run them individually).
+
+Keep the shared references in sync (also run automatically by `npm run build`):
+
+    npm run sync:check
+
+Verify a repository's constitution matches its decision files:
+
+    node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions --check
+
+Validation must
 confirm that each target contains its expected manifest and canonical skill files, contains no files
 from another agent, and that the Claude skill trees match the canonical `skills/` files
 byte-for-byte. A clean rebuild of committed artifacts should leave no diff.

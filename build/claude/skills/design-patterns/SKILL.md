@@ -120,3 +120,12 @@ skill can do is stop someone from building a metaclass singleton or a visitor hi
 module or `singledispatch` would do. A pattern earns its ceremony only when the plain-language
 version genuinely falls short — so the recommendation always carries the cheaper alternative next to
 it, and review mode is as willing to delete structure as to add it.
+
+## Record the decision
+
+If this run made a recommendation — **including an explicit refusal** — record it. Read
+`references/recording-decisions.md` and follow it: read the existing constitution, write one
+decision file with `status: proposed`, classify each rule's `verification` honestly (default
+`narrative`), and regenerate the constitution.
+
+Do not record when the run only answered a question without recommending anything.

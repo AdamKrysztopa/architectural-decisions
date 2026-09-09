@@ -19,6 +19,10 @@ marketplaces can install a target package directly.
 Its user-facing marketplace and install commands, plugin identity, skill namespace, and canonical
 skill bytes must remain compatible with the existing Claude release.
 
+`shared/` holds canonical content copied into several skills; `builders/sync-shared.mjs` performs
+that copy and its output is committed, so `skills/*/references/recording-decisions.md` must never be
+edited directly. `runtime/` holds the zero-dependency Node code shipped to every target.
+
 Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 
 - `decide-architecture` — software architecture (structure/topology/data/overlays).

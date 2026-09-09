@@ -1,5 +1,7 @@
 # 0001. Generate agent-specific packages from shared Agent Skills
 
+> Prose ADR, predating the machine-readable baseline in `docs/architecture/decisions/`.
+
 - Status: Accepted
 - Date: 2026-07-31
 - Deciders: arch-crew maintainers

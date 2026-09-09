@@ -49,6 +49,7 @@ export default {
   outputDirectory: "codex",
   runtimeTrees: ({ packaging }) => [
     { source: packaging.canonicalSkills, destination: "skills" },
+    { source: packaging.canonicalRuntime, destination: "runtime" },
   ],
   manifestPath: ".codex-plugin/plugin.json",
   manifest,

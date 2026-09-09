@@ -174,3 +174,12 @@ chosen, by reaching for an agent (or a swarm) when something simpler and more re
 Naming the cost beside every layer, and leading review mode with the seven-defect checklist, keeps
 the focus where real failures happen — over-engineering and missing guardrails — rather than on
 collecting exotic patterns.
+
+## Record the decision
+
+If this run made a recommendation — **including an explicit refusal** — record it. Read
+`references/recording-decisions.md` and follow it: read the existing constitution, write one
+decision file with `status: proposed`, classify each rule's `verification` honestly (default
+`narrative`), and regenerate the constitution.
+
+Do not record when the run only answered a question without recommending anything.

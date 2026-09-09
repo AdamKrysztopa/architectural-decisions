@@ -24,6 +24,13 @@ code) — then either runs a short selection interview or reviews your code agai
 through-line in all four: recommend the **least architecture that meets the requirement**, and name
 the cost of every pick.
 
+## The baseline
+
+Each skill records the decision it reached — including an explicit refusal — as a file under the
+repository's decisions directory, with `status: proposed` for a human to promote. A zero-dependency
+generator rolls the active ones into `constitution.md`, which the skills read before recommending,
+so the crew stops re-litigating decisions it has already made.
+
 ## Install for Claude Code
 
 Add the marketplace and install the plugin:

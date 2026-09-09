@@ -164,6 +164,7 @@ async function loadContext() {
 
   if (
     !packaging?.canonicalSkills ||
+    !packaging?.canonicalRuntime ||
     !packaging?.buildDirectory ||
     !packaging?.generatedRootDirectories ||
     !packaging?.generatedRootFiles ||
@@ -173,6 +174,7 @@ async function loadContext() {
   }
 
   assertRelativePath(packaging.canonicalSkills, "canonicalSkills");
+  assertRelativePath(packaging.canonicalRuntime, "canonicalRuntime");
   assertRelativePath(packaging.buildDirectory, "buildDirectory");
 
   return { metadata, packaging };

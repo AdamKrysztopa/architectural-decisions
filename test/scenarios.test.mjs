@@ -195,3 +195,50 @@ test("both operating modes and the no-change outcome are covered", async () => {
     "no scenario where independent assurance overrides developer-owned evidence",
   );
 });
+
+const captureScenarioFile = join(repositoryRoot, "test/scenarios/baseline-capture.json");
+const captureReference = join(repositoryRoot, "shared/recording-decisions.md");
+
+const requiredCaptureScenarioIds = [
+  "already-decided",
+  "binding-exists",
+  "explicit-refusal",
+  "greenfield-recommendation",
+  "no-real-binding",
+  "question-only",
+];
+
+test("the capture scenario set is complete and well formed", async () => {
+  const set = JSON.parse(await readFile(captureScenarioFile, "utf8"));
+  assert.ok(set.about?.length > 0, "the capture scenario set has no description");
+  await assert.doesNotReject(readFile(join(repositoryRoot, set.howToRun), "utf8"));
+
+  const ids = set.scenarios.map((scenario) => scenario.id);
+  assert.equal(new Set(ids).size, ids.length, "a capture scenario id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredCaptureScenarioIds);
+
+  for (const scenario of set.scenarios) {
+    assert.ok(scenario.forces?.length > 0, `${scenario.id} names no forces`);
+    assert.equal(typeof scenario.expect.captures, "boolean", `${scenario.id} does not state whether it captures`);
+    if (scenario.expect.captures) {
+      assert.equal(scenario.expect.status, "proposed", `${scenario.id} must capture as proposed`);
+    }
+  }
+});
+
+test("every capture criterion is anchored in the shared reference", async () => {
+  const set = JSON.parse(await readFile(captureScenarioFile, "utf8"));
+  const reference = await readFile(captureReference, "utf8");
+  const criteriaIds = set.criteria.map((criterion) => criterion.id).sort();
+  assert.deepEqual(criteriaIds, [
+    "narrative-by-default",
+    "no-invented-bindings",
+    "no-transcript-logging",
+    "proposed-only",
+    "prose-preserved",
+    "reads-before-writing",
+  ]);
+  for (const anchor of ["status: proposed", "narrative", "verified_by", "superseded_by"]) {
+    assert.ok(reference.includes(anchor), `shared/recording-decisions.md never mentions ${anchor}`);
+  }
+});

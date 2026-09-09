@@ -10,6 +10,11 @@ Two layers, deliberately separate.
 Neither replaces the other. A perfectly packaged skill can still recommend an E2E suite nobody
 needs, and a well-reasoned skill that ships without its references is useless.
 
+`test/scenarios/baseline-capture.json` is the second scenario set: it grades the decision-capture
+step shared by all four skills (`shared/recording-decisions.md`) — when a run must write a decision
+file, at what status, and how a rule earns a `deterministic` classification — rather than any one
+skill's domain reasoning.
+
 ## The scenario set
 
 `test/scenarios/test-patterns.json` is the force-driven gating set for `test-patterns`. It follows

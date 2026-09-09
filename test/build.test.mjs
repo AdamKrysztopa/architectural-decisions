@@ -45,7 +45,7 @@ const descriptionFloor = 40;
 
 // Every skill ships at least these two; a skill may add topic references when a
 // single catalog would be too large to retrieve selectively (test-patterns does).
-const requiredReferences = ["decision-tree.md", "catalog.md"];
+const requiredReferences = ["decision-tree.md", "catalog.md", "recording-decisions.md"];
 
 const documentationFiles = ["README.md", "llms.txt"];
 
@@ -179,18 +179,19 @@ test("repeated builds are idempotent", async () => {
   assert.equal(second, first);
 });
 
-test("target inventories contain only their manifest and canonical skills", async () => {
+test("target inventories contain only their manifest, canonical skills, and the runtime", async () => {
   const skillFiles = (await listFiles(canonicalSkills)).map((file) => `skills/${file}`);
+  const runtimeFiles = (await listFiles(join(repositoryRoot, "runtime"))).map((file) => `runtime/${file}`);
   const claudeFiles = await listFiles(join(repositoryRoot, "build/claude"));
   const codexFiles = await listFiles(join(repositoryRoot, "build/codex"));
 
   assert.deepEqual(
     [...claudeFiles].sort(),
-    [".claude-plugin/plugin.json", ...skillFiles].sort(),
+    [".claude-plugin/plugin.json", ...skillFiles, ...runtimeFiles].sort(),
   );
   assert.deepEqual(
     [...codexFiles].sort(),
-    [".codex-plugin/plugin.json", ...skillFiles].sort(),
+    [".codex-plugin/plugin.json", ...skillFiles, ...runtimeFiles].sort(),
   );
 });
 
@@ -451,4 +452,25 @@ test("adapter contracts require runtime trees and exact root-file allowlists", (
     () => assertRootFileBoundaries("test", ["package.json"], generatedRootDirectories),
     /outside its root directories/,
   );
+});
+
+test("the shared capture reference is in sync across every skill", async () => {
+  const source = await readFile(join(repositoryRoot, "shared/recording-decisions.md"));
+  for (const name of await canonicalSkillNames()) {
+    const copy = await readFile(
+      join(canonicalSkills, name, "references/recording-decisions.md"),
+    );
+    assert.ok(source.equals(copy), `${name}/references/recording-decisions.md has drifted from shared/`);
+  }
+});
+
+test("the shipped generator runs from each target package", async () => {
+  const fixtures = join(repositoryRoot, "test/fixtures/decisions");
+  for (const target of ["claude", "codex"]) {
+    const script = join(repositoryRoot, "build", target, "runtime/baseline/build-constitution.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "--dir", fixtures, "--check"], { cwd: repositoryRoot }),
+      `${target} package's generator failed --check against the fixture corpus`,
+    );
+  }
 });
