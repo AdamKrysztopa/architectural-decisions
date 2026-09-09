@@ -133,17 +133,12 @@ Output:
 
 A design that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the design, write `docs/adr/NNNN-short-title.md` (lowercase
-words joined by hyphens, e.g. `0001-single-react-agent-with-hitl-gates.md`) — a 4-digit number, one
-past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent. Use this
-MADR-style template:
+**Greenfield → one decision file.** After presenting the design, follow
+`references/recording-decisions.md`: read the constitution first, then write a single
+`status: proposed` decision file — no separate ADR file. Its prose *is* the ADR:
 
 ```
-# NNNN. <decision title, e.g. "Single ReAct agent with HITL gates for the support bot">
-
-- Status: Accepted
-- Date: <YYYY-MM-DD>
-- Deciders: <the user / team, if known>
+# <decision title, e.g. "Single ReAct agent with HITL gates for the support bot">
 
 ## Context
 <the task and its forces — what the system must do, the autonomy genuinely required, the stakes /
@@ -152,20 +147,26 @@ latency / cost constraints that drove each layer.>
 ## Decision
 <the composed design: the layer · pattern · why table you just presented>
 
-## Consequences
+## Consequences (cost)
 <the cost/watch-out for each layer, the guardrails included from day one (step budgets, loop caps,
 HITL, tracing), and the least-autonomy caveat: what was deliberately *not* built and the signal
 that would justify climbing the spectrum.>
 ```
 
+Classify every rule honestly (default `narrative`) and regenerate the constitution.
+
 **Refactoring → a review report.** Write the review to `docs/agentic-review-<YYYY-MM-DD>.md` (create
 `docs/` if absent — Current design + Findings from the seven-defect checklist + Simplify /
 Sound-as-is). If the system is already sound, say so plainly and keep the report short — a clean
 bill of health is a valid, useful outcome, not a failure to find work. If a finding is a direction
-the user commits to, offer to capture it as its own ADR.
+the user commits to, capture it the same way — one decision file, following
+`references/recording-decisions.md`.
 
-Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+Write the file(s) and report the path(s). Ask first only if the repo layout is unclear or the user is
 clearly still just exploring rather than deciding.
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? Read `references/migrating-decisions.md` and follow it.
 
 ## Why this shape
 
@@ -177,12 +178,9 @@ collecting exotic patterns.
 
 ## Record the decision
 
-If this run made a recommendation — **including an explicit refusal** — record it. Read
-`references/recording-decisions.md` and follow it: read the existing constitution, write one
-decision file with `status: proposed`, classify each rule's `verification` honestly (default
-`narrative`), and regenerate the constitution.
-
-Do not record when the run only answered a question without recommending anything.
+Covered above: every recommendation this skill makes — **including an explicit refusal** — is
+persisted as the one decision file described in "Recording the outcome." Do not record when the run
+only answered a question without recommending anything.
 
 ## Notice drift later
 

@@ -116,6 +116,7 @@ export function parseDecision(text, filename) {
     commit: values.commit,
     supersededBy,
     title: heading[1].trim(),
+    body,
     rules,
     filename,
   };

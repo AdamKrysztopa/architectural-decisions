@@ -104,12 +104,14 @@ standing record — so this skill is **chat-first**. Don't create files by defau
 Write a file when the decision is consequential enough to outlive the conversation, or when the
 user asks:
 - **A pattern choice that shapes a module's design** (e.g. "everything goes through a Service Layer
-  + Unit of Work") → an ADR at `docs/adr/NNNN-short-title.md` (lowercase words joined by hyphens;
-  4-digit number, one past the highest in `docs/adr/`, else `0001`), with **Context / Decision /
-  Consequences** — and record the *Pythonic
-  form chosen* in the Decision, since that's the part future readers will second-guess.
+  + Unit of Work") → one decision file, following `references/recording-decisions.md` — no separate
+  ADR file. Record the *Pythonic form chosen* in its `## Decision`, since that's the part future
+  readers will second-guess.
 - **A pattern review of existing code** → on request, write `docs/design-pattern-review-<YYYY-MM-DD>.md`
   (the Findings + Leave-as-is / Simplify-away sections).
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? Read `references/migrating-decisions.md` and follow it.
 
 Otherwise present the recommendation in chat and let the code be the record.
 
@@ -123,12 +125,9 @@ it, and review mode is as willing to delete structure as to add it.
 
 ## Record the decision
 
-If this run made a recommendation — **including an explicit refusal** — record it. Read
-`references/recording-decisions.md` and follow it: read the existing constitution, write one
-decision file with `status: proposed`, classify each rule's `verification` honestly (default
-`narrative`), and regenerate the constitution.
-
-Do not record when the run only answered a question without recommending anything.
+Covered above: every recommendation this skill makes — **including an explicit refusal** — is
+persisted, when a file is written at all, as the one decision file described above. Do not record
+when the run only answered a question without recommending anything.
 
 ## Notice drift later
 

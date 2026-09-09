@@ -94,7 +94,7 @@ needs it.
 - Produces: `parseDecision(...)` return object gains one key, `body: string` (the Markdown after the
   closing `---`, unchanged from what the function already computes internally).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Append to `test/baseline.test.mjs`:
 
@@ -108,12 +108,12 @@ test("a parsed decision retains its body", () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test test/baseline.test.mjs`
 Expected: FAIL — `decision.body` is `undefined`.
 
-- [ ] **Step 3: Add the field**
+- [x] **Step 3: Add the field**
 
 In `runtime/baseline/decisions.mjs`, in `parseDecision`'s return statement, add `body,` next to
 `title`:
@@ -134,7 +134,7 @@ In `runtime/baseline/decisions.mjs`, in `parseDecision`'s return statement, add 
   };
 ```
 
-- [ ] **Step 4: Run the full baseline suite**
+- [x] **Step 4: Run the full baseline suite**
 
 Run: `node --test test/baseline.test.mjs`
 Expected: PASS, every existing test plus the new one — nothing that destructures the return object by
@@ -160,7 +160,7 @@ git commit -m "Retain a decision's body after parsing, for downstream Sources ch
 - Produces: `matchGlob(pattern: string, path: string): boolean`; `scopesOverlap(scopeA: string[],
   scopeB: string[]): boolean`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `test/migration.test.mjs`:
 
@@ -206,12 +206,12 @@ test("scopesOverlap: an empty scope on either side is never a candidate conflict
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/glob.mjs'`.
 
-- [ ] **Step 3: Implement the module**
+- [x] **Step 3: Implement the module**
 
 Create `runtime/migration/glob.mjs`:
 
@@ -273,7 +273,7 @@ export function scopesOverlap(scopeA, scopeB) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 7 tests.
@@ -299,7 +299,7 @@ git commit -m "Add a zero-dependency glob matcher for scope globs"
 - Produces: `listCandidates(root: string): Promise<string[]>` — repository-relative paths, sorted.
   Reads directory listings only; reads no file's content.
 
-- [ ] **Step 1: Export `CANDIDATES`**
+- [x] **Step 1: Export `CANDIDATES`**
 
 In `runtime/baseline/build-constitution.mjs`, change:
 
@@ -316,7 +316,7 @@ export const CANDIDATES = ["docs/adr", "docs/architecture/decisions", "doc/adr",
 Run `node --test test/baseline.test.mjs` — expected PASS, unchanged (an export keyword changes
 nothing about existing behavior).
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/migration.test.mjs`:
 
@@ -357,12 +357,12 @@ test("listCandidates returns nothing when no candidate directory exists", async 
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/discover-candidates.mjs'`.
 
-- [ ] **Step 4: Implement the module**
+- [x] **Step 4: Implement the module**
 
 Create `runtime/migration/discover-candidates.mjs`:
 
@@ -400,7 +400,7 @@ export async function listCandidates(root) {
 }
 ```
 
-- [ ] **Step 5: Run the tests to verify they pass**
+- [x] **Step 5: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 10 tests.
@@ -428,7 +428,7 @@ git commit -m "List ADR-shaped candidate files without reading or adopting them"
   `structuralConflicts(classified): string[]`; `candidateScopeConflicts(classified): Conflict[]` where
   `Conflict = { decisionA, decisionB, ruleA, ruleB }`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/migration.test.mjs`:
 
@@ -485,12 +485,12 @@ test("candidateScopeConflicts reports nothing for disjoint scopes", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/classify-inputs.mjs'`.
 
-- [ ] **Step 3: Implement the module**
+- [x] **Step 3: Implement the module**
 
 Create `runtime/migration/classify-inputs.mjs`:
 
@@ -549,7 +549,7 @@ export function candidateScopeConflicts(classified) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 14 tests.
@@ -578,7 +578,7 @@ git commit -m "Classify confirmed migration inputs and detect structural / candi
   generatedAt}): Model` — throws with the offending path named on any gap; `renderTraceabilityReport
   (model): string` — pure, no I/O.
 
-- [ ] **Step 1: Write the fixture decision**
+- [x] **Step 1: Write the fixture decision**
 
 `test/fixtures/migration/0011-events-over-shared-db.md` — a decision that would be the product of
 migrating one prose ADR:
@@ -612,7 +612,7 @@ Eventual consistency, and a broker to operate.
 - `docs/adr/0003-shared-db-writes.md` (repository commit aa1ca89)
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Append to `test/migration.test.mjs`:
 
@@ -738,13 +738,13 @@ test("the report renders identically regardless of input or disposition order", 
 Add the two new imports this file needs at its top (`join` from `node:path`, `parseDecision` from
 `../runtime/baseline/decisions.mjs`) alongside the existing ones from Task 1 if not already present.
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/traceability.mjs'`, and the golden file does
 not exist yet.
 
-- [ ] **Step 4: Implement the module**
+- [x] **Step 4: Implement the module**
 
 Create `runtime/migration/traceability.mjs`:
 
@@ -857,7 +857,7 @@ export function renderTraceabilityReport(model) {
 }
 ```
 
-- [ ] **Step 5: Generate the golden file, then read it before trusting it**
+- [x] **Step 5: Generate the golden file, then read it before trusting it**
 
 ```bash
 node -e '
@@ -884,7 +884,7 @@ Read the output. It must list both input paths under "Inputs and their dispositi
 `0003-shared-db-writes.md` as `migrated → 0011`, and list decision `0011` with its one `review` rule.
 If it doesn't, the renderer is wrong — fix the renderer, not the golden file.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 20 tests.
@@ -909,7 +909,7 @@ git commit -m "Add the traceability model and its golden-tested Markdown rendere
 - Produces: `countPatternOccurrences(root: string, scopeGlob: string, pattern: string | RegExp):
   Promise<{ total: number, matches: string[], exceptions: string[] }>`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/migration.test.mjs`:
 
@@ -958,12 +958,12 @@ test("countPatternOccurrences skips node_modules and .git", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/inventory.mjs'`.
 
-- [ ] **Step 3: Implement the module**
+- [x] **Step 3: Implement the module**
 
 Create `runtime/migration/inventory.mjs`:
 
@@ -1007,7 +1007,7 @@ export async function countPatternOccurrences(root, scopeGlob, pattern) {
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 23 tests.
@@ -1034,7 +1034,7 @@ git commit -m "Add the reverse-discovery pattern-occurrence evidence helper"
   validation, or cap error. `--manifest <path>` (required), `--dir <path>` (required), `--cap <n>`
   (default `20`).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/migration.test.mjs`:
 
@@ -1103,12 +1103,12 @@ test("--manifest and --dir are both required", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/migration.test.mjs`
 Expected: FAIL — `Cannot find module '../runtime/migration/build-migration-report.mjs'`.
 
-- [ ] **Step 3: Implement the CLI**
+- [x] **Step 3: Implement the CLI**
 
 Create `runtime/migration/build-migration-report.mjs`:
 
@@ -1234,7 +1234,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/migration.test.mjs`
 Expected: PASS, 27 tests.
@@ -1263,7 +1263,7 @@ hand edit, and it must not claim to be more than that.
 - Produces: `promoteStatusLine(text: string, id: number, filename: string): string` — pure, changes
   exactly the `status:` line; `runPromote(argv: string[], cwd: string): Promise<number>`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Append to `test/baseline.test.mjs`:
 
@@ -1328,7 +1328,7 @@ test("runPromote exits 1 for an id that does not exist, and writes nothing", asy
 Run: `node --test test/baseline.test.mjs`
 Expected: FAIL — `promoteStatusLine` and `runPromote` are not exported.
 
-- [ ] **Step 3: Implement `promote`**
+- [x] **Step 3: Implement `promote`**
 
 In `runtime/baseline/build-constitution.mjs`, add two exported functions above the final dispatcher
 block, and change the dispatcher to route a leading `promote` argument to them:
@@ -1427,7 +1427,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
 }
 ```
 
-- [ ] **Step 4: Run the full baseline suite**
+- [x] **Step 4: Run the full baseline suite**
 
 Run: `node --test test/baseline.test.mjs`
 Expected: PASS — every existing `build-constitution.mjs` test unchanged, plus the five new ones.
@@ -1452,7 +1452,7 @@ git commit -m "Add a promote verb over the existing proposed/active gate"
 - Consumes: nothing new.
 - Produces: `skills/{decide-architecture,design-patterns,agentic-patterns,test-patterns}/references/migrating-decisions.md`, generated by `syncShared` and committed.
 
-- [ ] **Step 1: Write the shared reference**
+- [x] **Step 1: Write the shared reference**
 
 Create `shared/migrating-decisions.md`:
 
@@ -1535,7 +1535,7 @@ enforce — the verb only makes the act auditable. Hand-editing `status: active`
 works and is still a human's call to make; this tool does not prevent it.
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Append to `test/build.test.mjs`:
 
@@ -1549,12 +1549,12 @@ test("the shared migration reference is in sync across every skill", async () =>
 });
 ```
 
-- [ ] **Step 3: Run it to verify it fails**
+- [x] **Step 3: Run it to verify it fails**
 
 Run: `node --test test/build.test.mjs`
 Expected: FAIL — `ENOENT` on `skills/decide-architecture/references/migrating-decisions.md`.
 
-- [ ] **Step 4: Register it and sync**
+- [x] **Step 4: Register it and sync**
 
 In `builders/sync-shared.mjs`, add a second entry to `SHARED`:
 
@@ -1569,7 +1569,7 @@ const SHARED = [
 npm run sync:shared
 ```
 
-- [ ] **Step 5: Run the test to verify it passes**
+- [x] **Step 5: Run the test to verify it passes**
 
 Run: `node --test test/build.test.mjs`
 Expected: The sync test PASSES. The reference-citation tests still fail until Task 10 adds the
@@ -1599,7 +1599,7 @@ untouched in all four files.**
 - Produces: nothing programmatic. The contract is the same two-way citation `build.test.mjs` already
   enforces for `recording-decisions.md`.
 
-- [ ] **Step 1: Make the reference required**
+- [x] **Step 1: Make the reference required**
 
 In `test/build.test.mjs`:
 
@@ -1609,7 +1609,7 @@ const requiredReferences = ["decision-tree.md", "catalog.md", "recording-decisio
 
 Run: `node --test test/build.test.mjs` — expected FAIL, no `SKILL.md` cites the new path yet.
 
-- [ ] **Step 2: `decide-architecture` — collapse the write, add the pointer**
+- [x] **Step 2: `decide-architecture` — collapse the write, add the pointer**
 
 Replace:
 
@@ -1713,7 +1713,7 @@ persisted as the one decision file described in "Recording the outcome." Do not 
 only answered a question without recommending anything.
 ```
 
-- [ ] **Step 3: `design-patterns` — collapse the write, add the pointer**
+- [x] **Step 3: `design-patterns` — collapse the write, add the pointer**
 
 Replace:
 
@@ -1755,7 +1755,7 @@ persisted, when a file is written at all, as the one decision file described abo
 when the run only answered a question without recommending anything.
 ```
 
-- [ ] **Step 4: `agentic-patterns` — collapse the write, add the pointer**
+- [x] **Step 4: `agentic-patterns` — collapse the write, add the pointer**
 
 Replace:
 
@@ -1844,7 +1844,7 @@ that has none? Read `references/migrating-decisions.md` and follow it.
 
 Then replace the trailing "## Record the decision" section the same way as Step 2's.
 
-- [ ] **Step 5: `test-patterns` — collapse the write, add the pointer**
+- [x] **Step 5: `test-patterns` — collapse the write, add the pointer**
 
 Change step 8 of the greenfield interview list from:
 
@@ -1926,7 +1926,7 @@ E2E suite, a "no change needed" review) — is persisted as the one decision fil
 anything.
 ```
 
-- [ ] **Step 6: Rebuild and run the full suite**
+- [x] **Step 6: Rebuild and run the full suite**
 
 ```bash
 npm run build -- --target all
@@ -1935,7 +1935,7 @@ npm test
 
 Expected: PASS.
 
-- [ ] **Step 7: Verify the frozen bytes really are frozen**
+- [x] **Step 7: Verify the frozen bytes really are frozen**
 
 ```bash
 git diff main -- skills/*/SKILL.md | grep -E '^[-+](name|description):'
@@ -1943,7 +1943,7 @@ git diff main -- skills/*/SKILL.md | grep -E '^[-+](name|description):'
 
 Expected: no output. Any line here is release-breaking — revert it.
 
-- [ ] **Step 8: Verify no skill writes to `docs/adr/` for a new decision**
+- [x] **Step 8: Verify no skill writes to `docs/adr/` for a new decision**
 
 ```bash
 grep -n 'docs/adr' skills/*/SKILL.md
@@ -1973,7 +1973,7 @@ git commit -m "Collapse the dual-artifact write and add the migration pointer to
 - Consumes: `references/migrating-decisions.md` (Task 9).
 - Produces: a scenario set graded like `baseline-capture.json` — outcomes, no numeric scoring.
 
-- [ ] **Step 1: Write the scenario set**
+- [x] **Step 1: Write the scenario set**
 
 Create `test/scenarios/migration.json`:
 
@@ -2040,7 +2040,7 @@ Create `test/scenarios/migration.json`:
 }
 ```
 
-- [ ] **Step 2: Write the failing test**
+- [x] **Step 2: Write the failing test**
 
 Append to `test/scenarios.test.mjs`:
 
@@ -2099,12 +2099,12 @@ test("every migration criterion is anchored in the shared reference or its recor
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail, then pass**
+- [x] **Step 3: Run the tests to verify they fail, then pass**
 
 Run: `node --test test/scenarios.test.mjs`
 Expected: FAIL before Step 1's file exists; PASS once both steps are in place.
 
-- [ ] **Step 4: Add the file to the suite**
+- [x] **Step 4: Add the file to the suite**
 
 In `package.json`:
 
@@ -2112,7 +2112,7 @@ In `package.json`:
     "test": "node --test test/build.test.mjs test/baseline.test.mjs test/migration.test.mjs test/scenarios.test.mjs",
 ```
 
-- [ ] **Step 5: Run the full suite**
+- [x] **Step 5: Run the full suite**
 
 Run: `npm test`
 Expected: PASS.
@@ -2138,11 +2138,11 @@ git commit -m "Add force-driven scenarios for consolidation and reverse discover
 - Consumes: everything above.
 - Produces: proof the CLIs work from a built package, and docs that match what shipped.
 
-- [ ] **Step 1: Bump the version**
+- [x] **Step 1: Bump the version**
 
 In `package.json`, set `"version": "0.3.3"`.
 
-- [ ] **Step 2: Rebuild both targets and verify the runtime inventory ships with no adapter change**
+- [x] **Step 2: Rebuild both targets and verify the runtime inventory ships with no adapter change**
 
 ```bash
 npm run build -- --target all
@@ -2154,7 +2154,7 @@ canonical skills, and the runtime" assertion now includes `runtime/migration/*` 
 `build/claude` and `build/codex` without any change to either adapter — confirming C2's claim that a
 new runtime subsystem ships automatically.
 
-- [ ] **Step 3: Dogfood consolidation on this repository's own prose ADR**
+- [x] **Step 3: Dogfood consolidation on this repository's own prose ADR**
 
 ```bash
 node runtime/migration/discover-candidates.mjs 2>/dev/null || \
@@ -2183,7 +2183,7 @@ scratch manifest; do not commit `docs/architecture/migration-report.md` from thi
 maintainer wants the worked example kept (if kept, add it to `git add` in Step 6 and mention it in the
 release doc).
 
-- [ ] **Step 4: Retract the 0.3.1 known limitation**
+- [x] **Step 4: Retract the 0.3.1 known limitation**
 
 In `docs/release-0.3.1.md`, replace the last "Known limitations" bullet:
 
@@ -2203,7 +2203,7 @@ with:
   write a single decision file; the prose-ADR write is gone. See `docs/release-0.3.3.md`.
 ```
 
-- [ ] **Step 5: Write `docs/release-0.3.3.md`**
+- [x] **Step 5: Write `docs/release-0.3.3.md`**
 
 ```markdown
 # Release 0.3.3 — migration and bootstrap
@@ -2254,7 +2254,7 @@ grep -rn "0\.4\.0" package.json build/ .claude-plugin/ .agents/ docs/
 The `grep` must return nothing.
 ```
 
-- [ ] **Step 6: Update the remaining docs**
+- [x] **Step 6: Update the remaining docs**
 
 In `docs/building-packages.md`, add after the existing constitution-check line:
 
@@ -2277,7 +2277,7 @@ In `CLAUDE.md`, extend the paragraph about `shared/` and `runtime/`: "`runtime/m
 consolidation and reverse-discovery tooling on top of the SP1 baseline; `promote` on
 `runtime/baseline/build-constitution.mjs` flips a decision from `proposed` to `active`."
 
-- [ ] **Step 7: Run everything**
+- [x] **Step 7: Run everything**
 
 ```bash
 npm run build -- --target all

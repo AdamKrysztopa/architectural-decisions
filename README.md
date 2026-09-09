@@ -35,6 +35,9 @@ A `deterministic` rule's binding is resolved against the repository's real tool 
 `runtime/checkers/check-rules.mjs` — no tool installation required to catch a rule bound to a
 contract that does not exist; `--run` opts into actually evaluating it.
 
+A repository with existing prose ADRs, or none at all, has a path to a first baseline too — see
+`shared/migrating-decisions.md` for consolidation and reverse discovery.
+
 ## Noticing drift
 
 On Claude Code, arch-crew injects the active rules at session start and quietly records which files

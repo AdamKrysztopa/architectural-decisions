@@ -20,9 +20,10 @@ the repository uses) before writing anything. It lists the rules already in forc
 Write into the directory the generator selects: the first existing decisions directory that already
 holds at least one file matching this schema, else the first existing one holding any `NNNN-slug.md`
 file at all, else `docs/architecture/decisions/` (created if absent). If an existing ADR directory
-(e.g. `docs/adr/`) holds prose ADRs that are not in this schema, do **not** convert them or write
-into that directory — use `docs/architecture/decisions/` alongside it. Name your file `NNNN-slug.md`,
-taking the next free number.
+(e.g. `docs/adr/`) holds prose ADRs that are not in this schema, do **not** convert them or write into
+that directory during an ordinary capture run — use `docs/architecture/decisions/` alongside it.
+Converting them deliberately, on request, is `references/migrating-decisions.md`'s job, not this
+one's. Name your file `NNNN-slug.md`, taking the next free number.
 
     ---
     id: 0004

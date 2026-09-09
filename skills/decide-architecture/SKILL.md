@@ -112,17 +112,12 @@ app needs no refactor, and the most useful thing you can tell its author is "lea
 
 A decision that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the stack, write `docs/adr/NNNN-short-title.md` (lowercase
-words joined by hyphens, e.g. `0001-modular-monolith-with-hexagonal-core.md`) — a 4-digit number,
-one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent. Use
-this MADR-style template:
+**Greenfield → one decision file.** After presenting the stack, follow
+`references/recording-decisions.md`: read the constitution first, then write a single
+`status: proposed` decision file — no separate ADR file. Its prose *is* the ADR:
 
 ```
-# NNNN. <decision title, e.g. "Adopt a modular monolith with a hexagonal core">
-
-- Status: Accepted
-- Date: <YYYY-MM-DD>
-- Deciders: <the user / team, if known>
+# <decision title, e.g. "Adopt a modular monolith with a hexagonal core">
 
 ## Context
 <the forces from the interview — what's being built, and the load / team / domain facts that drove
@@ -131,18 +126,24 @@ each axis. This is *why*, not just what.>
 ## Decision
 <the composed stack: the axis · pick · why table you just presented>
 
-## Consequences
+## Consequences (cost)
 <the cost accepted for each pick, the contextual notes triggered (gateway/mesh/stability/…), and
 the least-architecture caveat: which axes were deferred and the concrete signal that would reopen
 them.>
 ```
 
+Classify every rule honestly (default `narrative`) and regenerate the constitution.
+
 **Refactoring → a review report.** Write the review to `docs/architecture-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent — Current shape + Findings + Leave-alone; short if the system is sound).
-If a finding is a direction the user commits to, offer to capture that one as its own ADR too.
+If a finding is a direction the user commits to, capture it the same way — one decision file,
+following `references/recording-decisions.md`.
 
-Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+Write the file(s) and report the path(s). Ask first only if the repo layout is unclear or the user is
 clearly still just exploring options rather than deciding.
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? That is not this interview — read `references/migrating-decisions.md` and follow it.
 
 ## Why this shape
 
@@ -154,12 +155,9 @@ principle: change the architecture only as fast as a real requirement forces it.
 
 ## Record the decision
 
-If this run made a recommendation — **including an explicit refusal** — record it. Read
-`references/recording-decisions.md` and follow it: read the existing constitution, write one
-decision file with `status: proposed`, classify each rule's `verification` honestly (default
-`narrative`), and regenerate the constitution.
-
-Do not record when the run only answered a question without recommending anything.
+Covered above: every recommendation this skill makes — **including an explicit refusal** — is
+persisted as the one decision file described in "Recording the outcome." Do not record when the run
+only answered a question without recommending anything.
 
 ## Notice drift later
 

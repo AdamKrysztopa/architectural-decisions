@@ -1,0 +1,67 @@
+{
+  "skill": "shared:migrating-decisions",
+  "about": "Force-driven scenarios for consolidation and reverse discovery, the two modes shared by all four skills through references/migrating-decisions.md. Each scenario names what the repository looks like and what a correct run must therefore produce. There is no numeric scoring: a run passes when it reaches the stated outcome for the stated reason.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    { "id": "explicit-inputs-only", "statement": "Only paths or code scopes the user explicitly confirmed influence anything written. A candidate list may be shown; nothing on it is used until confirmed." },
+    { "id": "conflicts-reported-not-resolved", "statement": "A duplicate, overlap, or contradiction is reported as a finding or a candidate. No run auto-merges, auto-supersedes, or silently drops one side." },
+    { "id": "prose-never-rewritten", "statement": "No existing ADR or decision file's prose is edited or deleted. Superseding an existing file only ever happens through a newly proposed decision, never by editing the old one." },
+    { "id": "traceability-exhaustive", "statement": "Every confirmed input appears in the traceability report exactly once, with a disposition and, where required, a reason." },
+    { "id": "narrative-by-default", "statement": "Every rule reverse discovery proposes starts at verification: narrative. Raising it is never done in the same run." },
+    { "id": "proposed-only", "statement": "Every generated decision is status: proposed. The constitution is unaffected until a human runs promote." },
+    { "id": "no-score", "statement": "No percentage, coverage number, or maturity score appears anywhere in a migration report or its summary." },
+    { "id": "cap-forces-ranking", "statement": "When more than 20 decisions would be warranted, the run ranks and states what was left out, rather than proposing all of them or silently truncating without saying so." }
+  ],
+  "scenarios": [
+    {
+      "id": "consolidation-confirmed-subset",
+      "forces": "docs/adr/ holds six prose ADRs. The user confirms three of them for migration.",
+      "expect": { "notes": "Only the three confirmed files are read or referenced. The other three are never mentioned as migrated, merged, or superseded — they simply don't appear, because they were never confirmed." }
+    },
+    {
+      "id": "refuses-whole-directory-conversion",
+      "forces": "The user says \"just migrate everything in docs/adr/.\"",
+      "expect": { "notes": "The run declines to treat the whole directory as confirmed, lists the candidates, and asks which ones to include." }
+    },
+    {
+      "id": "conflict-reported-as-candidate",
+      "forces": "Two confirmed prose ADRs, migrated into two schema decisions, end up with overlapping scope globs on rules that read as contradictory.",
+      "expect": { "notes": "The traceability report names both decisions and both rules as a candidate conflict. Neither file's status is set to superseded automatically." }
+    },
+    {
+      "id": "existing-prose-untouched",
+      "forces": "A confirmed prose ADR is migrated into a new schema decision.",
+      "expect": { "notes": "The original prose ADR file is byte-identical afterward. It is not deleted, converted, or reformatted." }
+    },
+    {
+      "id": "already-schema-nothing-to-migrate",
+      "forces": "Every file the user confirms already parses as a schema decision.",
+      "expect": { "notes": "The run says there is nothing to migrate and still writes a traceability report — every input disposed as its own existing decision, none newly proposed." }
+    },
+    {
+      "id": "reverse-discovery-narrative-with-exceptions",
+      "forces": "The user asks for a baseline for src/domain/**. 47 of 51 files avoid importing infra directly; 4 do not.",
+      "expect": { "notes": "A narrative rule is proposed, its Context names the count and lists all four exceptions by path. Nothing is deterministic or review at proposal time." }
+    },
+    {
+      "id": "reverse-discovery-insufficient-evidence",
+      "forces": "The user asks for a baseline for a small, inconsistent utility script directory with no discernible regularity.",
+      "expect": { "notes": "The run reports it found nothing worth proposing and writes no decision. This is a correct outcome, not a failure." }
+    },
+    {
+      "id": "reverse-discovery-cap-exceeded",
+      "forces": "A large undocumented monorepo where a thorough pass would justify 35 decisions.",
+      "expect": { "notes": "The run proposes at most 20, ranked, and the report states which 15+ were left out and why, rather than proposing all 35 or silently stopping at 20 unexplained." }
+    },
+    {
+      "id": "promotion-is-a-separate-explicit-act",
+      "forces": "A migration run completes with 8 proposed decisions.",
+      "expect": { "notes": "The constitution is byte-unchanged immediately after the run. A later, explicit promote of 2 of the 8 changes only those two rules' presence in the constitution." }
+    },
+    {
+      "id": "dual-artifact-collapsed",
+      "forces": "A greenfield decide-architecture run reaches a recommendation.",
+      "expect": { "notes": "Exactly one file is written under the decisions directory. No file is written to docs/adr/ for this new decision." }
+    }
+  ]
+}

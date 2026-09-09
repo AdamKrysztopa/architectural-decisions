@@ -168,6 +168,14 @@ test("rejects a non-integer superseded_by", () => {
   assert.throws(() => parseDecision(text, "0004-events-over-shared-db.md"), /superseded_by/);
 });
 
+test("a parsed decision retains its body", () => {
+  const text = decisionText(validFrontmatter, "Events over a shared database") +
+    "\n## Sources\n- `docs/adr/0002-events.md`\n";
+  const decision = parseDecision(text, "0004-events-over-shared-db.md");
+  assert.match(decision.body, /## Sources/);
+  assert.match(decision.body, /docs\/adr\/0002-events\.md/);
+});
+
 // --- Task 3: constitution renderer ---
 
 import { readdir, readFile } from "node:fs/promises";
@@ -318,4 +326,113 @@ test("this repository's own committed constitution is not stale", async () => {
     await run(["--dir", "docs/architecture/decisions", "--check"], repositoryRoot),
     0,
   );
+});
+
+// --- Task 8: the promote verb ---
+
+import { promoteStatusLine, runPromote } from "../runtime/baseline/build-constitution.mjs";
+
+test("promoteStatusLine changes exactly the status line", () => {
+  const before = decisionText(validFrontmatter); // status: active in this fixture; use a proposed one:
+  const proposedText = decisionText(validFrontmatter.replace("status: active", "status: proposed"));
+  const after = promoteStatusLine(proposedText, 4, "0004-events-over-shared-db.md");
+  const beforeLines = proposedText.split("\n");
+  const afterLines = after.split("\n");
+  const changed = beforeLines
+    .map((line, index) => (line === afterLines[index] ? null : index))
+    .filter((index) => index !== null);
+  assert.deepEqual(changed, [beforeLines.indexOf("status: proposed")]);
+  assert.ok(afterLines.includes("status: active"));
+});
+
+test("promoteStatusLine refuses an already-active decision", () => {
+  const text = decisionText(validFrontmatter); // status: active
+  assert.throws(() => promoteStatusLine(text, 4, "0004-x.md"), /already active/);
+});
+
+test("promoteStatusLine refuses a superseded decision", () => {
+  const text = decisionText(validFrontmatter.replace("status: active", "status: superseded\nsuperseded_by: 0009"));
+  assert.throws(() => promoteStatusLine(text, 4, "0004-x.md"), /superseded/);
+});
+
+test("runPromote flips status, regenerates the constitution, and touches only the named files", async () => {
+  const { root, decisions } = await scratchRepo(); // from Task 4 of the SP1 plan: 0001 and 0002, both active
+  const proposedName = "0005-proposed-extra.md";
+  await write(
+    join(decisions, proposedName),
+    decisionText(
+      validFrontmatter
+        .replace("id: 0004", "id: 0005")
+        .replace("status: active", "status: proposed")
+        .replace("no-shared-db-writes", "extra-rule"),
+    ),
+  );
+  const code = await runPromote(["0005"], root);
+  assert.equal(code, 0);
+  const promoted = await readFile(join(decisions, proposedName), "utf8");
+  assert.match(promoted, /status: active/);
+  const constitution = await readFile(join(decisions, "../constitution.md"), "utf8");
+  assert.match(constitution, /extra-rule/);
+});
+
+test("runPromote exits 1 for an id that does not exist, and writes nothing", async () => {
+  const { root, decisions } = await scratchRepo();
+  const before = await readFile(join(decisions, "../constitution.md"), "utf8").catch(() => null);
+  const code = await runPromote(["0099"], root);
+  assert.equal(code, 1);
+  const after = await readFile(join(decisions, "../constitution.md"), "utf8").catch(() => null);
+  assert.equal(before, after);
+});
+
+test("runPromote validates every requested id before writing any of them", async () => {
+  const { root, decisions } = await scratchRepo();
+  const alphaText = decisionText(
+    validFrontmatter
+      .replace("id: 0004", "id: 0007")
+      .replace("status: active", "status: proposed")
+      .replace("no-shared-db-writes", "alpha-rule"),
+    "Alpha decision",
+  );
+  const betaText = decisionText(
+    validFrontmatter.replace("id: 0004", "id: 0009").replace("no-shared-db-writes", "beta-rule"),
+    "Beta decision (already active)",
+  );
+  await write(join(decisions, "0007-alpha.md"), alphaText);
+  await write(join(decisions, "0009-beta.md"), betaText);
+
+  const constitutionBefore = await readFile(join(decisions, "../constitution.md"), "utf8").catch(() => null);
+  const code = await runPromote(["0007", "0009"], root);
+  assert.equal(code, 1);
+
+  // 0007 validated fine in isolation; 0009 (already active) failed after it.
+  // Nothing may be written until every requested id is known-promotable.
+  assert.equal(await readFile(join(decisions, "0007-alpha.md"), "utf8"), alphaText);
+  assert.equal(await readFile(join(decisions, "0009-beta.md"), "utf8"), betaText);
+  const constitutionAfter = await readFile(join(decisions, "../constitution.md"), "utf8").catch(() => null);
+  assert.equal(constitutionBefore, constitutionAfter);
+});
+
+test("runPromote refuses a directory with two files sharing an NNNN prefix, mutating neither", async () => {
+  const { root, decisions } = await scratchRepo();
+  const zetaText = decisionText(
+    validFrontmatter
+      .replace("id: 0004", "id: 0007")
+      .replace("status: active", "status: proposed")
+      .replace("no-shared-db-writes", "zeta-rule"),
+    "Zeta decision",
+  );
+  const alphaText = decisionText(
+    validFrontmatter
+      .replace("id: 0004", "id: 0007")
+      .replace("status: active", "status: proposed")
+      .replace("no-shared-db-writes", "alpha-rule"),
+    "Alpha decision",
+  );
+  await write(join(decisions, "0007-zeta.md"), zetaText);
+  await write(join(decisions, "0007-alpha.md"), alphaText);
+
+  const code = await runPromote(["0007"], root);
+  assert.equal(code, 1);
+  assert.equal(await readFile(join(decisions, "0007-zeta.md"), "utf8"), zetaText);
+  assert.equal(await readFile(join(decisions, "0007-alpha.md"), "utf8"), alphaText);
 });

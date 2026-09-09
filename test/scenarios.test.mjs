@@ -308,3 +308,56 @@ test("the drift scenario set is complete and anchored in the shared reference", 
     "no scenario exercising the evidence-gate downgrade",
   );
 });
+
+const migrationScenarioFile = join(repositoryRoot, "test/scenarios/migration.json");
+const migrationReference = join(repositoryRoot, "shared/migrating-decisions.md");
+
+const requiredMigrationScenarioIds = [
+  "already-schema-nothing-to-migrate",
+  "conflict-reported-as-candidate",
+  "consolidation-confirmed-subset",
+  "dual-artifact-collapsed",
+  "existing-prose-untouched",
+  "promotion-is-a-separate-explicit-act",
+  "refuses-whole-directory-conversion",
+  "reverse-discovery-cap-exceeded",
+  "reverse-discovery-insufficient-evidence",
+  "reverse-discovery-narrative-with-exceptions",
+];
+
+test("the migration scenario set is complete and well formed", async () => {
+  const set = JSON.parse(await readFile(migrationScenarioFile, "utf8"));
+  assert.ok(set.about?.length > 0, "the migration scenario set has no description");
+  await assert.doesNotReject(readFile(join(repositoryRoot, set.howToRun), "utf8"));
+
+  const ids = set.scenarios.map((scenario) => scenario.id);
+  assert.equal(new Set(ids).size, ids.length, "a migration scenario id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredMigrationScenarioIds);
+
+  for (const scenario of set.scenarios) {
+    assert.ok(scenario.forces?.length > 0, `${scenario.id} names no forces`);
+    assert.ok(scenario.expect?.notes?.length > 0, `${scenario.id} states no expected outcome`);
+  }
+});
+
+test("every migration criterion is anchored in the shared reference or its recording-decisions companion", async () => {
+  const set = JSON.parse(await readFile(migrationScenarioFile, "utf8"));
+  const reference = await readFile(migrationReference, "utf8");
+  const criteriaIds = set.criteria.map((criterion) => criterion.id).sort();
+  assert.deepEqual(criteriaIds, [
+    "cap-forces-ranking",
+    "conflicts-reported-not-resolved",
+    "explicit-inputs-only",
+    "narrative-by-default",
+    "no-score",
+    "proposed-only",
+    "prose-never-rewritten",
+    "traceability-exhaustive",
+  ]);
+  for (const anchor of ["confirmed", "narrative", "Sources", "cap of 20", "20 decisions"]) {
+    assert.ok(
+      reference.includes(anchor) || reference.includes("at most 20"),
+      `shared/migrating-decisions.md never mentions ${anchor}`,
+    );
+  }
+});

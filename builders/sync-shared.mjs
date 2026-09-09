@@ -8,6 +8,7 @@ const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SHARED = [
   { source: "shared/recording-decisions.md", reference: "recording-decisions.md" },
   { source: "shared/observing-drift.md", reference: "observing-drift.md" },
+  { source: "shared/migrating-decisions.md", reference: "migrating-decisions.md" },
 ];
 
 async function skillNames() {

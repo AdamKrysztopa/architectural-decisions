@@ -75,12 +75,8 @@ alongside it.
 - The baseline version is the **git commit containing `constitution.md`**, recovered from git
   history; no SHA is written into the file (writing one would make `--check` report staleness on
   every commit).
-- A greenfield run records the same decision **twice**: the skill's own "Greenfield → an ADR" step
-  writes a prose ADR to `docs/adr/`, and the capture step writes a schema decision file to
-  `docs/architecture/decisions/`. The two use independent numbering and do not cross-reference each
-  other. Only `test-patterns` tells the model the two are the same decision. Nothing breaks — the
-  generator skips the prose directory and the write targets never clash — but the duplication is
-  real, and unifying the two is deferred to a later sub-project.
+- ~~A greenfield run records the same decision twice~~ — **resolved in 0.3.6.** All four skills now
+  write a single decision file; the prose-ADR write is gone. See `docs/release-0.3.6.md`.
 
 ## Compatibility
 

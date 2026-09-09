@@ -24,6 +24,11 @@ shared by all four skills (`shared/observing-drift.md`) — classifying observed
 rules and deciding when to write a proposed decision — without ever asserting a violation the evidence
 does not support.
 
+`test/scenarios/migration.json` is the fourth scenario set: it grades consolidation and reverse
+discovery (`shared/migrating-decisions.md`) — listing candidates without adopting them, classifying
+confirmed inputs, citing sources honestly, and capping how many decisions one reverse-discovery pass
+may propose.
+
 ## The scenario set
 
 `test/scenarios/test-patterns.json` is the force-driven gating set for `test-patterns`. It follows

@@ -23,7 +23,9 @@ skill bytes must remain compatible with the existing Claude release.
 that copy and its output is committed, so `skills/*/references/recording-decisions.md` must never be
 edited directly. `runtime/` holds the zero-dependency Node code shipped to every target.
 `runtime/drift/` holds the hook scripts and the drain, shipped identically to both targets; only
-the Claude hook registration is adapter-generated.
+the Claude hook registration is adapter-generated. `runtime/migration/` adds consolidation and
+reverse-discovery tooling on top of the SP1 baseline; `promote` on
+`runtime/baseline/build-constitution.mjs` flips a decision from `proposed` to `active`.
 
 Four shared skills, each invoked as `arch-crew:<name>` in a host that namespaces skills:
 

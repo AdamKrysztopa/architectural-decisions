@@ -52,6 +52,7 @@ const requiredReferences = [
   "catalog.md",
   "recording-decisions.md",
   "observing-drift.md",
+  "migrating-decisions.md",
 ];
 
 const documentationFiles = ["README.md", "llms.txt"];
@@ -549,6 +550,14 @@ test("the shared references are in sync across every skill", async () => {
       const copy = await readFile(join(canonicalSkills, name, "references", reference));
       assert.ok(source.equals(copy), `${name}/references/${reference} has drifted from shared/`);
     }
+  }
+});
+
+test("the shared migration reference is in sync across every skill", async () => {
+  const source = await readFile(join(repositoryRoot, "shared/migrating-decisions.md"));
+  for (const name of await canonicalSkillNames()) {
+    const copy = await readFile(join(canonicalSkills, name, "references/migrating-decisions.md"));
+    assert.ok(source.equals(copy), `${name}/references/migrating-decisions.md has drifted from shared/`);
   }
 });
 

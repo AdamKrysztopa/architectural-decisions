@@ -105,7 +105,7 @@ test portfolio.
    model spend, alert ownership.
 6. **Record what you deliberately did not buy**, and why.
 7. **Define the reopening signal** for each row: the concrete event that would change the answer.
-8. **Persist the accepted decision as a MADR-style ADR** (see "Recording the outcome").
+8. **Persist the accepted decision as the one decision file** (see "Recording the outcome").
 
 Output — the evidence portfolio (the shared contract, below).
 
@@ -272,17 +272,12 @@ proceed.**
 
 A strategy that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the portfolio, write `docs/adr/NNNN-short-title.md`
-(lowercase words joined by hyphens, e.g. `0004-risk-led-evidence-portfolio-invoicing.md`) — a 4-digit
-number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent.
-Follow the repository's existing ADR template if it has one; otherwise this MADR-style shape:
+**Greenfield → one decision file.** After presenting the portfolio, follow
+`references/recording-decisions.md`: read the existing constitution, then write a single
+`status: proposed` decision file — no separate ADR file. Its prose is the output contract:
 
 ```
-# NNNN. <decision title, e.g. "Risk-led evidence portfolio for invoice processing">
-
-- Status: Accepted
-- Date: <YYYY-MM-DD>
-- Deciders: <the user / team, if known>
+# <decision title, e.g. "Risk-led evidence portfolio for invoice processing">
 
 ## Context
 <what the system does, the named failure surfaces and their blast radius, the constraints —
@@ -292,19 +287,24 @@ release cadence, reversibility, regulation, team shape, environment ownership.>
 <the evidence-portfolio table you just presented, plus the deterministic/stochastic split and the
 oracle assessment where they apply.>
 
-## Consequences
+## Consequences (cost)
 <the cost of each row; the heavier options rejected and why; CI and ownership implications
 (runtime budget, who owns fixtures/environments/evals); and the reopening signals.>
 ```
 
+Classify every rule honestly (default `narrative`) and regenerate the constitution.
+
 **Existing suite → a dated review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent) with the output contract above. If the suite is already well balanced, say
 so plainly and keep the report short — a clean bill of health is a valid outcome, not a failure to
-find work. If a rebalancing move is a direction the user commits to, offer to capture it as its own
-ADR.
+find work. If a rebalancing move is a direction the user commits to, capture it the same way — one
+decision file, following `references/recording-decisions.md`.
 
-Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+Write the file(s) and report the path(s). Ask first only if the repo layout is unclear or the user is
 clearly still exploring rather than deciding.
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? Read `references/migrating-decisions.md` and follow it.
 
 ## Why this shape
 
@@ -317,13 +317,10 @@ can tie to a requirement.
 
 ## Record the decision
 
-If this run made a recommendation — **including an explicit refusal** (a refused E2E suite, a
-"no change needed" review) — record it. Read `references/recording-decisions.md` and follow it: read
-the existing constitution, write one decision file with `status: proposed`, classify each rule's
-`verification` honestly (default `narrative`), and regenerate the constitution. This is the same ADR
-the output contract already asks for, in the schema the baseline can read.
-
-Do not record when the run only answered a question without recommending anything.
+Covered above: every recommendation this skill makes — **including an explicit refusal** (a refused
+E2E suite, a "no change needed" review) — is persisted as the one decision file described in
+"Recording the outcome." Do not record when the run only answered a question without recommending
+anything.
 
 ## Notice drift later
 

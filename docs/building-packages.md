@@ -46,6 +46,12 @@ Verify a repository's constitution matches its decision files:
 
     node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions --check
 
+Consolidate or bootstrap a baseline for a repository (see `shared/migrating-decisions.md`):
+
+    node runtime/migration/discover-candidates.mjs
+    node runtime/migration/build-migration-report.mjs --manifest <path> --dir <decisions-dir>
+    node runtime/baseline/build-constitution.mjs promote NNNN [NNNN ...]
+
 Resolve every deterministic rule's binding against this repository's own tool config (no tool
 required; add `--run` to also evaluate, `--require-tools` to make a missing tool binary blocking
 under `--run`):
