@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "type": "module",
   "license": "MIT",
   "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",
@@ -9,13 +9,17 @@
     "email": "krysztopa@gmail.com"
   },
   "scripts": {
-    "build": "node builders/build.mjs",
-    "test": "node --test test/build.test.mjs test/scenarios.test.mjs",
+    "build": "node builders/sync-shared.mjs && node builders/build.mjs",
+    "sync:shared": "node builders/sync-shared.mjs",
+    "sync:check": "node builders/sync-shared.mjs --check",
+    "test": "node --test test/build.test.mjs test/baseline.test.mjs test/skill-freeze.test.mjs test/migration.test.mjs test/checkers.test.mjs test/checker-corpus.test.mjs test/glob-parity.test.mjs test/decision-filenames.test.mjs test/drift.test.mjs test/surfaces.test.mjs test/documentation-mode.test.mjs test/authoritative-sources.test.mjs test/scenarios.test.mjs test/e2e/adr-to-living-migration.test.mjs test/e2e/bind-and-prove.test.mjs test/e2e/drift-observed.test.mjs test/e2e/bootstrap-migration.test.mjs test/e2e/security-without-theatre.test.mjs test/approval-gate.test.mjs test/status-vocabulary.test.mjs test/vocabulary-consistency.test.mjs",
     "test:build": "node --test test/build.test.mjs",
     "test:scenarios": "node --test test/scenarios.test.mjs"
   },
   "agentPackaging": {
     "canonicalSkills": "skills",
+    "canonicalRuntime": "runtime",
+    "canonicalCommands": "commands",
     "buildDirectory": "build",
     "generatedRootDirectories": {
       "claude": [
@@ -34,14 +38,20 @@
         ".agents/plugins/marketplace.json"
       ]
     },
+    "generatedTargetFiles": {
+      "claude": [
+        "hooks/hooks.json"
+      ],
+      "codex": []
+    },
     "targets": {
       "claude": {
         "adapter": "adapters/claude.mjs",
-        "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation, with an oracle-independence guardrail over generated tests). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves."
+        "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation, with an oracle-independence guardrail over generated tests), and threat-model (architecture-level security: trust boundaries, authentication and authorization placement, secrets, data protection, supply chain, and agent/tool permissions — every deterministic claim bound to a checker the repository already runs, and no maturity score in the output). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves."
       },
       "codex": {
         "adapter": "adapters/codex.mjs",
-        "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, agentic-patterns, and test-patterns. Each skill guides a selection interview for new work or a focused review of existing code."
+        "description": "A suite of architectural-decision skills for Codex: decide-architecture, design-patterns, agentic-patterns, test-patterns, and threat-model. Each skill guides a selection interview for new work or a focused review of existing code."
       }
     }
   }

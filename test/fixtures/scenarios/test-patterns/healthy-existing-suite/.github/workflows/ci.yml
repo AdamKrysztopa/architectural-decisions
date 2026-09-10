@@ -1,0 +1,25 @@
+name: ci
+
+on: [pull_request, push]
+
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pytest tests/unit          # ~900 tests, ~20s
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pytest tests/integration   # ~60 tests, ~3m, ephemeral containers
+
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pytest tests/e2e -m e2e    # 4 journeys, ~6m
+
+# No job retries the suite, and no step carries continue-on-error. A red job
+# blocks the merge on the first failure.

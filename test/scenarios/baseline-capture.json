@@ -1,0 +1,93 @@
+{
+  "skill": "shared:recording-decisions",
+  "about": "Force-driven scenarios for the decision-capture step shared by all five skills. Each scenario names what a run produced and whether a decision file must therefore be written, with which status and which verification classification. There is no numeric scoring: a run passes when it reaches the stated capture outcome for the stated reason, and the criteria below hold of what it wrote.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "proposed-only",
+      "statement": "Every captured decision is written with status: proposed. No run writes active, and no run promotes an existing decision to active — promotion is the exclusive province of `arch promote`. Editing an existing decision's status to superseded (with superseded_by) is permitted and is how supersession is recorded; see prose-preserved for what such an edit may touch."
+    },
+    {
+      "id": "narrative-by-default",
+      "statement": "A rule is classified deterministic only when a verified_by binding names a contract that already exists in the repository's tool config. Otherwise it is narrative or review."
+    },
+    {
+      "id": "no-invented-bindings",
+      "statement": "No verified_by value is invented, guessed, or aspirational."
+    },
+    {
+      "id": "reads-before-writing",
+      "statement": "The run reads the existing constitution before writing, and says what it found."
+    },
+    {
+      "id": "prose-preserved",
+      "statement": "No existing decision file's prose is rewritten. Superseding changes only status and superseded_by."
+    },
+    {
+      "id": "no-transcript-logging",
+      "statement": "A run that recommended nothing writes no decision file."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "greenfield-recommendation",
+      "prompt": "We're starting a new internal service that imports supplier invoices and reconciles them against purchase orders. Three engineers, one Postgres, no traffic to speak of yet. How should we structure it?",
+      "forces": "A new internal service; the run composes a modular monolith with a layered domain and names the cost of each pick.",
+      "expect": {
+        "captures": true,
+        "status": "proposed",
+        "notes": "One decision file, rules for the picks that are actually enforceable, the rest narrative."
+      }
+    },
+    {
+      "id": "explicit-refusal",
+      "prompt": "The team wants to break our app into microservices before we hire in the autumn. We're eight engineers on one deploy and nothing is slow. Should we do it?",
+      "forces": "A team asks for microservices; the run recommends staying a monolith and names the signal that would reopen the question.",
+      "expect": {
+        "captures": true,
+        "status": "proposed",
+        "notes": "The refusal and its reopening signal are recorded. This is the outcome easiest to lose."
+      }
+    },
+    {
+      "id": "question-only",
+      "prompt": "What is CQRS exactly, and is it the same thing as event sourcing? I keep seeing them mentioned together.",
+      "forces": "The user asks what CQRS is and whether it relates to event sourcing. The run explains, and recommends nothing.",
+      "expect": {
+        "captures": false,
+        "notes": "Nothing is written. Guards against turning the baseline into a transcript log."
+      }
+    },
+    {
+      "id": "already-decided",
+      "fixture": "test/fixtures/scenarios/baseline-capture/already-decided",
+      "prompt": "The reporting service needs order data. Can it just read the orders service's tables directly? Building an API for it feels like a lot of work for an internal read.",
+      "forces": "The constitution already carries an active decision on service-to-service data access; this run reaches a different conclusion on the same subject.",
+      "expect": {
+        "captures": true,
+        "status": "proposed",
+        "notes": "Supersedes rather than duplicating: the old file gains status: superseded and superseded_by, its prose untouched."
+      }
+    },
+    {
+      "id": "no-real-binding",
+      "prompt": "Our domain code keeps ending up importing the database layer directly and it's making everything hard to test. How should we structure that boundary?",
+      "forces": "The run recommends that the domain package must not import infrastructure. The repository has no import-linter config and no equivalent checker.",
+      "expect": {
+        "captures": true,
+        "status": "proposed",
+        "notes": "The rule stays narrative or review. No verified_by is written — check-rules.mjs (sub-project 2) would report this binding unbound if it were."
+      }
+    },
+    {
+      "id": "binding-exists",
+      "prompt": "Our domain code keeps ending up importing the database layer directly and it's making everything hard to test. How should we structure that boundary so it stays that way?",
+      "forces": "Same rule, but the repository already has a .importlinter file containing a contract named domain-isolation.",
+      "expect": {
+        "captures": true,
+        "status": "proposed",
+        "notes": "verification: deterministic with verified_by: import-linter#domain-isolation — check-rules.mjs (sub-project 2) resolves this binding, so the claim is checker-backed, not merely asserted."
+      }
+    }
+  ]
+}

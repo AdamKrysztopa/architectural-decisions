@@ -1,7 +1,7 @@
 {
   "name": "arch-crew",
-  "version": "0.3.0",
-  "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation, with an oracle-independence guardrail over generated tests). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves.",
+  "version": "0.4.0",
+  "description": "A suite of architectural-decision skills for Claude Code: decide-architecture (software architecture stack), design-patterns (GoF + Python-idiomatic patterns), agentic-patterns (LLM-agent control-flow design), and test-patterns (risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation, with an oracle-independence guardrail over generated tests), and threat-model (architecture-level security: trust boundaries, authentication and authorization placement, secrets, data protection, supply chain, and agent/tool permissions — every deterministic claim bound to a checker the repository already runs, and no maturity score in the output). Each skill branches on project status — greenfield runs a short selection interview and recommends a composed design; refactoring reviews existing code against the catalog and proposes targeted moves.",
   "author": {
     "name": "Adam Krysztopa",
     "email": "krysztopa@gmail.com"

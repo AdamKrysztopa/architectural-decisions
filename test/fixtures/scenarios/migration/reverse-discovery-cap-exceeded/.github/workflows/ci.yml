@@ -1,0 +1,29 @@
+name: ci
+
+on: [push, pull_request]
+
+# One matrix entry per service; a service is built and tested on its own.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - accounts
+          - billing
+          - catalog
+          - checkout
+          - inventory
+          - invoicing
+          - notifications
+          - orders
+          - payments
+          - pricing
+          - ratelimit
+          - reporting
+          - sessions
+          - shipping
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -e libs/platform
+      - run: pytest services/${{ matrix.service }}/tests

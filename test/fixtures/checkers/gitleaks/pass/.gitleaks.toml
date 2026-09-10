@@ -1,0 +1,4 @@
+[[rules]]
+id = "test-api-key"
+description = "Synthetic test API key pattern (fixture only, not a real secret format)"
+regex = '''sk-test-[0-9]{40}'''

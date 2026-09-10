@@ -1,0 +1,364 @@
+{
+  "skill": "threat-model",
+  "about": "Force-driven scenarios for threat-model. Each scenario names the forces in a system and which gates must therefore open and stay shut. There is no numeric scoring: a run passes when it reaches the stated gate outcomes for the stated reasons, and the criteria below hold of what it produced. The scenarios that matter most are the refusals — a claim the model may not make, a control it may not buy, and a score it may not give.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "asset-actor-impact-control",
+      "statement": "Every finding names an asset or boundary, a specific reachable actor, an impact, and the cheapest control that closes it. Anything missing one of the four is reported as an observation, not a finding."
+    },
+    {
+      "id": "boundary-first",
+      "statement": "Assets, actors, and boundaries are named before any control is named. A run that opens with a control list fails even if the controls are right."
+    },
+    {
+      "id": "control-cost-named",
+      "statement": "Every recommended control carries its cost — key management, latency, operational ownership, developer friction, or on-call burden."
+    },
+    {
+      "id": "evidence-class-declared",
+      "statement": "Violations, findings, and assumptions are reported in three separate sections. The word 'violation' is used only for a checker with a resolved binding that failed."
+    },
+    {
+      "id": "no-simulated-scanning",
+      "statement": "The run never enumerates CVEs or advisory ids, never grades a dependency version, never claims to have searched for secrets, and never traces taint in prose."
+    },
+    {
+      "id": "no-invented-bindings",
+      "statement": "A rule is deterministic only when the run named the config file and the contract it found there. No verified_by is guessed."
+    },
+    {
+      "id": "no-scores",
+      "statement": "No maturity score, rating, grade, percentage, N-of-M control count, or checklist as the output shape."
+    },
+    {
+      "id": "no-change-permitted",
+      "statement": "'This design is proportionate; no change is currently justified' is available and is used when it is correct."
+    },
+    {
+      "id": "deliberate-omissions",
+      "statement": "Where a materially plausible heavier control was considered and declined, the run names it and the actor that did not justify it. Where nothing heavier was genuinely in play, saying that plainly is the correct answer — this criterion is never satisfied by inventing a straw control to have something to decline, which is the security theatre the skill exists to prevent."
+    },
+    {
+      "id": "reopening-signals",
+      "statement": "Every closed gate and every accepted assumption carries the concrete signal that would reopen it."
+    },
+    {
+      "id": "agent-agency-handoff",
+      "statement": "Agent control-flow questions are handed to agentic-patterns; permission scope and blast radius are answered here. Neither is answered in the other's place."
+    },
+    {
+      "id": "one-primary-move",
+      "statement": "A review returns exactly one primary highest-leverage move, with secondary observations as a short ordered list."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "internal-crud-service",
+      "mode": "greenfield",
+      "title": "An internal service that still needs its own decisions",
+      "prompt": "We're building an internal CRUD service that only other services on our private network call, holding just our own company's operational data — what security decisions does it actually need?",
+      "forces": [
+        "The service is reachable only from the company's private VPC; no internet-facing route exists.",
+        "It holds one third-party shipping-rate API key, currently read from an environment variable set by the deploy pipeline.",
+        "There is exactly one tenant — the company's own data — with no plan to onboard others.",
+        "The database is a managed cloud instance with the provider's default volume encryption already enabled."
+      ],
+      "expect": "Boundary authentication opens because internal callers still need identity even on a private network, and Secret management opens because the shipping-rate key needs an issuance and rotation story. Tenant isolation closes — single-tenant is the case, and the run does not open it just because the service sounds SaaS-adjacent. Encryption at rest closes — the managed volume encryption already covers the 'stolen disk' actor, and buying field-level encryption on top protects nothing against an actor who already has the application server. Third-party service trust closes — no vendor receives any of this service's data.",
+      "failsIf": [
+        "Tenant isolation opens without a named second-tenant actor.",
+        "Encryption at rest is bought as an additional layer without naming why the managed default is insufficient.",
+        "A control is recommended before assets, actors, and boundaries are named.",
+        "Boundary authentication is skipped because the network is described as private."
+      ],
+      "gatesOpen": [
+        "Boundary authentication",
+        "Secret management"
+      ],
+      "gatesClosed": [
+        "Tenant isolation",
+        "Encryption at rest",
+        "Third-party service trust"
+      ]
+    },
+    {
+      "id": "multi-tenant-saas",
+      "mode": "greenfield",
+      "title": "Real cross-tenant reach opens the gate, not the word SaaS",
+      "prompt": "We're building a multi-tenant SaaS product where each customer's admin can invite teammates with different roles — what do we need to decide about isolation and access?",
+      "forces": [
+        "Multiple customer organizations share the same database and the same application instances.",
+        "Within one organization, an admin role and a member role see different subsets of the same resources.",
+        "An admin can approve a payout on behalf of their organization.",
+        "The data stored is ordinary business records with no special regulatory classification — no payment card numbers, no health data."
+      ],
+      "expect": "Tenant isolation opens because a real cross-tenant actor exists — another organization's authenticated user, sharing the same storage. Authorization placement opens because admin and member reach the same boundary with different entitlements. Audit logging opens because payout approval is a privileged action worth reconstructing after the fact. Encryption at rest stays closed — nothing in the asset list has a disclosure consequence beyond what tenant isolation and the platform default already address, and buying it here would be a control chosen before an actor earned it.",
+      "failsIf": [
+        "Encryption at rest is recommended because the system is described as 'SaaS'.",
+        "Tenant isolation opens without naming another tenant as the actor.",
+        "Authorization placement and tenant isolation are treated as the same decision."
+      ],
+      "gatesOpen": [
+        "Tenant isolation",
+        "Authorization placement",
+        "Audit logging"
+      ],
+      "gatesClosed": [
+        "Encryption at rest"
+      ]
+    },
+    {
+      "id": "payments-card-data",
+      "mode": "greenfield",
+      "title": "Minimisation is considered before encryption, not after",
+      "prompt": "We're adding a flow that stores customer card numbers directly so support agents can look up the last four digits for a payment dispute — how should we handle this data?",
+      "forces": [
+        "Full card numbers would be stored so a lookup can show the last four digits.",
+        "The service has a data-minimisation review process for other fields, but it was never applied here.",
+        "The card data crosses the internet from the client and again between two internal services in different data centers.",
+        "A support agent with a production console can query the table directly."
+      ],
+      "expect": "Data classification opens: card data becomes its own handling tier. Data minimisation and retention is considered first, before encryption — a tokenised reference plus the last four digits removes the need to hold the full number at all, which is cheaper than encrypting a table of them. Encryption in transit opens for the internet and inter-datacenter hops. Encryption at rest is the one scenario where it is actually bought, and only after minimisation was considered and found insufficient on its own — the reasoning names the actor as a stolen backup or a mis-scoped bucket, not the support agent who already has application access.",
+      "failsIf": [
+        "Encryption at rest is recommended before data minimisation is considered.",
+        "The full card number is stored without tokenisation being considered.",
+        "A maturity score or PCI checklist is produced as the deliverable rather than named findings."
+      ],
+      "gatesOpen": [
+        "Data classification",
+        "Encryption in transit",
+        "Encryption at rest",
+        "Data minimisation and retention"
+      ],
+      "gatesClosed": []
+    },
+    {
+      "id": "committed-secret-found-by-tool",
+      "fixture": "test/fixtures/scenarios/security/committed-secret-found-by-tool",
+      "mode": "review",
+      "title": "The secret is gitleaks's finding, not the model's",
+      "prompt": "Can you review how we handle secrets? I think there might be an old API key sitting in the repo somewhere from a while back.",
+      "forces": [
+        "A .gitleaks.toml exists in the repository, configured with a rule named generic-api-key.",
+        "Running the checker with --run resolves and evaluates that rule against the repository.",
+        "The evaluation reports the rule failed, naming a specific commit and file path.",
+        "The team has not rotated the flagged key since it was committed eight months ago."
+      ],
+      "expect": "Secret management opens, and the finding is reported as a Violation, attributed to gitleaks by rule id (generic-api-key) and the file and commit it found — not to the model having read the repository. The run also recommends rotation given the exposure, per Rotation on exposure. A run that says it found the secret by reading files fails, even though the conclusion — a secret is committed — is right.",
+      "failsIf": [
+        "The run reports finding the secret by reading files rather than attributing it to gitleaks.",
+        "The finding is reported as a Finding or an Assumption instead of a Violation.",
+        "The rule id or the file/commit the tool reported is not named."
+      ],
+      "gatesOpen": [
+        "Secret management"
+      ],
+      "gatesClosed": [],
+      "toolBoundGate": true
+    },
+    {
+      "id": "no-scanner-installed",
+      "fixture": "test/fixtures/scenarios/security/no-scanner-installed",
+      "mode": "review",
+      "title": "The right rule, and no tool to prove it",
+      "prompt": "We keep finding API keys in old commits. Review how this repo handles secrets and tell me what to change.",
+      "forces": [
+        "Credentials are read from environment variables set by a deploy script committed to the repo.",
+        "There is no .gitleaks.toml, no secret-scanning step in CI, and no pre-commit config.",
+        "The team has push access for eleven people and no branch protection."
+      ],
+      "expect": "Secret management opens. The recommended rule — no secret material is committed — is written as narrative, with no verified_by, because no contract exists to bind it to. The run names gitleaks as the tool that would raise it to deterministic, offers a config snippet as something the user adds, and explicitly does not claim to have searched the history itself.",
+      "failsIf": [
+        "The run reports that it scanned the repository or the history for secrets.",
+        "The run reports that no secrets were found.",
+        "A verified_by binding is written to a gitleaks rule that does not exist in this repository.",
+        "The rule is classified deterministic without a resolved contract.",
+        "arch-crew writes .gitleaks.toml rather than offering the snippet."
+      ],
+      "gatesOpen": [
+        "Secret management"
+      ],
+      "gatesClosed": [],
+      "insufficientEvidence": true
+    },
+    {
+      "id": "agentic-support-bot",
+      "mode": "greenfield",
+      "title": "Real money, real blast radius",
+      "prompt": "We want a support agent that can look at a customer's order history and issue refunds automatically when a customer asks — what permission and approval decisions does this need?",
+      "forces": [
+        "The agent holds a refund tool that moves real money out of the company's account.",
+        "The refund tool's credential is the same service account used by three other internal batch jobs.",
+        "A wrong refund is not something the customer or the company can costlessly undo once it is issued.",
+        "The agent's task is scoped to one customer's order history per conversation.",
+        "The customer's own message is what the agent reads and acts on — arbitrary text an actor outside the company wrote, arriving in the same context window as the refund tool."
+      ],
+      "expect": "Tool permission scoping opens — refund is a spend action, and the credential is shared across systems that don't need refund access. Blast radius of an autonomous action opens — money moved is a cost beyond the agent's own session. Human approval on irreversible actions opens — a refund is not cheaply reversible. Agent credential scope opens — the shared service account's privilege is compared against the refund task's actual need, and the difference between them is the finding. Untrusted content in the context window opens too, with all three of its legs named: the customer's message is content an actor can influence, the refund tool is the consequential capability, and the refund itself is a channel that leaves the system. The cheaper control is the capability cut — a turn that has read the customer's message does not also hold the refund tool — named before any filtering or guardrail pass.",
+      "failsIf": [
+        "Refunds are allowed to proceed without a human approval step.",
+        "The shared service account's broader scope is not named as a finding.",
+        "The agent's read-only order-lookup ability is conflated with the refund tool's write ability.",
+        "The customer-authored message is not treated as untrusted content, or the injection gate is skipped because the agent is not reading the open web.",
+        "Prompt-injection filtering or a guardrail pass is offered as the control instead of the capability cut, or ahead of it."
+      ],
+      "gatesOpen": [
+        "Tool permission scoping",
+        "Blast radius of an autonomous action",
+        "Human approval on irreversible actions",
+        "Agent credential scope",
+        "Untrusted content in the context window"
+      ],
+      "gatesClosed": []
+    },
+    {
+      "id": "read-only-summariser-agent",
+      "mode": "greenfield",
+      "title": "Read-only is not automatically low-risk",
+      "prompt": "We're adding an agent that reads a customer's support thread and writes a short internal summary for the next agent to read — does a read-only agent like this need a security review?",
+      "forces": [
+        "The agent reads the full customer-supplied thread, which can contain arbitrary text a customer wrote.",
+        "The agent writes only to an internal summary field; it has no tool that sends anything outside the system.",
+        "Nothing the agent produces is acted on automatically — a human reads the summary before doing anything with it.",
+        "No credential beyond read access to the thread and write access to the summary field is granted."
+      ],
+      "expect": "Untrusted content in the context window opens even though the agent is read-only — a customer-authored thread is exactly the influenceable content this gate exists for. The third leg, an outbound channel, is explicitly checked and found absent, which is part of why the gate can close cheaply here rather than needing a guardrail pass. Human approval on irreversible actions closes — nothing the agent does is irreversible; it writes a field a human reads before acting. Agent action audit trail closes — the summary write is already covered by existing logging with the agent named as the actor.",
+      "failsIf": [
+        "The agent is treated as low-risk purely because it is read-only, and the injection gate is skipped.",
+        "Human approval is recommended for a summary field nobody acts on automatically.",
+        "The absence of an outbound channel is not checked or named."
+      ],
+      "gatesOpen": [
+        "Untrusted content in the context window"
+      ],
+      "gatesClosed": [
+        "Human approval on irreversible actions",
+        "Agent action audit trail"
+      ]
+    },
+    {
+      "id": "public-api-surface-change",
+      "fixture": "test/fixtures/scenarios/security/public-api-surface-change",
+      "mode": "review",
+      "title": "Bound to the check that actually caught it",
+      "prompt": "We just changed our public API — can you check whether the new endpoint accidentally introduced an authorization gap?",
+      "forces": [
+        "An .oasdiff.yaml config exists in CI, set to fail the build on a new operation with no security requirement.",
+        "A new endpoint was added to the OpenAPI contract without a security scheme, and the CI check caught it before merge.",
+        "The API serves a single organization's data; there is no cross-tenant boundary here.",
+        "The existing endpoints all carry an authorization check confirmed in a prior review."
+      ],
+      "expect": "Boundary authentication and Authorization placement both open, and the finding binds to the resolved oasdiff check in CI — named as the tool and the contract, not the model's own reading of the OpenAPI file. Tenant isolation stays closed — a single organization, with no second tenant on the actor list.",
+      "failsIf": [
+        "The finding is reported without naming the oasdiff contract that actually caught it.",
+        "Tenant isolation opens without a second-tenant actor.",
+        "The rule is classified deterministic without confirming the CI check actually resolved."
+      ],
+      "gatesOpen": [
+        "Boundary authentication",
+        "Authorization placement"
+      ],
+      "gatesClosed": [
+        "Tenant isolation"
+      ],
+      "toolBoundGate": true
+    },
+    {
+      "id": "oss-library-supply-chain",
+      "mode": "greenfield",
+      "title": "A published library has a supply chain and almost nothing else",
+      "prompt": "We're publishing an open-source library that other teams' services will install as a dependency — what security decisions actually apply to a package like this?",
+      "forces": [
+        "The library is published to a public package registry; any project can add it as a dependency.",
+        "Anyone with write access to the repository can currently trigger a publish with no second-party review.",
+        "The library holds no customer data and runs no persistent storage of its own.",
+        "There is no multi-tenant data model at all — it is a stateless library, not a running service."
+      ],
+      "expect": "Dependency provenance opens — the library itself is the asset a dependency maintainer or a compromised upstream package could taint, and its own dependencies need pinning. Build and release integrity opens — a contributor with write access can currently publish unreviewed, and that is the actual boundary this project has. Encryption at rest and Tenant isolation both close — there is no stored data and no tenant model for a stateless library to defend.",
+      "failsIf": [
+        "Encryption at rest or Tenant isolation is opened for a library with no storage or tenant model.",
+        "The published library's own build and release path is not identified as the primary asset.",
+        "The review defaults to a generic checklist instead of the two gates that actually apply."
+      ],
+      "gatesOpen": [
+        "Dependency provenance",
+        "Build and release integrity"
+      ],
+      "gatesClosed": [
+        "Encryption at rest",
+        "Tenant isolation"
+      ]
+    },
+    {
+      "id": "already-hardened-service",
+      "fixture": "test/fixtures/scenarios/security/already-hardened-service",
+      "mode": "review",
+      "title": "The proportionate design, reported plainly",
+      "prompt": "Can you review the security of our billing service? We've already been through two audits and made a lot of changes since then.",
+      "forces": [
+        "Every route is behind authentication middleware, confirmed in the review with no unauthenticated handler found.",
+        "Authorization checks live at the resource-owning service, confirmed against a second caller path — a batch job — that also goes through the same check.",
+        "Secrets are held in a managed vault with short-lived tokens issued per task; gitleaks runs in CI and reports clean.",
+        "The dependency lockfile is committed and CI installs with a frozen-lockfile flag; releases require a second-party review."
+      ],
+      "expect": "The review reaches 'this design is proportionate to its threat model; no change is currently justified' and says so plainly, in a short report. It does not invent findings to look thorough, and it still names the reopening signal for the controls it confirmed — a new caller path, a new route, a policy change — rather than treating 'no change' as nothing to report.",
+      "failsIf": [
+        "A finding is invented or inflated to avoid an empty-looking report.",
+        "The report is padded with observations that don't meet the four-part finding shape.",
+        "No reopening signal is named for the confirmed controls."
+      ],
+      "gatesOpen": [],
+      "gatesClosed": [],
+      "expectNoChange": true
+    },
+    {
+      "id": "maturity-score-request",
+      "fixture": "test/fixtures/scenarios/security/maturity-score-request",
+      "mode": "review",
+      "title": "Declined in one sentence, then delivered anyway",
+      "prompt": "Review our API's security and give it a score out of ten, and check it against the OWASP Top 10 as a checklist.",
+      "forces": [
+        "One route registered without the authentication middleware was found during the review.",
+        "The database is on a managed instance with default volume encryption; only the application server can reach it.",
+        "The user explicitly asks for a numeric score and an OWASP tick-sheet as the deliverable.",
+        "No other authentication gaps were found across the rest of the route table."
+      ],
+      "expect": "The run declines the score request in one sentence — a number would hide which of these rests on a tool and which rests on reading — and then delivers the findings anyway: Boundary authentication opens for the one unguarded route, and Encryption at rest closes because only the application server can already reach the database. Supplying the score fails this scenario regardless of how good the underlying findings are.",
+      "failsIf": [
+        "A numeric score, grade, or percentage is given in any form.",
+        "An OWASP Top-10 checklist is produced as the deliverable rather than folded into the interview as a coverage prompt.",
+        "The refusal is not accompanied by the actual findings — declining and stopping is also a failure."
+      ],
+      "gatesOpen": [
+        "Boundary authentication"
+      ],
+      "gatesClosed": [
+        "Encryption at rest"
+      ],
+      "refusesScore": true
+    },
+    {
+      "id": "legacy-monolith-trusted-network",
+      "mode": "review",
+      "title": "A long-standing assumption is still an assumption",
+      "prompt": "We have an old monolith that calls a few internal services directly — we've always just assumed the internal network is trusted. Is that still okay?",
+      "forces": [
+        "Internal service-to-service calls carry no authentication of their own; every service trusts a request that reaches it on the internal network.",
+        "The team states the internal network is trusted because it is not internet-facing.",
+        "A recent hire's laptop was added to the same network segment as part of a new contractor engagement.",
+        "There is exactly one tenant — the company's own data — with no plan for multi-tenancy."
+      ],
+      "expect": "Service-to-service identity opens — the contractor's laptop is a compromised-or-mis-scoped-workload actor now reachable on the same segment, which the 'trusted internal network' assumption never accounted for. The assumption itself is recorded as an Assumption, never as a control that passes — 'we assume the internal network is trusted' does not become a Finding that closes the gate just because it is long-standing. Tenant isolation stays closed — a single tenant.",
+      "failsIf": [
+        "The trusted-network assumption is reported as a control that satisfies the gate rather than as an assumption.",
+        "The contractor's laptop is not named as the actor that reopens the assumption.",
+        "Tenant isolation is opened without a real second tenant."
+      ],
+      "gatesOpen": [
+        "Service-to-service identity"
+      ],
+      "gatesClosed": [
+        "Tenant isolation"
+      ]
+    }
+  ]
+}

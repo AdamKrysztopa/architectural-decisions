@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -11,6 +12,8 @@ import {
   assertRelativePath,
   assertRootFileBoundaries,
   assertRootFileContract,
+  assertTargetFileBoundaries,
+  assertTargetFileContract,
   validateRuntimeTrees,
 } from "../builders/build.mjs";
 
@@ -26,6 +29,7 @@ const expectedSkillNames = [
   "decide-architecture",
   "design-patterns",
   "test-patterns",
+  "threat-model",
 ];
 
 // Terms a user-visible surface may use to advertise each skill. Release
@@ -37,6 +41,7 @@ const advertisedTerms = {
   "decide-architecture": ["decide-architecture", "software architecture", "architecture"],
   "design-patterns": ["design-patterns", "design pattern"],
   "test-patterns": ["test-patterns", "testing strategy", "testing"],
+  "threat-model": ["threat-model", "threat model", "security"],
 };
 
 // A description short enough to be blank, a stub, or a placeholder cannot
@@ -45,7 +50,13 @@ const descriptionFloor = 40;
 
 // Every skill ships at least these two; a skill may add topic references when a
 // single catalog would be too large to retrieve selectively (test-patterns does).
-const requiredReferences = ["decision-tree.md", "catalog.md"];
+const requiredReferences = [
+  "decision-tree.md",
+  "catalog.md",
+  "recording-decisions.md",
+  "observing-drift.md",
+  "migrating-decisions.md",
+];
 
 const documentationFiles = ["README.md", "llms.txt"];
 
@@ -58,6 +69,7 @@ const skillCountedDocumentation = [
   "docs/README.md",
   "docs/building-packages.md",
   "docs/examples/README.md",
+  "docs/validating-skills.md",
 ];
 
 const numberWords = [
@@ -179,19 +191,71 @@ test("repeated builds are idempotent", async () => {
   assert.equal(second, first);
 });
 
-test("target inventories contain only their manifest and canonical skills", async () => {
+// Hardcoded on purpose, exactly like expectedSkillNames: removing a generated
+// target file must cost a deliberate edit here as well as in package.json.
+const expectedGeneratedTargetFiles = { claude: ["hooks/hooks.json"], codex: [] };
+
+test("target inventories contain only their manifest, generated target files, skills, the runtime, and (claude) the commands", async () => {
+  const metadata = await readJson(join(repositoryRoot, "package.json"));
+  assert.deepEqual(metadata.agentPackaging.generatedTargetFiles, expectedGeneratedTargetFiles);
+
   const skillFiles = (await listFiles(canonicalSkills)).map((file) => `skills/${file}`);
-  const claudeFiles = await listFiles(join(repositoryRoot, "build/claude"));
-  const codexFiles = await listFiles(join(repositoryRoot, "build/codex"));
+  const runtimeFiles = (await listFiles(join(repositoryRoot, "runtime"))).map((file) => `runtime/${file}`);
+  // Claude-only: slash commands are a Claude Code plugin surface with no Codex
+  // equivalent, so this asymmetry is deliberate and is asserted in both
+  // directions -- present under build/claude, absent from build/codex.
+  const commandFiles = (await listFiles(join(repositoryRoot, "commands"))).map((file) => `commands/${file}`);
 
   assert.deepEqual(
-    [...claudeFiles].sort(),
-    [".claude-plugin/plugin.json", ...skillFiles].sort(),
+    (await listFiles(join(repositoryRoot, "build/claude"))).sort(),
+    [
+      ".claude-plugin/plugin.json",
+      ...expectedGeneratedTargetFiles.claude,
+      ...skillFiles,
+      ...runtimeFiles,
+      ...commandFiles,
+    ].sort(),
   );
   assert.deepEqual(
-    [...codexFiles].sort(),
-    [".codex-plugin/plugin.json", ...skillFiles].sort(),
+    (await listFiles(join(repositoryRoot, "build/codex"))).sort(),
+    [".codex-plugin/plugin.json", ...expectedGeneratedTargetFiles.codex, ...skillFiles, ...runtimeFiles].sort(),
   );
+});
+
+test("the claude hook manifest registers the drift loop and nothing that can block", async () => {
+  const hooks = await readJson(join(repositoryRoot, "build/claude/hooks/hooks.json"));
+  assert.deepEqual(Object.keys(hooks.hooks).sort(), ["PostToolUse", "SessionStart", "Stop"]);
+  assert.ok(!("PreToolUse" in hooks.hooks), "the drift loop must never register a PreToolUse hook");
+
+  const [postToolUse] = hooks.hooks.PostToolUse;
+  assert.equal(postToolUse.matcher, "Write|Edit|NotebookEdit");
+  assert.ok(!/MultiEdit/.test(JSON.stringify(hooks)), "MultiEdit is not a tool Claude Code documents");
+  assert.equal(postToolUse.hooks[0].async, true, "the observer must not sit on the edit critical path");
+
+  const [sessionStart] = hooks.hooks.SessionStart;
+  assert.equal(sessionStart.matcher, undefined, "an explicit source list would silently stop injecting");
+
+  const handlers = Object.values(hooks.hooks).flatMap((groups) => groups.flatMap((group) => group.hooks));
+  for (const handler of handlers) {
+    assert.equal(handler.type, "command");
+    assert.equal(handler.command, "node");
+    assert.equal(handler.args.length, 1);
+    assert.match(handler.args[0], /^\$\{CLAUDE_PLUGIN_ROOT\}\/runtime\/drift\/[a-z-]+\.mjs$/);
+    assert.ok(Number.isInteger(handler.timeout) && handler.timeout <= 30);
+  }
+
+  // The scripts the manifest points at must actually ship in the package.
+  for (const handler of handlers) {
+    const relativePath = handler.args[0].replace("${CLAUDE_PLUGIN_ROOT}/", "");
+    await assert.doesNotReject(readFile(join(repositoryRoot, "build/claude", relativePath), "utf8"));
+  }
+});
+
+test("codex ships the drift runtime and registers no hooks", async () => {
+  const files = await listFiles(join(repositoryRoot, "build/codex"));
+  assert.ok(files.includes("runtime/drift/drift.mjs"), "the drain must ship to codex");
+  assert.ok(files.includes("runtime/drift/observe.mjs"), "the hook scripts ship, inert, to codex");
+  assert.ok(!files.some((file) => file.startsWith("hooks/")), "codex has no hook system to register with");
 });
 
 test("generated skill payloads are byte-identical to the canonical skills", async () => {
@@ -451,4 +515,143 @@ test("adapter contracts require runtime trees and exact root-file allowlists", (
     () => assertRootFileBoundaries("test", ["package.json"], generatedRootDirectories),
     /outside its root directories/,
   );
+});
+
+test("generated target files are allowlisted, unique, and outside every runtime tree", () => {
+  const runtimeTrees = [
+    { source: "skills", destination: "skills" },
+    { source: "runtime", destination: "runtime" },
+  ];
+  const targetFiles = [{ path: "hooks/hooks.json" }];
+  const allowlist = ["hooks/hooks.json"];
+
+  assert.doesNotThrow(() => assertTargetFileContract("test", targetFiles, allowlist));
+  assert.doesNotThrow(() => assertTargetFileBoundaries("test", allowlist, runtimeTrees));
+
+  assert.doesNotThrow(() => assertTargetFileContract("test", [], []));
+  assert.throws(
+    () => assertTargetFileContract("test", [], allowlist),
+    /differ from generatedTargetFiles/,
+  );
+  assert.throws(
+    () => assertTargetFileContract("test", [...targetFiles, ...targetFiles], allowlist),
+    /duplicate target file/,
+  );
+  assert.throws(
+    () => assertTargetFileContract("test", targetFiles, [...allowlist, ...allowlist]),
+    /contains a duplicate/,
+  );
+  assert.throws(() => assertTargetFileContract("test", [{ path: "../x.json" }], ["../x.json"]), /must stay inside/);
+
+  // The guard that keeps byte-identity meaningful: a generated file may not be
+  // injected into a tree that assertCopiedExactly owns.
+  assert.throws(
+    () => assertTargetFileBoundaries("test", ["runtime/drift/hooks.json"], runtimeTrees),
+    /inside a runtime tree/,
+  );
+  assert.throws(
+    () => assertTargetFileBoundaries("test", ["skills/x.json"], runtimeTrees),
+    /inside a runtime tree/,
+  );
+});
+
+test("the shared references are in sync across every skill", async () => {
+  const sharedFiles = ["recording-decisions.md", "observing-drift.md"];
+  for (const reference of sharedFiles) {
+    const source = await readFile(join(repositoryRoot, "shared", reference));
+    for (const name of await canonicalSkillNames()) {
+      const copy = await readFile(join(canonicalSkills, name, "references", reference));
+      assert.ok(source.equals(copy), `${name}/references/${reference} has drifted from shared/`);
+    }
+  }
+});
+
+test("the shared migration reference is in sync across every skill", async () => {
+  const source = await readFile(join(repositoryRoot, "shared/migrating-decisions.md"));
+  for (const name of await canonicalSkillNames()) {
+    const copy = await readFile(join(canonicalSkills, name, "references/migrating-decisions.md"));
+    assert.ok(source.equals(copy), `${name}/references/migrating-decisions.md has drifted from shared/`);
+  }
+});
+
+test("the shipped generator runs from each target package", async () => {
+  const fixtures = join(repositoryRoot, "test/fixtures/decisions");
+  for (const target of ["claude", "codex"]) {
+    const script = join(repositoryRoot, "build", target, "runtime/baseline/build-constitution.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "--dir", fixtures, "--check"], { cwd: repositoryRoot }),
+      `${target} package's generator failed --check against the fixture corpus`,
+    );
+  }
+});
+
+test("the shipped rule checker runs from each target package", async () => {
+  // Reuses sub-project 1's decision fixtures (test/fixtures/decisions), which
+  // already carry a deterministic rule bound to import-linter#domain-isolation
+  // (test/fixtures/decisions/0001-layered-domain.md). No .importlinter file
+  // exists in that fixture directory, so the rule resolves to "unbound" and
+  // the process exits 2 — a real, deterministic outcome, not a crash.
+  const fixtures = join(repositoryRoot, "test/fixtures/decisions");
+  for (const target of ["claude", "codex"]) {
+    const script = join(repositoryRoot, "build", target, "runtime/checkers/check-rules.mjs");
+    const { stdout } = await execFileAsync(process.execPath, [script, "--dir", fixtures], {
+      cwd: repositoryRoot,
+    }).catch((error) => error);
+    assert.match(stdout ?? "", /domain-imports-nothing\s+unbound/, `${target} checker CLI did not run as expected`);
+  }
+});
+
+test("the shipped migration CLI runs from each target package", async () => {
+  // Neither runtime/migration/build-migration-report.mjs nor
+  // runtime/baseline/build-constitution.mjs's promote verb (below) has a
+  // --help flag -- both throw "Unknown argument" and exit 1 for one, which
+  // would make assert.doesNotReject fail for the wrong reason. Proving "the
+  // entry point is reachable from the packaged target" instead means driving
+  // it through one real, successful invocation against fixture decisions.
+  const decisionName = "0011-events-over-shared-db.md";
+  const decisionBody = await readFile(join(repositoryRoot, "test/fixtures/migration", decisionName), "utf8");
+  for (const target of ["claude", "codex"]) {
+    const scratch = await mkdtemp(join(tmpdir(), "arch-crew-migration-cli-"));
+    const decisions = join(scratch, "docs/architecture/decisions");
+    await mkdir(decisions, { recursive: true });
+    await writeFile(join(decisions, decisionName), decisionBody);
+    const manifestPath = join(scratch, "manifest.json");
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        inputs: [{ path: "docs/adr/0003-shared-db-writes.md" }],
+        dispositions: [{ path: "docs/adr/0003-shared-db-writes.md", kind: "migrated", decisionId: 11 }],
+      }),
+    );
+    const script = join(repositoryRoot, "build", target, "runtime/migration/build-migration-report.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "--manifest", manifestPath, "--dir", decisions], {
+        cwd: repositoryRoot,
+      }),
+      `${target} package's migration CLI is not executable`,
+    );
+  }
+});
+
+test("build-constitution's promote verb runs from each target package", async () => {
+  // Same rationale as above: "promote --help" is an unrecognized argument in
+  // this CLI and would exit 1, so reachability is proven with a real promote
+  // of test/fixtures/decisions' one proposed entry (0004) copied into a
+  // scratch directory -- the shipped constitution generator's own fixtures,
+  // not new ones.
+  const decisionsFixtures = join(repositoryRoot, "test/fixtures/decisions");
+  const decisionNames = await readdir(decisionsFixtures);
+  for (const target of ["claude", "codex"]) {
+    const scratch = await mkdtemp(join(tmpdir(), "arch-crew-promote-cli-"));
+    const decisions = join(scratch, "docs/architecture/decisions");
+    await mkdir(decisions, { recursive: true });
+    for (const name of decisionNames) {
+      await writeFile(join(decisions, name), await readFile(join(decisionsFixtures, name), "utf8"));
+    }
+    const script = join(repositoryRoot, "build", target, "runtime/baseline/build-constitution.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "promote", "0004", "--dir", decisions], { cwd: repositoryRoot }),
+      `${target} package's promote verb is not executable`,
+    );
+  }
 });

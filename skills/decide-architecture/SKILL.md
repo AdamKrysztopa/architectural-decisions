@@ -32,6 +32,21 @@ If the user is building an **agentic / LLM system** (an agent that reasons, call
 that's a different axis set — say so and hand off to the `agentic-patterns` skill, which owns that
 decision tree. This skill covers regular software systems.
 
+**The system under discussion may not be this repository.** A third branch sits beside greenfield and
+refactoring: the user describes a system that is not the code you can read — another team's service,
+a product they are evaluating, an architecture on a whiteboard, or a repository you have no access
+to. Reason about the system they describe, and say plainly which claims rest on their description
+rather than on something you read. Do not substitute this repository for the one they meant, and do
+not refuse the question because the code is absent — an absent codebase makes conclusions
+provisional, not impossible. Where a step here calls for reading code, say what you would look for
+and what it would change.
+
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
+
 ## Mode A — Greenfield: the selection interview
 
 Read `references/decision-tree.md` and walk it.
@@ -112,17 +127,12 @@ app needs no refactor, and the most useful thing you can tell its author is "lea
 
 A decision that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the stack, write `docs/adr/NNNN-short-title.md` (lowercase
-words joined by hyphens, e.g. `0001-modular-monolith-with-hexagonal-core.md`) — a 4-digit number,
-one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent. Use
-this MADR-style template:
+**Greenfield → one decision file.** After presenting the stack, follow
+`references/recording-decisions.md`: read the constitution first, then write a single
+`status: proposed` decision file — no separate ADR file. Its prose *is* the ADR:
 
 ```
-# NNNN. <decision title, e.g. "Adopt a modular monolith with a hexagonal core">
-
-- Status: Accepted
-- Date: <YYYY-MM-DD>
-- Deciders: <the user / team, if known>
+# <decision title, e.g. "Adopt a modular monolith with a hexagonal core">
 
 ## Context
 <the forces from the interview — what's being built, and the load / team / domain facts that drove
@@ -131,18 +141,24 @@ each axis. This is *why*, not just what.>
 ## Decision
 <the composed stack: the axis · pick · why table you just presented>
 
-## Consequences
+## Consequences (cost)
 <the cost accepted for each pick, the contextual notes triggered (gateway/mesh/stability/…), and
 the least-architecture caveat: which axes were deferred and the concrete signal that would reopen
 them.>
 ```
 
+Classify every rule honestly (default `narrative`) and regenerate the constitution.
+
 **Refactoring → a review report.** Write the review to `docs/architecture-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent — Current shape + Findings + Leave-alone; short if the system is sound).
-If a finding is a direction the user commits to, offer to capture that one as its own ADR too.
+If a finding is a direction the user commits to, capture it the same way — one decision file,
+following `references/recording-decisions.md`.
 
-Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+Write the file(s) and report the path(s). Ask first only if the repo layout is unclear or the user is
 clearly still just exploring options rather than deciding.
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? That is not this interview — read `references/migrating-decisions.md` and follow it.
 
 ## Why this shape
 
@@ -151,3 +167,32 @@ is just fashion, and fashion is how teams end up with distributed monoliths and 
 The greenfield/refactoring split matters because the two situations have opposite risks — greenfield
 tempts you to add patterns "for later"; legacy tempts you to rewrite. Both are resisted by the same
 principle: change the architecture only as fast as a real requirement forces it.
+
+## Read-only mode
+
+**Present the complete recommendation without creating or modifying repository files whenever
+writing is off the table.** Two different things put it off the table, and both count:
+
+- **The user asks for it.** "Review only", "don't change anything", "dry run", "just tell me", or an
+  explicitly read-only target.
+- **The environment imposes it.** You have no write access, the repository is not checked out, the
+  session is sandboxed or read-only, the system under discussion is not this repository, or a tool
+  call to write has already been refused. An environment-imposed constraint is not a reason to ask
+  the user for permission you already know you do not have, and it is not a reason to skip the
+  recommendation — produce the whole thing, and say once at the end that the artifact was not
+  written and where it would have gone.
+
+Otherwise persist the outcome. **Do not ask for confirmation when repository context is sufficient to
+proceed.**
+
+## Record the decision
+
+Covered above: every recommendation this skill makes — **including an explicit refusal** — is
+persisted as the one decision file described in "Recording the outcome." Do not record when the run
+only answered a question without recommending anything.
+
+## Notice drift later
+
+At a checkpoint — before a commit, or when a session start notice says edits are queued — drain the
+observations and classify them: `references/observing-drift.md`. Report a violation only where a
+tool actually failed.

@@ -1,0 +1,160 @@
+{
+  "skill": "shared:observing-drift",
+  "about": "Force-driven scenarios for the drift-drain classifier shared by all four skills. Each scenario names what edits a run encountered, how they relate to active rules, and whether the drain should write a proposed decision. There is no numeric scoring: a run passes when it reaches the stated classification for the stated reason, and the criteria below hold of what it reported.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "violation-is-reserved",
+      "statement": "No finding is classified as a Violation unless checker.status is fail. No run writes violation about a review rule, however confident the evidence. (A run may name the word while explaining the taxonomy; what is reserved is the CLASSIFICATION, not the token.)"
+    },
+    {
+      "id": "no-model-for-a-tool",
+      "statement": "Where judgement is forbidden, the run reports the checker's status verbatim and substitutes no opinion. Unavailable and unbound are not findings."
+    },
+    {
+      "id": "evidence-gate",
+      "statement": "Every suspected drift names rule id, file, line and the contradicting text; a finding missing any one of the four is downgraded to insufficient evidence."
+    },
+    {
+      "id": "insufficient-evidence-is-normal",
+      "statement": "The run does not inflate weak evidence to reach a finding, and nothing to report is an available conclusion reached as often as justified."
+    },
+    {
+      "id": "no-scores",
+      "statement": "No score, percentage, ranking, or headline count mixes classes. One tool failure and two impressions are not 3 findings."
+    },
+    {
+      "id": "proposed-not-defect",
+      "statement": "Legitimate evolution and stale documentation produce a proposed decision after asking, never a defect report."
+    },
+    {
+      "id": "no-silent-writes",
+      "statement": "No run modifies code, documentation, a rule, an existing decision's prose, constitution.md, or a tool config. Only new proposed decisions after user agreement."
+    },
+    {
+      "id": "sources-are-pointers",
+      "statement": "No entry in sources is classified, counted into a class total, or graded. Each is reported as a pointer to a designated document — never a Violation, since no checker can speak for one — and never routed into a proposed decision. Precedence orders the report and resolves nothing; a stale-baseline source is described as unverified, not wrong."
+    },
+    {
+      "id": "window-is-declared",
+      "statement": "A degenerate or unavailable baseStatus is stated before any conclusion is drawn from what the packet does or does not hold. No run reports 'nothing to report' out of a window in which no committed change could have appeared."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "impression-only",
+      "prompt": "I'm about to commit. Can you check whether anything I've changed drifts from the architecture decisions we've recorded?",
+      "forces": "A review rule exists on a scoped file; the diff touches the file but the reviewer can name no line and no contradicting structure — only that the change 'feels layered wrong' and 'seems to violate the rule'.",
+      "expect": {
+        "class": "Insufficient evidence",
+        "downgraded": true,
+        "writes": false,
+        "notes": "Impression without specific text or line downgrades to insufficient evidence. This is the outcome easiest to lose."
+      }
+    },
+    {
+      "id": "narrative-rule-touched",
+      "prompt": "Before I commit — does any of this conflict with our recorded decisions?",
+      "forces": "A path under a narrative rule's subject changes; the rule is never classified, only counted in narrativeSkipped.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "Narrative rules are never classified. The packet counts them and nothing else."
+      }
+    },
+    {
+      "id": "new-boundary",
+      "prompt": "I've finished this piece of work. Check it against our architecture decisions before I commit, please.",
+      "forces": "A new services/notifications/ package with its own client appears; no active rule covers it. constitution.md remains byte-unchanged.",
+      "expect": {
+        "class": "Legitimate evolution",
+        "writes": true,
+        "status": "proposed",
+        "notes": "A new architectural boundary is proposed for review, not written silently. constitution.md is never modified by the run itself."
+      }
+    },
+    {
+      "id": "nothing-to-report",
+      "prompt": "End of session — run the drift check over what I changed today.",
+      "forces": "Four edits, all to README.md and test fixtures; no active rule's scope matches any changed path.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "When no rule is scoped to the changes, report nothing. This is the most common correct outcome."
+      }
+    },
+    {
+      "id": "rule-outlived-its-subject",
+      "fixture": "test/fixtures/scenarios/drift-drain/rule-outlived-its-subject",
+      "fixtureSetup": "The evidence has to come from git. Run the fixture's stage.sh against an empty directory to materialise nine pinned commits; the commit that deleted src/legacy/gateway is HEAD~6, and the drain queue is already in place.",
+      "prompt": "Can you check this session's changes against our recorded architecture decisions?",
+      "forces": "An active review rule names src/legacy/gateway, a directory deleted six commits ago. The evidence comes from git, not the run's assertions.",
+      "expect": {
+        "class": "Stale or contradictory documentation",
+        "writes": true,
+        "status": "proposed",
+        "notes": "The rule is wrong, not the code. A decision superseding the rule is proposed for user review."
+      }
+    },
+    {
+      "id": "specific-contradiction",
+      "prompt": "I'm about to commit. Can you check whether anything I've changed drifts from the architecture decisions we've recorded?",
+      "forces": "A review rule forbids the domain importing infrastructure; the diff adds 'from app.db import Session' at src/domain/order.py:14.",
+      "expect": {
+        "class": "Suspected drift",
+        "writes": false,
+        "notes": "Rule id, file, line 14, and the specific import text are all named. Nothing is written; this is a finding for human review."
+      }
+    },
+    {
+      "id": "tool-failed",
+      "prompt": "Before I push this, check it against our recorded decisions.",
+      "forces": "A deterministic rule bound to a real import-linter contract; check-rules --run reports fail.",
+      "expect": {
+        "class": "Violation",
+        "writes": false,
+        "notes": "Violation is reserved for tool failures. A model never stands in for a tool that ran and lost."
+      }
+    },
+    {
+      "id": "tool-unavailable",
+      "prompt": "Before I push this, check it against our recorded decisions.",
+      "forces": "The same rule, with import-linter not on PATH; checker.status is unavailable.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "Where judgement is forbidden, the run reports the checker's status verbatim — unavailable — and offers no judgement of its own. This is correct."
+      }
+    },
+    {
+      "id": "authoritative-source-governs-the-change",
+      "prompt": "I'm about to commit. Can you check whether anything I've changed drifts from what we've decided?",
+      "forces": "The repository designates docs/api/orders-v2.yaml as an authoritative api-contract source, scoped to services/orders/**. This session edited services/orders/handlers.py. No active rule's scope matches that path, so rules is empty; the packet's sources carries one entry with governs: [\"services/orders/handlers.py\"], judgement: review, and no checker of any kind.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "The source entry is reported as what it is — the document, why it is in the packet (governs), its kind, and the instruction to read it against the change — and nothing more. It is never called a Violation: no tool ran, and none can run for a designated document. It is never counted into a class from section 4. An empty rules list is not licence to say nothing happened here: the packet named a document this change bears on, and reporting silence would drop the whole layer."
+      }
+    },
+    {
+      "id": "authoritative-sources-disagree",
+      "prompt": "End of session — check what I changed against our decisions and anything else that governs this code.",
+      "forces": "Two designated sources of equal precedence — a security-requirement and an api-contract — both claim the subject 'authentication', and one of them has changed since it was last checked. The drain returns sourceConflicts holding an unresolvable-by-precedence entry and a stale-baseline entry alongside the ordinary rules.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "Both conflicts are reported and neither is resolved. The run does not pick a winner, does not treat the higher-precedence document as cancelling the other, and describes the stale source as unverified rather than wrong. No proposed decision is written to settle the disagreement: two designated documents disagreeing is work for their owners, not a decision file for the drain."
+      }
+    },
+    {
+      "id": "degenerate-comparison-window",
+      "prompt": "Before I open the PR, run the drift check over this branch.",
+      "forces": "The session is on main with nothing unpushed, so every candidate branch's merge-base resolves to HEAD itself and the packet reports baseStatus: degenerate with no paths from git. Real edits were committed earlier in the session, and the queue is empty because this host has no hooks.",
+      "expect": {
+        "class": null,
+        "writes": false,
+        "notes": "The run says plainly that the comparison base resolved to HEAD, so no committed change could have reached the packet, and asks for a meaningful --base before drawing any conclusion. What it must not do is report 'nothing to report' as though the window had been real: an empty packet from a degenerate window is an absence of evidence, and saying so is the whole of the finding."
+      }
+    }
+  ]
+}

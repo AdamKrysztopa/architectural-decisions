@@ -1,0 +1,9 @@
+rules:
+  - id: no-eval
+    languages: [python]
+    message: no eval
+    severity: ERROR
+    pattern: eval(...)
+  - id: no-pickle-loads
+    pattern-either:
+      - pattern: pickle.loads(...)

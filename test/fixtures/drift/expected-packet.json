@@ -1,0 +1,85 @@
+{
+  "root": "__FIXTURES_ROOT__",
+  "base": null,
+  "baseStatus": "unavailable",
+  "queue": {
+    "observed": 3,
+    "malformed": 1,
+    "atCap": false,
+    "truncated": false,
+    "since": "2026-09-09T12:04:11.412Z",
+    "until": "2026-09-09T12:11:02.700Z"
+  },
+  "paths": [
+    {
+      "path": "README.md",
+      "sources": [
+        "queue"
+      ],
+      "tools": [
+        "Edit"
+      ]
+    },
+    {
+      "path": "services/billing/db.py",
+      "sources": [
+        "queue"
+      ],
+      "tools": [
+        "Edit"
+      ]
+    },
+    {
+      "path": "src/domain/order.py",
+      "sources": [
+        "queue"
+      ],
+      "tools": [
+        "Write"
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "id": "domain-pure",
+      "decision": 4,
+      "statement": "The domain package must not import infrastructure.",
+      "severity": "warning",
+      "verification": "review",
+      "verifiedBy": null,
+      "scope": [
+        "src/domain/**"
+      ],
+      "matched": [
+        "src/domain/order.py"
+      ],
+      "checker": null,
+      "judgement": "required"
+    },
+    {
+      "id": "no-shared-db-writes",
+      "decision": 4,
+      "statement": "Services must not write to another service's tables.",
+      "severity": "blocking",
+      "verification": "deterministic",
+      "verifiedBy": "import-linter#svc-db-isolation",
+      "scope": [
+        "services/**"
+      ],
+      "matched": [
+        "services/billing/db.py"
+      ],
+      "checker": {
+        "status": "unbound",
+        "evidence": "no import-linter config found",
+        "scopeCoverage": "repository-wide"
+      },
+      "judgement": "forbidden"
+    }
+  ],
+  "sources": [],
+  "sourceConflicts": [],
+  "narrativeSkipped": 1,
+  "scopeless": 0,
+  "outOfScope": 1
+}

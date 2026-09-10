@@ -1,0 +1,14 @@
+name: ci
+
+on: [push, pull_request]
+
+# The whole of CI. There is no secret-scanning step here, and there is no
+# .gitleaks.toml, .pre-commit-config.yaml, .semgrep.yml or trufflehog config
+# anywhere in this repository.
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -r requirements.txt
+      - run: pytest -q

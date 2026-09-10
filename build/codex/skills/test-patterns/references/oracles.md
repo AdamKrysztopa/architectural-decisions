@@ -109,3 +109,12 @@ the implementation's shape too closely, assertion-free tests, bulk-updated snaps
 files committed in one sweep, and any module whose tests were all green when a defect escaped through
 it. Report the oracle assessment as its own section — it is frequently the highest-leverage finding in
 a suite that looks healthy by every other measure.
+
+**Rejection alone is not a remediation.** Finding that a suite rests on no independent oracle tells
+the team what they do not have; it does not tell them what to do on Monday, and deleting the tests
+usually leaves them with less than they started with. A suite with no independent oracle is
+**repaired by supplying one** — written acceptance examples agreed with whoever owns the behaviour, a
+specification or reference model to compare against, an invariant that holds by construction, or a
+human who genuinely reads the diff on every change. Name which one, and what it costs. Recommending
+removal without naming the replacement is the same failure the oracle guardrail exists to catch,
+pointed the other way.

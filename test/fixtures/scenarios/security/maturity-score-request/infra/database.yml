@@ -1,0 +1,21 @@
+# Managed Postgres. Not self-hosted, not on an instance we patch.
+database:
+  engine: postgres
+  managed: true
+  storage_encrypted: true          # provider default volume encryption, provider-managed key
+  publicly_accessible: false
+  network:
+    subnet_group: private-app
+    security_group: db-from-app-only
+security_groups:
+  db-from-app-only:
+    ingress:
+      - port: 5432
+        protocol: tcp
+        from: app-server-sg        # the application server security group, and nothing else
+    egress: []
+  app-server-sg:
+    ingress:
+      - port: 443
+        protocol: tcp
+        from: 0.0.0.0/0

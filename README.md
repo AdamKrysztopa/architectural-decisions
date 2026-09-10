@@ -1,6 +1,6 @@
 # arch-crew
 
-A suite of **architectural-decision skills** for supported coding agents. Four skills help you
+A suite of **architectural-decision skills** for supported coding agents. Five skills help you
 *choose* an architecture, a pattern, or a testing strategy for new work, or *audit* what you already
 have — each branching automatically on whether you're greenfield or refactoring.
 
@@ -18,11 +18,74 @@ have — each branching automatically on whether you're greenfield or refactorin
 | `arch-crew:design-patterns` | Pick or assess **GoF / Python-idiomatic design patterns** | Which-pattern interview → one recommendation (+ Pythonic form) | Smell → pattern review |
 | `arch-crew:agentic-patterns` | Design or assess an **LLM-agent system** | Layered design interview (autonomy → … → integration) | Seven-defect agent review |
 | `arch-crew:test-patterns` | Decide which **evidence** a system needs — quality practices, executable tests (unit/integration/contract/E2E), and data/ML/LLM evaluation | Risk-led evidence portfolio + ADR | Test-suite review + one highest-leverage rebalancing move |
+| `arch-crew:threat-model` | Decide or audit the **security of a design** — trust boundaries, authorization placement, secrets, data protection, supply chain, agent/tool permissions | Boundary-first threat interview → findings with asset, actor, impact, control + cost | Security review → one highest-leverage move |
 
 Each skill first works out **where you are** — greenfield (a new design) or refactoring (existing
 code) — then either runs a short selection interview or reviews your code against the catalog. The
-through-line in all four: recommend the **least architecture that meets the requirement**, and name
+through-line in all five: recommend the **least architecture that meets the requirement**, and name
 the cost of every pick.
+
+## The baseline
+
+Each skill records the decision it reached — including an explicit refusal — as a file under the
+repository's decisions directory, with `status: proposed` for a human to promote. A zero-dependency
+generator rolls the active ones into `constitution.md`, which the skills read before recommending,
+so the crew stops re-litigating decisions it has already made.
+
+A `deterministic` rule's binding is resolved against the repository's real tool config by
+`runtime/checkers/check-rules.mjs` — no tool installation required to catch a rule bound to a
+contract that does not exist; `--run` opts into actually evaluating it.
+
+A repository with existing prose ADRs, or none at all, has a path to a first baseline too:
+`runtime/migration/build-migration-report.mjs` writes a traceability report giving every confirmed
+input exactly one disposition, so consolidating or reverse-discovering a baseline never loses a
+decision without a trace — see `shared/migrating-decisions.md`.
+
+The baseline evolves the same way after capture: `node runtime/baseline/build-constitution.mjs
+promote NNNN` is the only path from `status: proposed` to `active`, and draining observed drift
+(below) is how a rule's real-world compliance gets checked once it's active — see
+[`docs/building-packages.md`](docs/building-packages.md).
+
+## Noticing drift
+
+On Claude Code, arch-crew injects the active rules at session start and quietly records which files
+were edited. At a checkpoint you drain those observations: a runtime matches the changed paths
+against the active rules, copies each deterministic checker's verdict verbatim, and hands the model
+only the rules judgement is actually allowed on. A tool failure is a violation; everything else is a
+finding, an honest "insufficient evidence", or a proposed decision. No hook can block an edit, no
+finding fails a build, and on Codex — which has no hooks — the same drain runs from git.
+
+## Running the deterministic tools
+
+Everything deterministic this package ships is reachable from one dispatcher, so there is no set of
+module paths to remember:
+
+```sh
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs"            # the six verbs
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check      # resolve every verified_by binding
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check --run  # and evaluate it with the real tool
+```
+
+The verbs are `constitution`, `promote`, `check`, `drift`, `migrate` and `candidates`. Each one
+delegates to the CLI that already owned it, and **exit codes pass through unchanged** — `check`
+returns 2 for a blocking failure and 3 for a warning, which is what makes it usable as a CI gate.
+
+On Claude Code you rarely type any of that. Five slash commands wrap the verbs and carry the
+procedure the output has to be read against:
+
+| Command | What it does |
+|---|---|
+| `/arch-check` | Resolves every deterministic rule and reports the status vocabulary honestly — `unavailable` is not a pass. |
+| `/arch-drift` | Drains the queue and classifies it per `observing-drift.md`, evidence gate included. |
+| `/arch-constitution` | Regenerates the constitution, or `--check`s that it is current. |
+| `/arch-promote` | Promotes named decisions — and asks first, because promotion is a human act. |
+| `/arch-migrate` | Lists candidates and proposes decisions from a manifest you confirm. |
+
+The Stop hook points at the two you would otherwise forget: it tells you when edits are queued, and
+when the committed constitution has gone stale. It only ever reports — no hook here writes to your
+repository or blocks a turn.
+
+Slash commands are a Claude Code surface; the Codex package ships the same dispatcher without them.
 
 ## Install for Claude Code
 
@@ -97,8 +160,9 @@ decision you need to make.
 
 The decision logic and pattern catalogs for `decide-architecture`, `design-patterns`, and
 `agentic-patterns` are distilled from three single-file HTML references (`html/`, kept locally as
-the source of truth, not shipped) into each skill's `references/`. `test-patterns` has no HTML
-source; its references were written directly. Every skill ships these two:
+the source of truth, not shipped) into each skill's `references/`. `test-patterns` and
+`threat-model` have no HTML source; their references were written directly. Every skill ships these
+two:
 
 - `references/decision-tree.md` — the selection interview / decision tree.
 - `references/catalog.md` — the patterns with when-to-use, cost, and code-review cues.
@@ -128,6 +192,7 @@ skills/
   design-patterns/        SKILL.md + references/{decision-tree,catalog}.md
   agentic-patterns/       SKILL.md + references/{decision-tree,catalog}.md
   test-patterns/          SKILL.md + references/{decision-tree,catalog,evaluation,oracles}.md
+  threat-model/           SKILL.md + references/{decision-tree,catalog,evidence,agent-agency}.md
 builders/
   build.mjs               shared deterministic builder
   adapters/               thin target packaging adapters

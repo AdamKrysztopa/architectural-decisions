@@ -1,0 +1,16 @@
+# Recorded output of the repository's own gitleaks run, as it appears in CI.
+# This file is the artifact a finding must bind to. A run may cite the rule id,
+# the file and the commit from here; it may not invent any of the three.
+
+$ gitleaks detect --source . --redact --report-format json
+
+Finding:     api_key = "REDACTED"
+RuleID:      generic-api-key
+File:        app/settings.py
+Line:        14
+Commit:      9c41ab7e2f5d8c3b1a06e4d7f28b5c9013ae64f2
+Author:      priya@example.com
+Date:        2026-04-18T09:12:44Z
+Message:     Wire the orders API to the payments sandbox
+
+1 leak found

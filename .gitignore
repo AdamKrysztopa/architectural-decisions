@@ -8,3 +8,10 @@ inputs/
 
 # Skill eval results (local only)
 test-runs/
+
+# Drift-observation queue (local only, per checkout)
+.arch-crew/
+
+# ...except the checked-in fixture queue the golden-packet test drains from.
+!test/fixtures/**/.arch-crew/
+!test/fixtures/**/.arch-crew/**

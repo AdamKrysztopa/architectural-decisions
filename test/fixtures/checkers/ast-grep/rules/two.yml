@@ -1,0 +1,9 @@
+id: rule-one
+language: TypeScript
+rule:
+  pattern: foo()
+---
+id: rule-two
+language: TypeScript
+rule:
+  pattern: bar()

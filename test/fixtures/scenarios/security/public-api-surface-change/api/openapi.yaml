@@ -1,0 +1,45 @@
+# The contract on the branch -- oasdiff's revision document.
+# `listReports` and `getReport` are unchanged. `createExport` is new, and it
+# carries `security: []`, which switches the document-level requirement off
+# for that one operation.
+openapi: 3.0.3
+info:
+  title: Reporting API
+  version: 1.5.0
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+security:
+  - bearerAuth: []
+paths:
+  /v1/reports:
+    get:
+      operationId: listReports
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: ok }
+  /v1/reports/{reportId}:
+    get:
+      operationId: getReport
+      security:
+        - bearerAuth: []
+      responses:
+        "200": { description: ok }
+  /v1/exports:
+    post:
+      operationId: createExport
+      summary: Start an export of a report for the caller's organization.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reportId: { type: string }
+      responses:
+        "202": { description: accepted }

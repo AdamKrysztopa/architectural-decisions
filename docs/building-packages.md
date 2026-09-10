@@ -35,8 +35,43 @@ git diff --check
 git status --short
 ```
 
-Build only the affected target while iterating; run `all` before release. `npm test` runs both
-suites (`npm run test:build` and `npm run test:scenarios` run them individually). Validation must
+Build only the affected target while iterating; run `all` before release. `npm test` runs every
+deterministic suite this repository ships — package contract, scenario-set integrity, the baseline
+and migration unit suites, the frozen-frontmatter/body-hash skill-freeze net, the checker-corpus
+suite, the drift-loop unit and hook suite, and all four `test/e2e/` suites — see `package.json`'s
+`test` script for the exact file list. `npm run test:build` and `npm run test:scenarios` run only the
+package-contract and scenario-integrity suites individually, a narrower subset useful while iterating
+on just one of those two.
+
+Keep the shared references in sync (also run automatically by `npm run build`):
+
+    npm run sync:check
+
+Verify a repository's constitution matches its decision files:
+
+    node runtime/baseline/build-constitution.mjs --dir docs/architecture/decisions --check
+
+Consolidate or bootstrap a baseline for a repository (see `shared/migrating-decisions.md`):
+
+    node runtime/migration/discover-candidates.mjs
+    node runtime/migration/build-migration-report.mjs --manifest <path> --dir <decisions-dir>
+    node runtime/baseline/build-constitution.mjs promote NNNN [NNNN ...]
+
+Resolve every deterministic rule's binding against this repository's own tool config (no tool
+required; add `--run` to also evaluate, `--require-tools` to make a missing tool binary blocking
+under `--run`):
+
+    node runtime/checkers/check-rules.mjs --dir docs/architecture/decisions
+
+Inspect the drift queue and drain it into an evidence packet:
+
+    node runtime/drift/drift.mjs status --root .
+    node runtime/drift/drift.mjs drain --root . --json
+
+`build/claude/hooks/hooks.json` is a generated target file, declared in package.json's
+`agentPackaging.generatedTargetFiles`, and is never hand-edited.
+
+Validation must
 confirm that each target contains its expected manifest and canonical skill files, contains no files
 from another agent, and that the Claude skill trees match the canonical `skills/` files
 byte-for-byte. A clean rebuild of committed artifacts should leave no diff.
@@ -67,9 +102,57 @@ codex plugin list --json
 ```
 
 Confirm both installed plugins are versioned correctly and contain only their target manifest plus
-the four generated skill trees. Remove the temporary plugin and marketplace registrations after
+the five generated skill trees. Remove the temporary plugin and marketplace registrations after
 the smoke test. The Codex CLI currently has no separate non-mutating plugin validator, so its actual
 marketplace installation is the release gate.
+
+### Clean-install verification (0.4.0 and later)
+
+From a clean clone **at the release tag** — i.e. every task's files committed, not a work-in-progress
+checkout mid-plan:
+
+    npm ci
+    npm run build -- --target all
+    git status --short          # empty
+    npm test
+    npm run sync:check
+
+`npm ci` works here despite zero runtime dependencies: a trivial `package-lock.json` (no
+`dependencies`, `lockfileVersion` 3) is committed precisely so this command has a lockfile to install
+from, rather than the "no lockfile" error `npm ci` gives without one. The `git status --short  # empty`
+line is only true against that committed tag — run against an in-progress branch with uncommitted
+deliverables it will legitimately show them; that is not build drift.
+
+**Claude**, in a scratch project outside this repository:
+
+    /plugin marketplace add ./
+    /plugin install arch-crew
+
+Confirm all five skills appear under the `arch-crew:` namespace, every `runtime/<subsystem>/` entry
+point runs from `$CLAUDE_PLUGIN_ROOT`, the hook registration is picked up, and a `PostToolUse` append
+is recorded in the repo-local drift queue (`.arch-crew/`, untracked — see `runtime/drift/queue.mjs`).
+
+**Codex**:
+
+    codex plugin marketplace add .
+    codex plugin add arch-crew@arch-crew
+
+Start a new session. Confirm the same five-skill inventory, every runtime script runs from the
+installed plugin directory, and the git-based drain path produces the same classification as the
+Claude session's, minus the uncommitted-edit lane.
+
+### Package-content audit
+
+Before tagging a release, confirm the built packages contain nothing unintended:
+
+    node --test test/build.test.mjs   # inventory equality already fails on an extra file
+
+    gitleaks detect --source build/ --no-git
+
+arch-crew does not reimplement secret scanning (see
+`docs/superpowers/specs/2026-09-09-upgrade-decisions-sp2-sp6.md`, Q5.3) — this is the same tool a
+`gitleaks`-bound `deterministic` rule uses, run once over the packaged output rather than the working
+tree.
 
 ## Installation contracts
 

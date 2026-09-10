@@ -1,0 +1,18 @@
+{
+  "agentic-patterns": {
+    "name": "agentic-patterns",
+    "description": "\"Use when designing or assessing an LLM-agent system — 'how should I build this agent', 'do I need multiple agents or one', 'should this be a workflow or an agent', 'how do I add memory/tools/human approval', 'is my ReAct loop / multi-agent setup right', or any agent-architecture code review. Branches automatically: greenfield → a layered design interview (autonomy → reasoning loop → topology → memory → reliability → governance → integration); existing agent code → a review against the catalog's seven recurring defects. Pushes toward the least autonomy that works. Reach for this whenever agents, tools, multi-agent, RAG-agents, orchestration, or LLM control flow come up, even if no pattern is named.\""
+  },
+  "decide-architecture": {
+    "name": "decide-architecture",
+    "description": "\"Use when choosing or assessing software architecture — picking a structure/topology for a new system, or reviewing whether an existing codebase's architecture fits. Triggers on questions like 'how should I structure this service', 'should this be microservices or a monolith', 'is our layering right', 'we're adding events/CQRS/a queue — does it fit', or any greenfield architecture decision or architecture-focused code review. Branches automatically: greenfield → a short selection interview that composes a stack; existing code → a review against the pattern catalog with targeted moves. Reach for this even when the user hasn't named a specific pattern.\""
+  },
+  "design-patterns": {
+    "name": "design-patterns",
+    "description": "\"Use when choosing or assessing object-level design patterns (GoF and Python-idiomatic) — 'which pattern fits here', 'how should I structure this class', 'is this the right use of a factory/strategy/observer', 'how do I make these algorithms swappable', or any design-pattern code review. Branches automatically: greenfield → a short interview that returns one recommended pattern (with its Pythonic form); existing code → a review that maps smells to the patterns that fix them. Strongly prefers the language feature over the ceremony — reach for this whenever pattern/class-design questions come up, even if no pattern is named, and especially in Python.\""
+  },
+  "test-patterns": {
+    "name": "test-patterns",
+    "description": "\"Use when designing or reviewing a software testing strategy — deciding between unit, integration, contract, E2E, QA practices, data-quality checks, ML evaluation, or LLM/agent evaluation; reviewing a slow, flaky, mock-heavy, or ineffective suite; chasing escaped defects; judging whether generated tests rest on a trustworthy oracle; or asking which evidence a system actually needs. Also triggers on 'pyramid or trophy', 'do we need QA', 'why is CI slow and still missing bugs', 'how do I test this pipeline / model / agent', 'review my test suite'. Greenfield produces a risk-led evidence portfolio and an ADR; an existing suite is inspected and receives one highest-leverage rebalancing move plus a written review. Do not use this skill merely to implement one ordinary test when no testing-strategy decision is required.\""
+  }
+}

@@ -1,0 +1,9 @@
+# oasdiff configuration for the API contract check.
+base: api/openapi.base.yaml
+revision: api/openapi.yaml
+format: text
+# Any operation that ships without a security requirement is an error, not a
+# warning: the build fails and the change cannot merge.
+severity-levels:
+  api-operation-security-removed: err
+  api-operation-added-without-security: err

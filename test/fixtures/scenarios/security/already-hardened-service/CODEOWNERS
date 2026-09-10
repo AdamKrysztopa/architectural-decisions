@@ -1,0 +1,5 @@
+# A release touching billing needs a second party's approval; the branch
+# protection rule on main requires one review from an owner listed here.
+/services/billing/  @billing-owners
+/jobs/              @billing-owners
+/.github/workflows/ @platform-owners

@@ -54,7 +54,7 @@ at a cheaper boundary.**
 |-----------|------|
 | `references/decision-tree.md` | Always, in both modes. The interview, the asymmetric escalation gates, and the suite-health inspection list. |
 | `references/catalog.md` | Whenever you need an entry's force, cost, reopening signal, or review cue for dimensions 1–2 — quality practices, levels, shapes, techniques, cross-level concerns, review anti-patterns. |
-| `references/evaluation.md` | **Only** when the system has a data-quality, model-quality, or LLM/agent-quality surface (dimension 3). Skip it otherwise — most systems have none. |
+| `references/evaluation.md` | **Only** when the system has a data-quality, model-quality, or LLM/agent-quality surface (dimension 3). Skip it otherwise — most systems have none. **A data pipeline counts even with no model in it**: its data-pipeline section covers freshness, completeness, distribution and referential expectations, which no unit test asserts. |
 | `references/oracles.md` | Whenever tests are generated, recorded, or snapshotted rather than derived from a stated requirement — and in every suite review. |
 
 Take each pick's *force*, *cost accepted*, and *reopening signal* from these files, not from your own
@@ -79,6 +79,21 @@ relitigate a decision the user has already closed.
 If the question is really how to **build** an agent — autonomy level, reasoning loop, topology,
 memory, guardrails — rather than how to get evidence about one, hand off to the `agentic-patterns`
 skill, which owns that decision tree. This skill covers the evidence, not the design.
+
+**The system under discussion may not be this repository.** A third branch sits beside greenfield and
+refactoring: the user describes a system that is not the code you can read — another team's service,
+a product they are evaluating, an architecture on a whiteboard, or a repository you have no access
+to. Reason about the system they describe, and say plainly which claims rest on their description
+rather than on something you read. Do not substitute this repository for the one they meant, and do
+not refuse the question because the code is absent — an absent codebase makes conclusions
+provisional, not impossible. Where a step here calls for reading code, say what you would look for
+and what it would change.
+
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
 
 ## Mode A — Greenfield: the risk-led portfolio interview
 
@@ -105,7 +120,7 @@ test portfolio.
    model spend, alert ownership.
 6. **Record what you deliberately did not buy**, and why.
 7. **Define the reopening signal** for each row: the concrete event that would change the answer.
-8. **Persist the accepted decision as a MADR-style ADR** (see "Recording the outcome").
+8. **Persist the accepted decision as the one decision file** (see "Recording the outcome").
 
 Output — the evidence portfolio (the shared contract, below).
 
@@ -114,7 +129,7 @@ phase", "no broad integration", "no mutation tool", "no LLM judge", "no contract
 together" are first-class outcomes, often the most valuable ones. Give the reason and the single
 signal that would change the answer, and don't pad the table to look thorough.
 
-## Mode B — Existing suite: the test-suite review
+## Mode B — Refactoring: the test-suite review
 
 **Inspect before concluding.** A described suite is a hypothesis, not a measurement — never fabricate
 suite characteristics, and **if code or CI evidence is unavailable, say which conclusions are
@@ -127,7 +142,10 @@ provisional.**
 3. **Inspect mocks, fakes, containers, external dependencies, browser drivers, and evaluation code.**
    Mock density and assertion quality say more than counts.
 4. **Identify missing, duplicated, misplaced, or disproportionately expensive evidence.** Walk the
-   inspection list in `references/decision-tree.md` **Step 7**, and run the review cues from
+   inspection list in `references/decision-tree.md` **Step 7** — which routes into **Step 3**, so the
+   always-on quality-practice gates (Code review, Static analysis and typing) are part of this review
+   too; a review that reports only on executable tests has covered one dimension of three — and run
+   the review cues from
    `references/catalog.md` §VI (plus `references/evaluation.md` §IV for stochastic systems) as a
    lens, not a form. Report a genuine problem even if no cue names it.
 5. **Assess oracle independence** against `references/oracles.md` — sample generated, recorded, and
@@ -177,7 +195,26 @@ uncovered.>
 
 **The smallest-portfolio check:** <one or two sentences confirming nothing here is broader than the
 risk requires — or naming a layer to drop.>
+
 ```
+
+Three rules govern that table. They are instructions to you, not text to reproduce:
+
+- **Every field survives any rendering.** The template is the required *content*, not a required
+  layout. Narrow it, transpose it, break it into per-risk paragraphs, match whatever house style the
+  host prefers — but `Cost accepted`, `Evidence deliberately omitted` and `Reopen when` must still be
+  present and attributed to their row. A rendering that quietly drops a column has dropped a
+  decision, not a decoration.
+- **Refusal rows carry a reopening signal too.** A row recording evidence you deliberately did *not*
+  buy is a decision with a cost, and a signal reopens it exactly as it reopens a purchase.
+  "Doesn't apply here" and "n/a" are not signals — name the change that would make you buy it.
+- **A reopening signal is never the force that justifies the purchase.** The force is what is true
+  now; the signal is the future event that would change the answer. They are different columns
+  because they are different things, and an always-on gate legitimately carries a signal that has not
+  fired — `Code review` is bought because it is always bought, and reopened when defects trace to
+  review gaps. What is not allowed is buying a row *because* of a signal that has not fired: if the
+  only justification you can write in `Force` is an event that has not happened, the row belongs in
+  the omitted column, carrying that signal.
 
 For an existing suite, add these sections:
 
@@ -196,6 +233,24 @@ actually touch, not by directory name.
 **Then, in order:** <2–4 secondary observations.>
 **Sound as-is:** <what is already right — say so.>
 ```
+
+**A "no change" review has a defined rendering, and it is not an empty template.** When the correct
+conclusion is *the suite is proportionate; no change is currently justified*, the contract is
+satisfied like this — and kept short:
+
+- The portfolio table describes **the evidence the suite already holds**, not evidence to buy. Each
+  row's `Selected evidence` is what is there now, `Why it belongs` is the risk it covers today, and
+  `Cost accepted` is what the team is already paying for it. A no-change review is not a review with
+  no rows.
+- **The refusals are rows too.** Every gate you reached and closed — the E2E suite not bought, the
+  mutation testing not added, the contract tests the deployment topology does not justify — is
+  recorded in `Evidence deliberately omitted` with its `Reopen when`. In a no-change review these
+  carry most of the report's content: they are the record that a gate was reached and answered, not
+  never reached.
+- **The single highest-leverage move** reads `None — the suite is proportionate`, followed by the
+  signal that would change that. It is never left blank, and a move is never invented to fill it.
+- **Sound as-is** carries what is already right, said plainly. Any optional observation stays
+  explicitly optional and never gets promoted into the highest-leverage slot.
 
 **Never prescribe numerical ratios** of unit, integration, and E2E tests. Report counts you measured;
 do not hand back targets.
@@ -260,10 +315,17 @@ tests; reviewed snapshots) are in `references/oracles.md`.
 
 ## Read-only mode
 
-**When the user requests a dry run, review-only mode, or no file changes, present the complete
-recommendation without creating or modifying repository files.** Phrases like "review only", "don't
-change anything", "dry run", "just tell me", or an explicitly read-only target all count. Say once at
-the end that the artifact was not written and where it would have gone.
+**Present the complete recommendation without creating or modifying repository files whenever
+writing is off the table.** Two different things put it off the table, and both count:
+
+- **The user asks for it.** "Review only", "don't change anything", "dry run", "just tell me", or an
+  explicitly read-only target.
+- **The environment imposes it.** You have no write access, the repository is not checked out, the
+  session is sandboxed or read-only, the system under discussion is not this repository, or a tool
+  call to write has already been refused. An environment-imposed constraint is not a reason to ask
+  the user for permission you already know you do not have, and it is not a reason to skip the
+  recommendation — produce the whole thing, and say once at the end that the artifact was not
+  written and where it would have gone.
 
 Otherwise persist the outcome. **Do not ask for confirmation when repository context is sufficient to
 proceed.**
@@ -272,17 +334,12 @@ proceed.**
 
 A strategy that lives only in a chat transcript is lost. Persist it.
 
-**Greenfield → an ADR.** After presenting the portfolio, write `docs/adr/NNNN-short-title.md`
-(lowercase words joined by hyphens, e.g. `0004-risk-led-evidence-portfolio-invoicing.md`) — a 4-digit
-number, one past the highest existing ADR in `docs/adr/` (else `0001`). Create `docs/adr/` if absent.
-Follow the repository's existing ADR template if it has one; otherwise this MADR-style shape:
+**Greenfield → one decision file.** After presenting the portfolio, follow
+`references/recording-decisions.md`: read the existing constitution, then write a single
+`status: proposed` decision file — no separate ADR file. Its prose is the output contract:
 
 ```
-# NNNN. <decision title, e.g. "Risk-led evidence portfolio for invoice processing">
-
-- Status: Accepted
-- Date: <YYYY-MM-DD>
-- Deciders: <the user / team, if known>
+# <decision title, e.g. "Risk-led evidence portfolio for invoice processing">
 
 ## Context
 <what the system does, the named failure surfaces and their blast radius, the constraints —
@@ -292,19 +349,24 @@ release cadence, reversibility, regulation, team shape, environment ownership.>
 <the evidence-portfolio table you just presented, plus the deterministic/stochastic split and the
 oracle assessment where they apply.>
 
-## Consequences
+## Consequences (cost)
 <the cost of each row; the heavier options rejected and why; CI and ownership implications
 (runtime budget, who owns fixtures/environments/evals); and the reopening signals.>
 ```
 
-**Existing suite → a dated review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
+Classify every rule honestly (default `narrative`) and regenerate the constitution.
+
+**Refactoring → a dated review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent) with the output contract above. If the suite is already well balanced, say
 so plainly and keep the report short — a clean bill of health is a valid outcome, not a failure to
-find work. If a rebalancing move is a direction the user commits to, offer to capture it as its own
-ADR.
+find work. If a rebalancing move is a direction the user commits to, capture it the same way — one
+decision file, following `references/recording-decisions.md`.
 
-Write the file and report its path. Ask first only if the repo layout is unclear or the user is
+Write the file(s) and report the path(s). Ask first only if the repo layout is unclear or the user is
 clearly still exploring rather than deciding.
+
+Asked instead to consolidate existing ADRs into this schema, or to propose a baseline for a codebase
+that has none? Read `references/migrating-decisions.md` and follow it.
 
 ## Why this shape
 
@@ -314,3 +376,16 @@ tests for every internal seam, or replacing ordinary code tests with evals becau
 LLM in it. Leading with the three-dimension split, the risk-first gates, and an explicit oracle
 guardrail keeps the focus where suites actually fail — slow, flaky, untrusted evidence that nobody
 can tie to a requirement.
+
+## Record the decision
+
+Covered above: every recommendation this skill makes — **including an explicit refusal** (a refused
+E2E suite, a "no change needed" review) — is persisted as the one decision file described in
+"Recording the outcome." Do not record when the run only answered a question without recommending
+anything.
+
+## Notice drift later
+
+At a checkpoint — before a commit, or when a session start notice says edits are queued — drain the
+observations and classify them: `references/observing-drift.md`. Report a violation only where a
+tool actually failed.
