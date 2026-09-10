@@ -114,6 +114,20 @@ test("staleness answers 'not stale' rather than throwing when there is nothing t
   assert.equal(await constitutionIsStale(noConstitution), false);
 });
 
+// These two exercise the hook's `input.cwd` lane, which `resolveRoot` reaches
+// only when CLAUDE_PROJECT_DIR is absent -- and it is *present* whenever the
+// suite is run from inside a Claude Code session, which is where this
+// repository is developed. Inheriting it silently pointed the hook at the real
+// project root instead of the scratch one. Scrub it here rather than pinning it
+// to `root`: root resolution has its own tests in `drift.test.mjs`, and what
+// these two are about is what the hook says, not where it looks.
+function stopHook(root) {
+  const { CLAUDE_PROJECT_DIR: _ignored, ...env } = process.env;
+  const child = execFileAsync("node", [join(repositoryRoot, "runtime/drift/notify.mjs")], { cwd: root, env });
+  child.child.stdin.end(JSON.stringify({ cwd: root }));
+  return child;
+}
+
 test("the Stop hook reports a stale constitution alongside the queue notice", async () => {
   const root = await scratch();
   await seedDecisions(root);
@@ -127,9 +141,7 @@ test("the Stop hook reports a stale constitution alongside the queue notice", as
     "utf8",
   );
 
-  const child = execFileAsync("node", [join(repositoryRoot, "runtime/drift/notify.mjs")], { cwd: root });
-  child.child.stdin.end(JSON.stringify({ cwd: root }));
-  const { stdout } = await child;
+  const { stdout } = await stopHook(root);
 
   const message = JSON.parse(stdout).systemMessage;
   assert.match(message, /1 edit observed/);
@@ -139,9 +151,7 @@ test("the Stop hook reports a stale constitution alongside the queue notice", as
 
 test("the Stop hook stays silent when there is nothing to say", async () => {
   const root = await scratch();
-  const child = execFileAsync("node", [join(repositoryRoot, "runtime/drift/notify.mjs")], { cwd: root });
-  child.child.stdin.end(JSON.stringify({ cwd: root }));
-  const { stdout } = await child;
+  const { stdout } = await stopHook(root);
   assert.equal(stdout.trim(), "");
 });
 

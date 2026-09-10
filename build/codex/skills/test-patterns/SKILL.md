@@ -54,7 +54,7 @@ at a cheaper boundary.**
 |-----------|------|
 | `references/decision-tree.md` | Always, in both modes. The interview, the asymmetric escalation gates, and the suite-health inspection list. |
 | `references/catalog.md` | Whenever you need an entry's force, cost, reopening signal, or review cue for dimensions 1–2 — quality practices, levels, shapes, techniques, cross-level concerns, review anti-patterns. |
-| `references/evaluation.md` | **Only** when the system has a data-quality, model-quality, or LLM/agent-quality surface (dimension 3). Skip it otherwise — most systems have none. |
+| `references/evaluation.md` | **Only** when the system has a data-quality, model-quality, or LLM/agent-quality surface (dimension 3). Skip it otherwise — most systems have none. **A data pipeline counts even with no model in it**: its data-pipeline section covers freshness, completeness, distribution and referential expectations, which no unit test asserts. |
 | `references/oracles.md` | Whenever tests are generated, recorded, or snapshotted rather than derived from a stated requirement — and in every suite review. |
 
 Take each pick's *force*, *cost accepted*, and *reopening signal* from these files, not from your own
@@ -79,6 +79,15 @@ relitigate a decision the user has already closed.
 If the question is really how to **build** an agent — autonomy level, reasoning loop, topology,
 memory, guardrails — rather than how to get evidence about one, hand off to the `agentic-patterns`
 skill, which owns that decision tree. This skill covers the evidence, not the design.
+
+**The system under discussion may not be this repository.** A third branch sits beside greenfield and
+refactoring: the user describes a system that is not the code you can read — another team's service,
+a product they are evaluating, an architecture on a whiteboard, or a repository you have no access
+to. Reason about the system they describe, and say plainly which claims rest on their description
+rather than on something you read. Do not substitute this repository for the one they meant, and do
+not refuse the question because the code is absent — an absent codebase makes conclusions
+provisional, not impossible. Where a step here calls for reading code, say what you would look for
+and what it would change.
 
 ## What "finding" means in this skill's output
 
@@ -133,7 +142,10 @@ provisional.**
 3. **Inspect mocks, fakes, containers, external dependencies, browser drivers, and evaluation code.**
    Mock density and assertion quality say more than counts.
 4. **Identify missing, duplicated, misplaced, or disproportionately expensive evidence.** Walk the
-   inspection list in `references/decision-tree.md` **Step 7**, and run the review cues from
+   inspection list in `references/decision-tree.md` **Step 7** — which routes into **Step 3**, so the
+   always-on quality-practice gates (Code review, Static analysis and typing) are part of this review
+   too; a review that reports only on executable tests has covered one dimension of three — and run
+   the review cues from
    `references/catalog.md` §VI (plus `references/evaluation.md` §IV for stochastic systems) as a
    lens, not a form. Report a genuine problem even if no cue names it.
 5. **Assess oracle independence** against `references/oracles.md` — sample generated, recorded, and
@@ -183,7 +195,26 @@ uncovered.>
 
 **The smallest-portfolio check:** <one or two sentences confirming nothing here is broader than the
 risk requires — or naming a layer to drop.>
+
 ```
+
+Three rules govern that table. They are instructions to you, not text to reproduce:
+
+- **Every field survives any rendering.** The template is the required *content*, not a required
+  layout. Narrow it, transpose it, break it into per-risk paragraphs, match whatever house style the
+  host prefers — but `Cost accepted`, `Evidence deliberately omitted` and `Reopen when` must still be
+  present and attributed to their row. A rendering that quietly drops a column has dropped a
+  decision, not a decoration.
+- **Refusal rows carry a reopening signal too.** A row recording evidence you deliberately did *not*
+  buy is a decision with a cost, and a signal reopens it exactly as it reopens a purchase.
+  "Doesn't apply here" and "n/a" are not signals — name the change that would make you buy it.
+- **A reopening signal is never the force that justifies the purchase.** The force is what is true
+  now; the signal is the future event that would change the answer. They are different columns
+  because they are different things, and an always-on gate legitimately carries a signal that has not
+  fired — `Code review` is bought because it is always bought, and reopened when defects trace to
+  review gaps. What is not allowed is buying a row *because* of a signal that has not fired: if the
+  only justification you can write in `Force` is an event that has not happened, the row belongs in
+  the omitted column, carrying that signal.
 
 For an existing suite, add these sections:
 
@@ -266,10 +297,17 @@ tests; reviewed snapshots) are in `references/oracles.md`.
 
 ## Read-only mode
 
-**When the user requests a dry run, review-only mode, or no file changes, present the complete
-recommendation without creating or modifying repository files.** Phrases like "review only", "don't
-change anything", "dry run", "just tell me", or an explicitly read-only target all count. Say once at
-the end that the artifact was not written and where it would have gone.
+**Present the complete recommendation without creating or modifying repository files whenever
+writing is off the table.** Two different things put it off the table, and both count:
+
+- **The user asks for it.** "Review only", "don't change anything", "dry run", "just tell me", or an
+  explicitly read-only target.
+- **The environment imposes it.** You have no write access, the repository is not checked out, the
+  session is sandboxed or read-only, the system under discussion is not this repository, or a tool
+  call to write has already been refused. An environment-imposed constraint is not a reason to ask
+  the user for permission you already know you do not have, and it is not a reason to skip the
+  recommendation — produce the whole thing, and say once at the end that the artifact was not
+  written and where it would have gone.
 
 Otherwise persist the outcome. **Do not ask for confirmation when repository context is sufficient to
 proceed.**

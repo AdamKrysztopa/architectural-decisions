@@ -14,6 +14,16 @@ the repository uses) before writing anything. It lists the rules already in forc
 
 - If this run's subject is already covered, **supersede** — do not add a near-duplicate.
 - If a recorded rule contradicts what you are about to recommend, say so to the user before writing.
+- **If the user states a prior decision this repository does not contain, still capture.** Reason in
+  the world the user describes, say plainly that this repository holds no record of it, and write the
+  decision anyway. A decision that was made in a meeting, in another repository, or before this
+  repository existed is still a decision; the absence of a file is not evidence it was not taken.
+  Mark what rests on the user's account rather than on something you read.
+
+> **§3's anti-fabrication rule is not a reason to decline to capture.** It governs `verified_by`
+> bindings and the `deterministic` classification — never *whether* to write the file. Capturing a
+> decision whose rules are all `narrative` is a correct outcome; refusing to capture because nothing
+> could be bound to a tool is not.
 
 ## 2. Write one decision file
 

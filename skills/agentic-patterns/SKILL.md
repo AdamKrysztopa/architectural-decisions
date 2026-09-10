@@ -42,6 +42,15 @@ constraint, name the cost once, and proceed to the design layers. Don't relitiga
 when the user has already closed it — in real work they've often *already decided* and want the
 layered design, not a re-argument of whether to build at all.
 
+**The system under discussion may not be this repository.** A third branch sits beside greenfield and
+refactoring: the user describes a system that is not the code you can read — another team's service,
+a product they are evaluating, an architecture on a whiteboard, or a repository you have no access
+to. Reason about the system they describe, and say plainly which claims rest on their description
+rather than on something you read. Do not substitute this repository for the one they meant, and do
+not refuse the question because the code is absent — an absent codebase makes conclusions
+provisional, not impossible. Where a step here calls for reading code, say what you would look for
+and what it would change.
+
 ## What "finding" means in this skill's output
 
 **A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
@@ -181,6 +190,23 @@ chosen, by reaching for an agent (or a swarm) when something simpler and more re
 Naming the cost beside every layer, and leading review mode with the seven-defect checklist, keeps
 the focus where real failures happen — over-engineering and missing guardrails — rather than on
 collecting exotic patterns.
+
+## Read-only mode
+
+**Present the complete recommendation without creating or modifying repository files whenever
+writing is off the table.** Two different things put it off the table, and both count:
+
+- **The user asks for it.** "Review only", "don't change anything", "dry run", "just tell me", or an
+  explicitly read-only target.
+- **The environment imposes it.** You have no write access, the repository is not checked out, the
+  session is sandboxed or read-only, the system under discussion is not this repository, or a tool
+  call to write has already been refused. An environment-imposed constraint is not a reason to ask
+  the user for permission you already know you do not have, and it is not a reason to skip the
+  recommendation — produce the whole thing, and say once at the end that the artifact was not
+  written and where it would have gone.
+
+Otherwise persist the outcome. **Do not ask for confirmation when repository context is sufficient to
+proceed.**
 
 ## Record the decision
 

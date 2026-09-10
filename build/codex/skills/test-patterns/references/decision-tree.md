@@ -35,7 +35,11 @@ Walk the steps in order; skip branches that don't apply. Record every pick as
 *Are we deciding quality practices, executable tests in the codebase, or both?*
 - **Quality practices** (who checks what, acceptance, sign-off, exploratory work) → **QA branch**
   (Step 3) and stop there unless code testing also comes up.
-- **Executable tests** ("what tests should I write?") → **code-testing branch** (Steps 2, 4).
+- **Executable tests** ("what tests should I write?") → **code-testing branch** (Steps 2, 3, 4).
+  Step 3 is not optional here. Two of its gates — **Code review** and **Static analysis and
+  typing** — are *Add when: always*, so they belong to every walk regardless of which branch Step 1
+  routed to. What the branch changes is how much of the *rest* of Step 3 you work through, never
+  whether the always-on gates are reached.
 - **Both** → run the QA branch briefly, then the code branch.
 - **A data / ML / LLM / agentic system** → run the relevant branch *first*, then add the stochastic
   overlay in Step 5. The overlay is **additive**: evaluations do not replace ordinary code testing,
@@ -58,7 +62,7 @@ Classify explicitly — every common system lands somewhere:
 | LLM call | deterministic scaffold tests + evaluation cases |
 | Multi-step agent | tool / wiring tests + scenario evals + selected journey tests |
 | Legacy code | characterization tests **before** any structural change |
-| Safety-critical / regulated | the ordinary portfolio **plus** independence and traceability (Step 3) |
+| Safety-critical / regulated | the ordinary portfolio **plus the whole of Step 3** — independence and traceability are the two that are easiest to remember, but user acceptance and release evidence are gates in that step too, and this row is not a list of the only ones that apply |
 
 Then ask **where complexity and risk actually live** — business invariants, serialization or
 protocol boundaries, persistence, framework configuration, authn/authz, orchestration, deployment,
@@ -204,6 +208,11 @@ reliably by lower-level tests?*
 > **No named journey and no named failure mode that requires complete wiring means no E2E
 > recommendation.**
 
+> **The examples below are illustration, never justification.** Before an E2E row may be written,
+> quote the journey and the failure mode **from the system under discussion**, in the user's own
+> terms. A journey copied from this list — or paraphrased from it — has not been named; it has been
+> borrowed, and the gate has not actually opened.
+
 - **Add a small number when** both halves hold, e.g. authentication + routing + configuration +
   deployment failing only in combination; a revenue-, safety-, or mission-critical path;
   cross-system orchestration visible only in a production-like environment.
@@ -308,6 +317,21 @@ OWASP Top 10 — hold both facts without asserting that one explains the other.
 - **Yes** → read `evaluation.md` and walk the relevant section (data pipelines · ML models · LLM and
   agentic systems). Do not reconstruct those gates from memory.
 
+> **"Statistical" is not the test, and neither is "machine learning".** Two different mistakes live
+> here, and the fix for one must not cause the other.
+>
+> A **closed-form estimator** — a mean, a quantile, a regression solved analytically, a numerical
+> routine with a known invariant — is **dimension 2**: its output is a deterministic function of its
+> input, so it is *asserted*, not evaluated. Reaching for an evaluation harness because the word
+> "statistical" appeared is the reflex this step exists to prevent.
+>
+> But **data quality is a dimension-3 surface whether or not a model is involved.** An ordinary ETL
+> or analytics pipeline with no learned component still has freshness, completeness, distribution and
+> referential expectations that no unit test asserts, and `evaluation.md`'s data-pipeline section is
+> written for exactly that case. Do not read the ML and LLM sections as the whole of this step: the
+> question in the heading is whether the system has a data-quality, model-quality, *or*
+> LLM/agent-quality surface, and the first of the three stands on its own.
+
 Two rules hold before you open that file:
 
 1. **The overlay is additive.** Deterministic code and wiring still get ordinary unit / integration /
@@ -337,6 +361,10 @@ fill or to hand back as a recommendation.
 ## Step 7 — Suite-health branch *(existing suites)*
 Inspect, then conclude. **Infer what tests actually exercise rather than trusting directory names.**
 Where evidence is missing, say the conclusion is provisional.
+
+> **Step 7 routes into Step 3, not around it.** An existing suite is still owned by people, and the
+> always-on Step 3 gates (Code review, Static analysis and typing) apply to it exactly as they apply
+> to a new one. A review that reports only on executable tests has looked at one dimension of three.
 - test count and runtime **by level**; CI wall-clock and stage layout
 - what each level actually touches — open a sample from each directory and check the resources: a
   `unit/` test that starts a container is an integration test, and a `browser/` test with the network
