@@ -12,7 +12,7 @@
     "build": "node builders/sync-shared.mjs && node builders/build.mjs",
     "sync:shared": "node builders/sync-shared.mjs",
     "sync:check": "node builders/sync-shared.mjs --check",
-    "test": "node --test test/build.test.mjs test/baseline.test.mjs test/skill-freeze.test.mjs test/migration.test.mjs test/checkers.test.mjs test/checker-corpus.test.mjs test/glob-parity.test.mjs test/decision-filenames.test.mjs test/drift.test.mjs test/surfaces.test.mjs test/documentation-mode.test.mjs test/authoritative-sources.test.mjs test/scenarios.test.mjs test/e2e/bind-and-prove.test.mjs test/e2e/drift-observed.test.mjs test/e2e/bootstrap-migration.test.mjs test/e2e/security-without-theatre.test.mjs test/approval-gate.test.mjs test/status-vocabulary.test.mjs test/vocabulary-consistency.test.mjs",
+    "test": "node --test test/build.test.mjs test/baseline.test.mjs test/skill-freeze.test.mjs test/migration.test.mjs test/checkers.test.mjs test/checker-corpus.test.mjs test/glob-parity.test.mjs test/decision-filenames.test.mjs test/drift.test.mjs test/surfaces.test.mjs test/documentation-mode.test.mjs test/authoritative-sources.test.mjs test/scenarios.test.mjs test/e2e/adr-to-living-migration.test.mjs test/e2e/bind-and-prove.test.mjs test/e2e/drift-observed.test.mjs test/e2e/bootstrap-migration.test.mjs test/e2e/security-without-theatre.test.mjs test/approval-gate.test.mjs test/status-vocabulary.test.mjs test/vocabulary-consistency.test.mjs",
     "test:build": "node --test test/build.test.mjs",
     "test:scenarios": "node --test test/scenarios.test.mjs"
   },

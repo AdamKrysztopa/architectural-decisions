@@ -82,7 +82,12 @@ The runs are agent-driven, as in the earlier 20-case evaluation:
    (real or synthetic). Reviews must run **read-only** against code you do not mind reading twice.
 4. Grade the output against that scenario's `expect`, `failsIf`, and the shared `criteria`. Record a
    pass/fail with the reason, not a score.
-5. Keep the outputs and a candid friction log per case under `test-runs/<iteration>/<scenario-id>/`.
+5. **Log the model tier for both roles** — which tier ran the scenario, and which tier graded it —
+   with the run record. This is required, not optional. Neither tier is recoverable from the outputs
+   afterwards, and a pass rate that cannot be attributed to a tier cannot be compared against the next
+   run's: a set that improves after a skill edit and a set that improves because a larger model ran it
+   look identical in the artifacts.
+6. Keep the outputs and a candid friction log per case under `test-runs/<iteration>/<scenario-id>/`.
    `test-runs/` is gitignored: eval artifacts are local, findings are what get committed.
 
 A scenario fails when any `failsIf` condition holds, when a gate in `gatesClosed` was recommended
@@ -110,7 +115,9 @@ one that changed:
 | `test/scenarios/security.json` | 12 | SP5 |
 
 Fresh session per scenario, prompt pasted verbatim without naming the skill, record pass/fail with the
-reason under `test-runs/<version>/<set>/<scenario-id>/`. A body edit to *any* skill (see
+reason under `test-runs/<version>/<set>/<scenario-id>/`, **and log the runner and grader tiers for the
+release record** — a release-gate result with no tier against it is not comparable to the one before
+it or the one after. A body edit to *any* skill (see
 `test/fixtures/skill-freeze/body-manifest.json`) requires this full re-run, not only the set that
 skill owns — a shared reference change (`shared/recording-decisions.md`, an SP2 checker binding
 guidance change) can shift behaviour across every skill that cites it.

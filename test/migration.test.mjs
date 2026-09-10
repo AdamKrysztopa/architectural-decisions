@@ -175,7 +175,13 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { buildTraceability, DISPOSITIONS, renderTraceabilityReport } from "../runtime/migration/traceability.mjs";
+import {
+  DISPOSITIONS,
+  REPORTED_DISPOSITIONS,
+  buildTraceability,
+  canonicalDisposition,
+  renderTraceabilityReport,
+} from "../runtime/migration/traceability.mjs";
 import { parseDecision } from "../runtime/baseline/decisions.mjs";
 
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
@@ -186,14 +192,33 @@ async function fixtureDecision() {
   return parseDecision(text, "0011-events-over-shared-db.md");
 }
 
-test("DISPOSITIONS names the five allowed outcomes", () => {
+test("DISPOSITIONS names the six reported outcomes, plus the two retained aliases", () => {
+  // The traceability requirement names six categories: migrated, merged,
+  // superseded, omitted, conflicting, unresolved. `left-as-prose` and
+  // `unmapped` are the original narrower names for omitted and unresolved and
+  // stay accepted, so manifests and the committed fixture keep parsing.
   assert.deepEqual([...DISPOSITIONS].sort(), [
+    "conflicting",
     "left-as-prose",
     "merged",
     "migrated",
+    "omitted",
     "superseded",
     "unmapped",
+    "unresolved",
   ]);
+  assert.deepEqual([...REPORTED_DISPOSITIONS], [
+    "migrated",
+    "merged",
+    "superseded",
+    "omitted",
+    "conflicting",
+    "unresolved",
+  ]);
+  // Each alias folds into exactly the category it always meant.
+  assert.equal(canonicalDisposition("left-as-prose"), "omitted");
+  assert.equal(canonicalDisposition("unmapped"), "unresolved");
+  assert.equal(canonicalDisposition("migrated"), "migrated");
 });
 
 test("buildTraceability throws, naming the path, when an input has no disposition", async () => {

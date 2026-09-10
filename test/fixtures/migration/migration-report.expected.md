@@ -10,6 +10,35 @@ Generated 2026-09-09.
 - `docs/adr/0003-shared-db-writes.md` — migrated → 0011
 - `docs/adr/0004-unrelated-note.md` — left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
 
+## Traceability summary
+
+### migrated (1)
+
+- `docs/adr/0003-shared-db-writes.md` — migrated → 0011
+
+### merged (0)
+
+_None._
+
+### superseded (0)
+
+_None._
+
+### omitted (1)
+
+- `docs/adr/0004-unrelated-note.md` — left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
+
+### conflicting (0)
+
+_None._
+
+### unresolved (0)
+
+_None._
+
+Every one of the 2 confirmed input(s) appears in exactly one category above.
+
+
 ## Decisions generated
 
 ### 0011 Events over a shared database

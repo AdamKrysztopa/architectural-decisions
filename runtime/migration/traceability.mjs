@@ -1,9 +1,57 @@
-export const DISPOSITIONS = ["migrated", "merged", "left-as-prose", "superseded", "unmapped"];
+// The six dispositions a migration must be able to report -- migrated,
+// merged, superseded, omitted, conflicting, unresolved -- plus the two
+// original names kept as accepted aliases so existing manifests, fixtures and
+// the committed expected report keep parsing.
+//
+// `omitted` and `unresolved` are the honest names for what `left-as-prose` and
+// `unmapped` were already doing; the older names are narrower descriptions of
+// the same outcome and stay valid. `conflicting` is genuinely new: before it,
+// an input that could not be migrated *because it contradicted another input*
+// had to be filed as unmapped, which lost the one fact a reader most needed.
+export const DISPOSITIONS = [
+  "migrated",
+  "merged",
+  "superseded",
+  "omitted",
+  "conflicting",
+  "unresolved",
+  // Accepted aliases, retained so nothing already written stops parsing.
+  "left-as-prose",
+  "unmapped",
+];
+
+// The six the reviewer's traceability requirement names, in report order. The
+// renderer walks this so a category with no members is still shown as empty
+// rather than silently missing -- "nothing was omitted" and "omission was
+// never considered" must not look the same.
+export const REPORTED_DISPOSITIONS = [
+  "migrated",
+  "merged",
+  "superseded",
+  "omitted",
+  "conflicting",
+  "unresolved",
+];
+
+// The older names fold into the category they always meant, so a report has
+// six sections whichever vocabulary the manifest used.
+export const DISPOSITION_ALIASES = { "left-as-prose": "omitted", unmapped: "unresolved" };
+
+export function canonicalDisposition(kind) {
+  return DISPOSITION_ALIASES[kind] ?? kind;
+}
+
 // Exported so every caller that needs to know which disposition kinds name a
 // decision (the report's "Decisions generated" section, the CLI's proposal
 // cap) reads from one place and can never drift apart from this module.
 export const NAMES_A_DECISION = new Set(["migrated", "merged", "superseded"]);
-const NEEDS_A_REASON = new Set(["left-as-prose", "unmapped"]);
+
+// Every disposition that does NOT produce a decision must say why. An input
+// that vanished from the record without a reason is exactly the silent loss
+// the traceability report exists to prevent -- and `conflicting` needs one
+// most of all, since "what did it conflict with" is the whole content of the
+// finding.
+const NEEDS_A_REASON = new Set(["omitted", "conflicting", "unresolved", "left-as-prose", "unmapped"]);
 
 // Only the '## Sources' section counts as a citation -- a mention anywhere
 // else in the body (e.g. explaining why a path was deliberately NOT used)
@@ -103,6 +151,31 @@ export function renderTraceabilityReport(model) {
   for (const input of sortedInputs) {
     lines.push(`- \`${input.path}\` — ${describeDisposition(byPath.get(input.path))}`);
   }
+
+  // The same dispositions again, grouped into the six categories the
+  // traceability requirement names. A category with no members is printed as
+  // empty rather than omitted: "nothing was omitted" and "omission was never
+  // considered" are different claims, and a reader checking that a 30-ADR
+  // migration lost nothing needs to see all six accounted for.
+  lines.push("", "## Traceability summary", "");
+  for (const category of REPORTED_DISPOSITIONS) {
+    const members = sortedInputs.filter(
+      (input) => canonicalDisposition(byPath.get(input.path).kind) === category,
+    );
+    lines.push(`### ${category} (${members.length})`, "");
+    if (members.length === 0) {
+      lines.push("_None._", "");
+      continue;
+    }
+    for (const input of members) {
+      lines.push(`- \`${input.path}\` — ${describeDisposition(byPath.get(input.path))}`);
+    }
+    lines.push("");
+  }
+  lines.push(
+    `Every one of the ${sortedInputs.length} confirmed input(s) appears in exactly one category above.`,
+    "",
+  );
 
   lines.push("", "## Decisions generated", "");
   const generatedDecisions = sortedDecisions.filter((decision) =>
