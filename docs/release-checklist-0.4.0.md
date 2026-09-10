@@ -327,8 +327,36 @@ describes SP2–SP6 and states its own known limitations, including the outstand
 `package.json`, `.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json`,
 `build/claude/.claude-plugin/plugin.json`, `build/codex/.codex-plugin/plugin.json` (all read
 `0.4.0`); `docs/building-packages.md`'s "Host validation before release", "Clean-install
-verification", and "Package-content audit" sections (present and current). This row is closed —
-§8's agent-driven re-run is the sole item still outstanding for the release as a whole.
+verification", and "Package-content audit" sections (present and current).
+
+**Added 2026-09-10 — two new documents and three verifications actually performed:**
+
+- [`docs/documentation-modes.md`](documentation-modes.md) (§2's authority model) and
+  [`docs/authoritative-sources.md`](authoritative-sources.md) (§3's model) are new and current.
+- **Package-content gitleaks audit — RUN, not merely documented.** `gitleaks dir build/` with the
+  real binary (gitleaks 8.30.1): 1.29 MB scanned, **no leaks found**, exit 0. Previous checklists
+  described this step; this is the first release record that states its actual result.
+- **Real-tool E2E lane — RUN with the real binaries.** `ARCH_CREW_E2E_REAL_TOOLS=1` with a real
+  `import-linter` and `gitleaks` on PATH: **5 of 5 pass**. It initially failed 4 of 5 and **found a
+  genuine shipped defect** — import-linter colours its report even into a pipe, so the adapter's
+  plain-text match on the contract name never fired and every deterministic import-linter rule
+  reported `error` against a tool that had just printed `KEPT`. The deterministic lane, the only
+  lane that can produce a violation, had silently stopped producing pass or fail for that tool, and
+  the fake-tool suite was green through all of it. Fixed in
+  `runtime/checkers/import-linter.mjs`. **This is the strongest argument in this document for the
+  real-tool lane being mandatory before a release rather than optional.**
+- **Clean-install verification — the candidate, not a cached 0.3.x.** The built Claude package was
+  copied to a clean location and inspected there: `.claude-plugin/plugin.json` reads `0.4.0`, five
+  skills are present (`threat-model` among them), seven commands ship, the runtime tree is complete,
+  and `node runtime/arch.mjs --help` runs from inside the installed tree. **Caveat recorded
+  deliberately:** the *user's own* `~/.claude/plugins` install is still pinned to `0.3.0` (four
+  skills, no `threat-model`) and its marketplace clone is stale at `0.3.0`. That stale install is
+  what voided the last gate's security set. It has not been changed here, because changing a
+  developer's global plugin install is not this branch's business — but **any scenario re-run must
+  read the skills from this repository, not from that cache**, and §8's re-run records that it did.
+
+This row is closed — §8's agent-driven re-run is the sole item still outstanding for the release as
+a whole.
 
 ## §10 — Final release decision
 

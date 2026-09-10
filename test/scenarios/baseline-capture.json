@@ -5,7 +5,7 @@
   "criteria": [
     {
       "id": "proposed-only",
-      "statement": "Every captured decision is written with status: proposed. No run writes active, and no run promotes or edits the status of an existing decision file."
+      "statement": "Every captured decision is written with status: proposed. No run writes active, and no run promotes an existing decision to active — promotion is the exclusive province of `arch promote`. Editing an existing decision's status to superseded (with superseded_by) is permitted and is how supersession is recorded; see prose-preserved for what such an edit may touch."
     },
     {
       "id": "narrative-by-default",
