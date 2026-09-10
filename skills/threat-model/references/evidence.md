@@ -16,7 +16,12 @@ This is the same rule `skills/test-patterns/references/oracles.md` applies to ge
 transplanted: there, the implementation must not be its own oracle; here, the model must not be its
 own scanner.
 
-## Every finding names four things
+## A finding is a specific, actionable conclusion
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported separately).** In this skill specifically, that means every review finding
+names four things:
 
 1. **The asset or boundary at risk** — a named thing with an owner and a loss.
 2. **The actor** — specific and reachable. "An attacker" is not an actor.
@@ -24,26 +29,31 @@ own scanner.
 4. **The cheapest control that closes it, with that control's cost** — runtime, latency, key
    management, operational ownership, developer friction, on-call burden.
 
-**A finding missing any one of the four is downgraded to an observation** and reported in a separate,
-clearly labelled list. It is not a finding, and nobody should buy a control for it.
+**A review finding missing any one of the four is downgraded to an observation** and reported in a
+separate, clearly labelled list. It is not a finding, and nobody should buy a control for it.
 
 A control without a stated cost is how security theatre gets bought. Cost-per-pick is this crew's
 signature move in every skill; it is not optional here because the topic is serious.
 
 ## Three evidence classes, never merged
 
+`finding` is the generic word this skill (and `references/observing-drift.md`) uses for any
+reported, evidenced problem. Two of the three classes below additionally earn a more specific,
+reserved label, because *how* a finding was established changes how much weight it carries:
+
 | Class | Means | The word for it |
 |---|---|---|
-| Tool-proven | A checker with a **resolved** binding actually failed. | **violation** |
-| Review | The design contradicts a stated property, and the finding cites the file, the boundary, and the specific structure that contradicts it. | **finding** |
-| Narrative | An assumption or intent no tool and no review can grade. | **assumption** |
+| Tool-proven | A checker with a **resolved** binding actually failed. | finding — always call it a **violation** |
+| Review | The design contradicts a stated property, and the finding cites the file, the boundary, and the specific structure that contradicts it. | review finding |
+| Narrative | An assumption or intent no tool and no review can grade. | **assumption**, never a finding |
 
 Report them as three sections with their evidentiary weight stated in words. **Never sort them into
 one ranked list, and never publish a headline count that spans them.** "7 issues" covering one
 `gitleaks` hit and six impressions is the theatre the whole `verification` vocabulary exists to
 prevent.
 
-**The word "violation" is reserved** for the first row. Everything else is a finding or an assumption.
+**The words "violation" and "assumption" are reserved** for the first and third rows — never write
+either about a review finding, however confident you are.
 
 ## What binds to which tool
 
@@ -58,6 +68,10 @@ exists** in this repository's config. Read the config file and name what you fou
 | A new unauthenticated operation in the API contract | `oasdiff` | `.oasdiff.yaml`, or the CI invocation |
 | Boundary and dependency-direction integrity | `import-linter`, `pytest-archon`, `dependency-cruiser` | `.importlinter`, test files, `.dependency-cruiser.json` |
 | Known-vulnerable dependencies | **no bound tool in this package** | — |
+
+"Config to read" shows each checker's own config-file search patterns (a small, checker-internal
+glob dialect) — it is not the `scope` field's syntax. Never copy one of these patterns into a
+decision's `scope`; the supported scope-glob subset is documented in `recording-decisions.md`.
 
 Dependency advisories are not checkable through a binding here. A supply-chain rule stays `review` or
 `narrative`, and the finding says: binding it requires a supply-chain scanner the repository runs in

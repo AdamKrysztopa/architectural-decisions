@@ -13,7 +13,7 @@ The domain package must not import infrastructure.
 
 - Severity: blocking
 - Scope: `src/domain/**`
-- Verified by `import-linter#domain-isolation` — run the rule checker to resolve this binding and evaluate it.
+- Verified by `import-linter#domain-isolation` — run the rule checker to resolve this binding and evaluate it. The checker's verdict covers the whole repository, not only this rule's scope: `scope` decides which edits the drift drain treats as touching this rule, never what the checker itself inspects.
 - Source: [0001 Layered domain with an isolated core](decisions/0001-layered-domain.md)
 
 ### no-shared-db-writes

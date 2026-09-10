@@ -80,6 +80,12 @@ If the question is really how to **build** an agent — autonomy level, reasonin
 memory, guardrails — rather than how to get evidence about one, hand off to the `agentic-patterns`
 skill, which owns that decision tree. This skill covers the evidence, not the design.
 
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
+
 ## Mode A — Greenfield: the risk-led portfolio interview
 
 Read `references/decision-tree.md` and walk it from **Step 1 (scope) → Step 2 (system and failure
@@ -114,7 +120,7 @@ phase", "no broad integration", "no mutation tool", "no LLM judge", "no contract
 together" are first-class outcomes, often the most valuable ones. Give the reason and the single
 signal that would change the answer, and don't pad the table to look thorough.
 
-## Mode B — Existing suite: the test-suite review
+## Mode B — Refactoring: the test-suite review
 
 **Inspect before concluding.** A described suite is a hypothesis, not a measurement — never fabricate
 suite characteristics, and **if code or CI evidence is unavailable, say which conclusions are
@@ -294,7 +300,7 @@ oracle assessment where they apply.>
 
 Classify every rule honestly (default `narrative`) and regenerate the constitution.
 
-**Existing suite → a dated review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
+**Refactoring → a dated review report.** Write it to `docs/test-suite-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent) with the output contract above. If the suite is already well balanced, say
 so plainly and keep the report short — a clean bill of health is a valid outcome, not a failure to
 find work. If a rebalancing move is a direction the user commits to, capture it the same way — one

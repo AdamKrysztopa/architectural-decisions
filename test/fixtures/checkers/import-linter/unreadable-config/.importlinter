@@ -1,0 +1,9 @@
+[importlinter]
+root_package = svc
+
+[importlinter:contract:svc-db-isolation]
+ malformed continuation line appears before this contract's name is set
+name = svc-db-isolation
+type = forbidden
+source_modules = svc.billing
+forbidden_modules = svc.catalog.db

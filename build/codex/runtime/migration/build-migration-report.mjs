@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseDecision } from "../baseline/decisions.mjs";
+import { loadDecisionFiles } from "../baseline/decisions.mjs";
+import { writeAtomically } from "../baseline/write-atomically.mjs";
 import { candidateScopeConflicts, structuralConflicts } from "./classify-inputs.mjs";
 import { buildTraceability, renderTraceabilityReport } from "./traceability.mjs";
 
@@ -39,32 +40,20 @@ function asClassified(decisions) {
   return decisions.map((decision) => ({ path: decision.filename, kind: "schema-decision", decision }));
 }
 
+// decisionFilenames' NNNN-slug.md test (applied inside loadDecisionFiles)
+// already excludes constitution.md and migration-report.md (neither is
+// shaped like a decision file), along with any README.md/template.md left in
+// an adr-tools-style directory. Unlike runtime/baseline/decisions.mjs's own
+// loadDecisions(), this does NOT run validateDecisions' cross-decision checks
+// -- it substitutes its own migration-specific structural conflicts instead.
 async function loadDecisions(directory) {
-  const names = (await readdir(directory)).filter(
-    (name) => name.endsWith(".md") && name !== "constitution.md" && name !== "migration-report.md",
-  );
-  const decisions = [];
-  const parseErrors = [];
-  for (const name of names.sort()) {
-    try {
-      decisions.push(parseDecision(await readFile(join(directory, name), "utf8"), name));
-    } catch (error) {
-      parseErrors.push(error.message);
-    }
-  }
+  const { decisions, parseErrors } = await loadDecisionFiles(directory);
   const classified = asClassified(decisions);
   return {
     decisions,
     errors: [...parseErrors, ...structuralConflicts(classified)],
     conflicts: candidateScopeConflicts(classified),
   };
-}
-
-async function writeAtomically(path, contents) {
-  const temporary = `${path}.${process.pid}.tmp`;
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(temporary, contents, "utf8");
-  await rename(temporary, path);
 }
 
 export async function run(argv, cwd = process.cwd()) {
@@ -97,11 +86,15 @@ export async function run(argv, cwd = process.cwd()) {
   // duplicate/superseded disposition still writes a brand-new proposed file --
   // either way, what the cap must bound is "how many unreviewed proposed
   // decisions will a human face," which is a fact about the directory, not
-  // about which disposition kind happened to introduce each one.
+  // about which disposition kind happened to introduce each one, or how many
+  // separate migration passes wrote them. shared/migrating-decisions.md
+  // documents this as a directory-wide backlog cap, not a per-run one -- keep
+  // the two in agreement if either changes.
   const proposedCount = decisions.filter((decision) => decision.status === "proposed").length;
   if (proposedCount > options.cap) {
     process.stderr.write(
-      `This run proposes ${proposedCount} decisions, above the cap of ${options.cap}. Rank and re-run with fewer, or raise --cap deliberately.\n`,
+      `This directory holds ${proposedCount} unreviewed proposed decisions (cap ${options.cap}); ` +
+        "promote or discard some before proposing more. Rank what matters most.\n",
     );
     return 1;
   }

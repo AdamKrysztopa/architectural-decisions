@@ -10,6 +10,13 @@ command was run.
 Shipped-state references are `runtime/baseline/*.mjs`, `builders/*.mjs`, `test/build.test.mjs`,
 `package.json` at 0.3.1.
 
+**Note on versions (added 2026-09-10):** the title's SP2 → SP4 → SP5 → SP3 → SP6 order, and every
+per-plan version target cited below, is the order and numbering as originally planned — this audit's
+actual subject, checked for *mutual* consistency, not against later execution. The build order that
+actually shipped moved SP3 ahead of SP4 and SP5, and skipped `0.3.3`/`0.3.4` entirely: SP2 (0.3.2) →
+SP3 (0.3.5) → SP4 (0.3.6) → SP5 (0.3.7) → SP6 (0.4.0). See Conflict 2's erratum below and
+`docs/release-0.4.0.md`'s SP → version mapping table for the shipped record.
+
 **Severity key**
 - **S1 — build-breaking.** The consuming plan's tests cannot pass against what the producing plan
   actually ships. Discovered during implementation, at the cost of a redesign mid-release.
@@ -104,6 +111,14 @@ iterates skills by a hard-coded four.
 | SP5 | 0.3.4 | four → five | `plans/…sp5…:71-82` replaces `expectedSkillNames`; `:913`, `:961`, `:986`, `:1020` change each count phrase |
 | SP3 | 0.3.5 | five | `plans/…sp3…:31`, `:57`, `:62`, `:1665`, `:1780` — "all five" |
 | SP6 | 0.4.0 | five | `plans/…sp6…:8`, `:1148`, `:1223`, `:1331`; `specs/…sp6…:27`, `:408`, `:520` |
+
+**Erratum (2026-09-10):** the "Ships" column above is each plan's *own* stated version target, as
+drafted from this audit's original SP2 → SP4 → SP5 → SP3 → SP6 build order — accurate for auditing
+the plans' *mutual* consistency, which is this document's stated scope. It is not what actually
+shipped: SP3 (the drift-observation loop) shipped ahead of SP4 and SP5, and `0.3.3`/`0.3.4` were never
+cut. The real sequence was SP2 (0.3.2) → SP3 (0.3.5) → SP4 (0.3.6) → SP5 (0.3.7) → SP6 (0.4.0) — see
+`docs/release-0.4.0.md`'s SP → version mapping table for the authoritative record, including the one
+shipped commit subject that still names the pre-execution version and cannot be amended.
 
 **Dynamic iteration confirmed.** The two mechanisms that fan out over skills are already
 count-independent in shipped code and neither plan freezes them:

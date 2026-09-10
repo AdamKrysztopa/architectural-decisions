@@ -7,7 +7,11 @@ function pad(id) {
 
 function verificationNote(rule) {
   if (rule.verification === "deterministic") {
-    return `Verified by \`${rule.verifiedBy}\` — run the rule checker to resolve this binding and evaluate it.`;
+    return (
+      `Verified by \`${rule.verifiedBy}\` — run the rule checker to resolve this binding and evaluate it. ` +
+      "The checker's verdict covers the whole repository, not only this rule's scope: `scope` decides which " +
+      "edits the drift drain treats as touching this rule, never what the checker itself inspects."
+    );
   }
   if (rule.verification === "review") {
     return "Verified by review — needs judgement, and may be graded as a soft signal.";

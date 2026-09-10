@@ -58,6 +58,16 @@ test("matchesScope is true when any pattern matches and false for an empty scope
   assert.ok(!matchesScope("services/a.py", [], "r"));
 });
 
+test("matchesScope strips a leading './' before matching, so a checker adapter's own path convention agrees with git's", () => {
+  // A file gitleaks/semgrep reports can arrive as "./services/a.py" (some
+  // /bin/sh `grep -r .`-style invocations emit exactly this), while `scope`
+  // is always written relative-without-"./", the same convention git itself
+  // uses. Without normalizing here, an in-scope finding reported with this
+  // prefix would be misread as out-of-scope.
+  assert.ok(matchesScope("./services/a.py", ["services/**"], "r"));
+  assert.ok(matchesScope("././services/a.py", ["services/**"], "r"));
+});
+
 import { mkdtemp, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -216,6 +226,8 @@ import { promisify } from "node:util";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { CANDIDATES, run as buildConstitution } from "../runtime/baseline/build-constitution.mjs";
+
 const execFileAsync = promisify(execFile);
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
 const script = (name) => join(repositoryRoot, "runtime/drift", name);
@@ -329,6 +341,55 @@ test("the session-start hook exits 0 and stays quiet when there is no constituti
   assert.match(result.stdout, /build-constitution\.mjs/);
 });
 
+test("the session-start hook finds the constitution for every one of build-constitution's four decision-directory layouts", async () => {
+  // inject-rules.mjs derives its lookup path from build-constitution.mjs's
+  // own discoverDirectory + write-target logic rather than a private list,
+  // so this proves the two modules agree for docs/adr, docs/architecture/
+  // decisions, doc/adr, and adr -- not only the one layout the other
+  // session-start test happens to use.
+  for (const candidate of CANDIDATES) {
+    const root = await scratch();
+    const decisionsDir = join(root, candidate);
+    await mkdir(decisionsDir, { recursive: true });
+    await writeFile(
+      join(decisionsDir, "0001-example.md"),
+      [
+        "---",
+        "id: 0001",
+        "status: active",
+        "skill: decide-architecture",
+        "date: 2026-09-09",
+        "commit: aaaaaaa",
+        "rules:",
+        "  - id: example-rule-for-layout",
+        "    statement: A rule used only to prove inject-rules finds this layout's constitution.",
+        "    severity: warning",
+        "    verification: narrative",
+        "---",
+        "# Example decision",
+        "",
+        "## Context",
+        "## Decision",
+        "## Consequences (cost)",
+        "",
+      ].join("\n"),
+    );
+
+    const buildCode = await buildConstitution(["--dir", decisionsDir], root);
+    assert.equal(buildCode, 0, `build-constitution failed to write a constitution for layout '${candidate}'`);
+
+    const result = await runHook("inject-rules.mjs", JSON.stringify({ cwd: root }), {
+      CLAUDE_PROJECT_DIR: root,
+    });
+    assert.equal(result.code, 0, `inject-rules exited nonzero for layout '${candidate}'`);
+    assert.match(
+      result.stdout,
+      /example-rule-for-layout/,
+      `inject-rules did not find the constitution build-constitution wrote for layout '${candidate}'`,
+    );
+  }
+});
+
 test("the stop hook emits a systemMessage only when the queue is non-empty", async () => {
   const root = await scratch();
   const quiet = await runHook("notify.mjs", JSON.stringify({ cwd: root }), { CLAUDE_PROJECT_DIR: root });
@@ -421,7 +482,11 @@ test("the packet reports scoped rules, counts narrative ones, and never grades t
   const [rule] = packet.rules;
   assert.equal(rule.id, "no-shared-db-writes");
   assert.equal(rule.judgement, "forbidden");
-  assert.deepEqual(rule.checker, { status: "unavailable", evidence: "import-linter not on PATH" });
+  assert.deepEqual(rule.checker, {
+    status: "unavailable",
+    evidence: "import-linter not on PATH",
+    scopeCoverage: "repository-wide",
+  });
   assert.deepEqual(rule.matched, ["services/billing/db.py"]);
   assert.equal(packet.narrativeSkipped, 1);
   assert.equal(packet.scopeless, 0);
@@ -566,6 +631,33 @@ test("status reports the queue path it resolved", async () => {
   );
   assert.ok(stdout.includes(queuePath(root)), "status must print the queue path it resolved");
   assert.match(stdout, /\.gitignore/, "status must tell the user to gitignore .arch-crew/");
+});
+
+test("drift.mjs's default root follows CLAUDE_PROJECT_DIR, matching the hooks, even from a worktree subdirectory", async () => {
+  // observe.mjs/notify.mjs/inject-rules.mjs all resolve root via
+  // queue.mjs's resolveRoot (CLAUDE_PROJECT_DIR over cwd), so an edit
+  // observed from inside a worktree queues to the parent project root.
+  // drift.mjs's own default (before this fix: bare `cwd`) must resolve the
+  // same root, or `status`/`drain` looks at an empty worktree-local queue
+  // while the Stop hook already announced an edit the CLI can never see.
+  const parentRoot = await scratch();
+  const childDir = join(parentRoot, "worktree-child");
+  await mkdir(childDir, { recursive: true });
+
+  await runHook(
+    "observe.mjs",
+    JSON.stringify({ cwd: childDir, tool_name: "Write", tool_input: { file_path: join(childDir, "a.py") } }),
+    { CLAUDE_PROJECT_DIR: parentRoot },
+  );
+  assert.equal(await countObservations(parentRoot), 1, "the observation must land in the parent project root's queue");
+
+  const { stdout } = await execFileAsync(
+    process.execPath,
+    [join(repositoryRoot, "runtime/drift/drift.mjs"), "status"],
+    { cwd: childDir, env: { ...process.env, CLAUDE_PROJECT_DIR: parentRoot } },
+  );
+  assert.ok(stdout.includes(`root:  ${parentRoot}`), "status must resolve the same root the hooks used, not its own cwd");
+  assert.match(stdout, /observed: 1/, "status must see the edit observe.mjs already queued, not report 0");
 });
 
 test("status counts a stuck .draining slice into observed and names it separately", async () => {

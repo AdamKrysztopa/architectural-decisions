@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
 import { spawnSync } from "node:child_process";
-import { readFile, readdir, stat } from "node:fs/promises";
-import { dirname, isAbsolute, join, resolve } from "node:path";
+import { stat } from "node:fs/promises";
+import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseDecision, validateDecisions } from "../baseline/decisions.mjs";
+import { loadDecisions } from "../baseline/decisions.mjs";
 import { discoverDirectory } from "../baseline/build-constitution.mjs";
 import { buildPacket } from "./packet.mjs";
 import {
@@ -16,6 +16,7 @@ import {
   drainQueue,
   queuePath,
   releaseDrained,
+  resolveRoot,
 } from "./queue.mjs";
 
 const USAGE =
@@ -94,22 +95,6 @@ function gitPaths(root, base) {
   return paths;
 }
 
-async function loadDecisions(directory) {
-  const names = (await readdir(directory))
-    .filter((name) => name.endsWith(".md") && name !== "constitution.md")
-    .sort();
-  const decisions = [];
-  const errors = [];
-  for (const name of names) {
-    try {
-      decisions.push(parseDecision(await readFile(join(directory, name), "utf8"), name));
-    } catch (error) {
-      errors.push(error.message);
-    }
-  }
-  return { decisions, errors: [...errors, ...validateDecisions(decisions)] };
-}
-
 // SP2 owns every deterministic verdict. This copies its rows and never
 // re-implements, second-guesses, or substitutes for any of them. --run is
 // passed so a bound, resolvable contract is actually evaluated: without it,
@@ -133,9 +118,15 @@ function checkerRows(root, directory) {
 
 export async function run(argv, cwd = process.cwd()) {
   const options = parseArgs(argv);
+  // Falling back to bare `cwd` here (rather than the same CLAUDE_PROJECT_DIR-
+  // aware resolution observe.mjs, notify.mjs, and inject-rules.mjs all use)
+  // would let this CLI resolve a different root than the hooks did in a
+  // worktree -- queuing to the parent project root while status/drain looked
+  // at the worktree, forever "observed: 0" for edits the Stop hook already
+  // announced. --root stays an explicit, unconditional override.
   const root = options.root
     ? (isAbsolute(options.root) ? options.root : resolve(cwd, options.root))
-    : cwd;
+    : resolveRoot(process.env, {}, cwd);
 
   if (options.command === "status") {
     const draining = await countDrainingObservations(root);

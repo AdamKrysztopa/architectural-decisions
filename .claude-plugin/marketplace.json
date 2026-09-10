@@ -6,14 +6,14 @@
   },
   "metadata": {
     "description": "Architectural-decision skills for Claude Code — pick or audit software architecture, design patterns, agentic-system designs, testing strategy, and the security of a design (threat-model).",
-    "version": "0.3.7"
+    "version": "0.4.0"
   },
   "plugins": [
     {
       "name": "arch-crew",
       "source": "./build/claude",
       "description": "Five architectural-decision skills: decide-architecture (compose a software architecture stack), design-patterns (choose the right GoF / Python-idiomatic pattern), agentic-patterns (design an LLM-agent control flow), test-patterns (compose a risk-led testing portfolio across quality practices, unit / integration / contract / end-to-end tests, and data / ML / LLM evaluation), and threat-model (architecture-level security — trust boundaries, authorization placement, secrets, data protection, supply chain, and agent permissions — every deterministic claim bound to a checker the repository already runs, and no maturity score in the output). Each branches on status — greenfield → selection interview → recommended design; refactoring → code review against the catalog → targeted improvements.",
-      "version": "0.3.7",
+      "version": "0.4.0",
       "author": {
         "name": "Adam Krysztopa"
       },

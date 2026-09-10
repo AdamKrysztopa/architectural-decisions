@@ -1,5 +1,6 @@
 import { findConfigFiles, readLines } from "./text.mjs";
 import { spawnTool } from "./spawn.mjs";
+import { matchesScope } from "../drift/globs.mjs";
 
 const CONFIG_CANDIDATES = [".semgrep.yml", "semgrep.yml", ".semgrep/**.yml", "rules/**.yml", "sgconfig.yml"];
 
@@ -133,7 +134,15 @@ async function resolve(root, contract) {
 
 // semgrep --json is the one output mode with a stable check_id per finding;
 // the human-readable terminal report is not parsed.
-async function run(root, contract, resolution) {
+//
+// Every finding names its own `path`, so — unlike import-linter or
+// dependency-cruiser — this adapter CAN confine its verdict to the calling
+// rule's `scope`: a decision with a narrow `scope` must never see a `fail`
+// for a match semgrep found somewhere else entirely (check-rules.mjs's
+// `scopeCoverage` field is what tells a JSON consumer this happened). Pass
+// no `scope` (or an empty one) to fall back to the old, unfiltered
+// repository-wide behaviour.
+async function run(root, contract, resolution, { scope = [] } = {}) {
   const result = await spawnTool("semgrep", ["--config", resolution.location.file, "--json", "--quiet", "."], { cwd: root });
   if (!result.available) {
     return { status: "unavailable", evidence: "semgrep is not on PATH" };
@@ -144,11 +153,29 @@ async function run(root, contract, resolution) {
   } catch {
     return { status: "error", evidence: "semgrep did not produce parseable JSON output" };
   }
-  const hit = (report.results ?? []).find((finding) => finding.check_id === contract);
-  if (hit) {
+  const hits = (report.results ?? []).filter((finding) => finding.check_id === contract);
+  if (hits.length === 0) {
+    return { status: "pass", evidence: `semgrep reported no match for '${contract}'` };
+  }
+  if (scope.length === 0) {
+    const hit = hits[0];
     return { status: "fail", evidence: `semgrep matched '${contract}' at ${hit.path}:${hit.start?.line}` };
   }
-  return { status: "pass", evidence: `semgrep reported no match for '${contract}'` };
+  const inScope = hits.filter((hit) => matchesScope(hit.path, scope, `semgrep#${contract}`));
+  if (inScope.length > 0) {
+    const hit = inScope[0];
+    return { status: "fail", evidence: `semgrep matched '${contract}' at ${hit.path}:${hit.start?.line}` };
+  }
+  const outside = hits[0];
+  return {
+    status: "pass",
+    evidence:
+      `semgrep matched '${contract}', but only outside this rule's scope ` +
+      `(e.g. ${outside.path}:${outside.start?.line}); not a violation of this scoped rule`,
+  };
 }
 
-export default { tool: "semgrep", configCandidates: CONFIG_CANDIDATES, resolve, run };
+// scopeAware: true means check-rules.mjs may hand run() a rule's `scope` and
+// trust it to have been honoured (see the run() comment above) — the
+// contract behind the JSON `scopeCoverage` field.
+export default { tool: "semgrep", configCandidates: CONFIG_CANDIDATES, scopeAware: true, resolve, run };

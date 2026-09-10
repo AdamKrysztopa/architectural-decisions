@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
 import { createHash } from "node:crypto";
-import { readFile, readdir } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
@@ -587,5 +588,60 @@ test("the shipped rule checker runs from each target package", async () => {
       cwd: repositoryRoot,
     }).catch((error) => error);
     assert.match(stdout ?? "", /domain-imports-nothing\s+unbound/, `${target} checker CLI did not run as expected`);
+  }
+});
+
+test("the shipped migration CLI runs from each target package", async () => {
+  // Neither runtime/migration/build-migration-report.mjs nor
+  // runtime/baseline/build-constitution.mjs's promote verb (below) has a
+  // --help flag -- both throw "Unknown argument" and exit 1 for one, which
+  // would make assert.doesNotReject fail for the wrong reason. Proving "the
+  // entry point is reachable from the packaged target" instead means driving
+  // it through one real, successful invocation against fixture decisions.
+  const decisionName = "0011-events-over-shared-db.md";
+  const decisionBody = await readFile(join(repositoryRoot, "test/fixtures/migration", decisionName), "utf8");
+  for (const target of ["claude", "codex"]) {
+    const scratch = await mkdtemp(join(tmpdir(), "arch-crew-migration-cli-"));
+    const decisions = join(scratch, "docs/architecture/decisions");
+    await mkdir(decisions, { recursive: true });
+    await writeFile(join(decisions, decisionName), decisionBody);
+    const manifestPath = join(scratch, "manifest.json");
+    await writeFile(
+      manifestPath,
+      JSON.stringify({
+        inputs: [{ path: "docs/adr/0003-shared-db-writes.md" }],
+        dispositions: [{ path: "docs/adr/0003-shared-db-writes.md", kind: "migrated", decisionId: 11 }],
+      }),
+    );
+    const script = join(repositoryRoot, "build", target, "runtime/migration/build-migration-report.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "--manifest", manifestPath, "--dir", decisions], {
+        cwd: repositoryRoot,
+      }),
+      `${target} package's migration CLI is not executable`,
+    );
+  }
+});
+
+test("build-constitution's promote verb runs from each target package", async () => {
+  // Same rationale as above: "promote --help" is an unrecognized argument in
+  // this CLI and would exit 1, so reachability is proven with a real promote
+  // of test/fixtures/decisions' one proposed entry (0004) copied into a
+  // scratch directory -- the shipped constitution generator's own fixtures,
+  // not new ones.
+  const decisionsFixtures = join(repositoryRoot, "test/fixtures/decisions");
+  const decisionNames = await readdir(decisionsFixtures);
+  for (const target of ["claude", "codex"]) {
+    const scratch = await mkdtemp(join(tmpdir(), "arch-crew-promote-cli-"));
+    const decisions = join(scratch, "docs/architecture/decisions");
+    await mkdir(decisions, { recursive: true });
+    for (const name of decisionNames) {
+      await writeFile(join(decisions, name), await readFile(join(decisionsFixtures, name), "utf8"));
+    }
+    const script = join(repositoryRoot, "build", target, "runtime/baseline/build-constitution.mjs");
+    await assert.doesNotReject(
+      execFileAsync(process.execPath, [script, "promote", "0004", "--dir", decisions], { cwd: repositoryRoot }),
+      `${target} package's promote verb is not executable`,
+    );
   }
 });

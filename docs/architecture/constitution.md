@@ -39,7 +39,7 @@ A security claim that a tool could decide is bound to a checker the repository a
 The four skills' name and description frontmatter must not change; triggering is part of the shipped release.
 
 - Severity: blocking
-- Scope: `skills/*/SKILL.md`
+- Scope: `skills/agentic-patterns/SKILL.md`, `skills/decide-architecture/SKILL.md`, `skills/design-patterns/SKILL.md`, `skills/test-patterns/SKILL.md`
 - Verified by review — needs judgement, and may be graded as a soft signal.
 - Source: [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md)
 

@@ -25,7 +25,7 @@
 ## Docs
 
 - [Documentation — how to use](docs/README.md)
-- [Worked examples](docs/examples/README.md) — including four `test-patterns` runs: [an invoicing service](docs/examples/test-patterns/invoicing-service.md), [a legacy E2E-heavy suite](docs/examples/test-patterns/legacy-e2e-heavy-suite.md), [a data pipeline](docs/examples/test-patterns/data-pipeline.md), [a RAG agent](docs/examples/test-patterns/rag-agent.md), and [a thin LLM service whose right test portfolio is deliberately small](docs/examples/test-patterns/thin-llm-service.md)
+- [Worked examples](docs/examples/README.md) — including five `test-patterns` runs: [an invoicing service](docs/examples/test-patterns/invoicing-service.md), [a legacy E2E-heavy suite](docs/examples/test-patterns/legacy-e2e-heavy-suite.md), [a data pipeline](docs/examples/test-patterns/data-pipeline.md), [a RAG agent](docs/examples/test-patterns/rag-agent.md), and [a thin LLM service whose right test portfolio is deliberately small](docs/examples/test-patterns/thin-llm-service.md)
 - [Validating the skills](docs/validating-skills.md)
 - [For coding agents](AGENTS.md)
 

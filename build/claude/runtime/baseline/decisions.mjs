@@ -1,8 +1,28 @@
+import { readFile, readdir } from "node:fs/promises";
+import { join } from "node:path";
+
 import { FrontmatterError, parseFrontmatter } from "./frontmatter.mjs";
+import { GlobError, compileGlob } from "../drift/globs.mjs";
 
 export const STATUSES = ["proposed", "active", "superseded"];
 export const VERIFICATIONS = ["deterministic", "review", "narrative"];
 export const SEVERITIES = ["blocking", "warning"];
+
+// The one definition of "which files in a decisions directory are decision
+// files", shared by every loader (build-constitution, check-rules, drift,
+// build-migration-report). A looser test -- "ends in .md and isn't
+// constitution.md" -- treats a README.md or template.md left beside real
+// decisions (the standard adr-tools layout) as a decision file, and
+// parseDecision then fails it loudly instead of the directory being usable
+// at all. discover-candidates.mjs deliberately uses a wider ADR_SHAPED test
+// of its own (it is only building a menu of candidates to migrate, not
+// loading decision files), so it is not a caller of this helper.
+export const DECISION_FILENAME = /^\d{4}-[a-z0-9][a-z0-9-]*\.md$/;
+
+export async function decisionFilenames(directory) {
+  const entries = await readdir(directory);
+  return entries.filter((name) => DECISION_FILENAME.test(name)).sort();
+}
 
 // v1 resolves a binding's shape and its tool, never the contract name inside the
 // tool's config. That resolution belongs to the checker sub-project.
@@ -57,10 +77,26 @@ function parseRule(raw, decisionId, filename) {
     }
   }
 
+  const scope = asList(raw.scope);
+  // Validated here, at parse time, against the one scope-glob matcher
+  // (runtime/drift/globs.mjs) rather than left for the drift drain to
+  // discover later: a bad pattern in one decision must fail loading that one
+  // file with a clear message, not abort every rule's drift review the next
+  // time anyone runs the drain. See shared/recording-decisions.md's scope
+  // section for the supported subset.
+  for (const pattern of scope) {
+    try {
+      compileGlob(pattern, `rule '${raw.id}'`);
+    } catch (error) {
+      if (error instanceof GlobError) fail(filename, error.message);
+      throw error;
+    }
+  }
+
   return {
     id: raw.id,
     statement: raw.statement,
-    scope: asList(raw.scope),
+    scope,
     severity: raw.severity,
     verification: raw.verification,
     verifiedBy,
@@ -154,4 +190,38 @@ export function validateDecisions(decisions) {
   }
 
   return errors.sort();
+}
+
+// The read-and-parse loop shared by every loader that needs decision files
+// off disk: list the directory's decision filenames, parse each one, and
+// collect a parse error per file that fails rather than aborting the whole
+// directory on the first bad one. Returns raw parse errors only -- no
+// cross-decision validation -- so a caller with its own notion of "what
+// counts as an error for this loader" (build-migration-report.mjs's
+// structural conflicts instead of validateDecisions' duplicate-id/rule
+// checks) can build on this without inheriting checks it does not want.
+export async function loadDecisionFiles(directory) {
+  const names = await decisionFilenames(directory);
+  const decisions = [];
+  const parseErrors = [];
+  for (const name of names) {
+    try {
+      decisions.push(parseDecision(await readFile(join(directory, name), "utf8"), name));
+    } catch (error) {
+      parseErrors.push(error.message);
+    }
+  }
+  return { decisions, parseErrors };
+}
+
+// The composed loader used identically by check-rules.mjs, drift.mjs, and
+// build-constitution.mjs: parse every decision file, then run the
+// cross-decision checks (duplicate ids, duplicate rule ids, dangling
+// superseded_by) over whatever parsed. build-migration-report.mjs is the one
+// caller that does NOT want validateDecisions' checks -- it uses
+// loadDecisionFiles directly and layers its own migration-specific
+// structural conflicts on top instead.
+export async function loadDecisions(directory) {
+  const { decisions, parseErrors } = await loadDecisionFiles(directory);
+  return { decisions, errors: [...parseErrors, ...validateDecisions(decisions)] };
 }

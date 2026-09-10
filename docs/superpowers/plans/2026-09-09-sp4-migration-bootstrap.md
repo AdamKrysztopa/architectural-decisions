@@ -4,6 +4,13 @@
 > (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use
 > checkbox (`- [ ]`) syntax for tracking.
 
+> **Erratum (2026-09-10):** this plan was drafted against `0.3.3` as SP4's version target, the third
+> release in the originally-planned SP2 → SP4 → SP5 → SP3 → SP6 order. SP3 actually shipped first
+> (0.3.5), and SP4 landed after it as **0.3.6** — `0.3.3` was never cut. Every version string below is
+> corrected to what actually shipped; see `docs/release-0.4.0.md`'s SP → version mapping table for
+> the full picture, including the one commit whose subject still reads `(0.3.3)` and cannot be
+> amended.
+
 **Goal:** Give `arch-crew` a path from "no baseline" to a first one, for the two repository shapes
 SP1–SP3 don't help: one with existing prose ADRs (consolidation) and one with none at all (reverse
 discovery). Both write only `status: proposed` schema decision files over an explicitly confirmed set
@@ -36,7 +43,7 @@ byte-for-byte.
   functions — the CLI supplies the clock, the renderer takes it as a parameter.
 - **Code style:** ESM, 2-space indent, double-quoted strings, named exports — match
   `runtime/baseline/*.mjs`.
-- **Version target:** `0.3.3` in `package.json`.
+- **Version target:** `0.3.6` in `package.json`.
 - **Test command:** `npm test` runs `node --test test/build.test.mjs test/baseline.test.mjs
   test/migration.test.mjs test/scenarios.test.mjs`; this plan adds `test/migration.test.mjs` to that
   script.
@@ -2130,7 +2137,7 @@ git commit -m "Add force-driven scenarios for consolidation and reverse discover
 
 **Files:**
 - Modify: `package.json` (version)
-- Create: `docs/release-0.3.3.md`
+- Create: `docs/release-0.3.6.md`
 - Modify: `docs/release-0.3.1.md` (retract the resolved limitation), `docs/building-packages.md`,
   `docs/validating-skills.md`, `README.md`, `CLAUDE.md`
 
@@ -2140,7 +2147,7 @@ git commit -m "Add force-driven scenarios for consolidation and reverse discover
 
 - [x] **Step 1: Bump the version**
 
-In `package.json`, set `"version": "0.3.3"`.
+In `package.json`, set `"version": "0.3.6"`.
 
 - [x] **Step 2: Rebuild both targets and verify the runtime inventory ships with no adapter change**
 
@@ -2199,16 +2206,16 @@ In `docs/release-0.3.1.md`, replace the last "Known limitations" bullet:
 with:
 
 ```markdown
-- ~~A greenfield run records the same decision twice~~ — **resolved in 0.3.3.** All four skills now
-  write a single decision file; the prose-ADR write is gone. See `docs/release-0.3.3.md`.
+- ~~A greenfield run records the same decision twice~~ — **resolved in 0.3.6.** All four skills now
+  write a single decision file; the prose-ADR write is gone. See `docs/release-0.3.6.md`.
 ```
 
-- [x] **Step 5: Write `docs/release-0.3.3.md`**
+- [x] **Step 5: Write `docs/release-0.3.6.md`**
 
 ```markdown
-# Release 0.3.3 — migration and bootstrap
+# Release 0.3.6 — migration and bootstrap
 
-## What shipped in 0.3.3
+## What shipped in 0.3.6
 
 - **Consolidation.** `references/migrating-decisions.md` (shared by all four skills) walks turning an
   explicitly confirmed set of existing prose ADRs into schema decision files: candidates are listed,
@@ -2291,8 +2298,13 @@ Expected: tests pass; no unexpected diff under `build/`.
 
 ```bash
 git add package.json docs README.md CLAUDE.md
-git commit -m "Ship migration and bootstrap; resolve the 0.3.1 dual-artifact limitation (0.3.3)"
+git commit -m "Ship migration and bootstrap; resolve the 0.3.1 dual-artifact limitation (0.3.6)"
 ```
+
+The commit that actually shipped this work (`ac6bea1`) predates this correction and used different
+wording with the plan's original, uncorrected version target: "Migration and bootstrap: propose
+decisions from an undocumented repo (0.3.3)" — its subject cannot be amended after the fact; see
+`docs/release-0.4.0.md`'s SP → version mapping table.
 
 ---
 
@@ -2312,7 +2324,7 @@ git commit -m "Ship migration and bootstrap; resolve the 0.3.1 dual-artifact lim
 | Packaging to both targets | 12 (runtime ships with no adapter change; shared reference synced in 9) |
 | Validation layer 1 | 1–8, 12 |
 | Validation layer 2 | 11 |
-| Version 0.3.3 | 12 |
+| Version 0.3.6 | 12 |
 
 **Placeholder scan:** none. Every step carries the literal content to write or the literal diff to
 apply; the migration scenario criteria are asserted inline in Task 11 rather than through a second

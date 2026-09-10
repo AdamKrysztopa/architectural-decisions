@@ -101,6 +101,15 @@ test("skips node_modules and virtualenv directories while walking", async () => 
   assert.deepEqual(files, ["nested/deep/tree/rule.yml"]);
 });
 
+test("a literal '?' in a candidate glob is escaped, not read as a regex quantifier", async () => {
+  // Before this fix, an unescaped '?' immediately after the '*' expansion
+  // ("[^/]*?.yml") was read by RegExp as making the preceding "[^/]*" lazy,
+  // not as a literal '?' character to match -- so "*?.yml" silently behaved
+  // exactly like "*.yml" and matched a file with no '?' in its name at all.
+  const files = await findConfigFiles(fixtures("text-question-mark"), ["*?.yml"]);
+  assert.deepEqual(files, []);
+});
+
 test("candidate order does not change the result set", async () => {
   const forward = await findConfigFiles(fixtures("text"), ["literal.json", "nested/**/*.yml"]);
   const reversed = await findConfigFiles(fixtures("text"), ["nested/**/*.yml", "literal.json"]);
@@ -440,6 +449,28 @@ test("semgrep run() reports fail when semgrep's JSON report matches the contract
   });
 });
 
+test("semgrep run() reports fail when a finding for the contract falls within a given scope", async () => {
+  const resolution = await semgrep.resolve(fixtures("semgrep"), "no-eval");
+  const script = `#!/bin/sh\necho '{"results":[{"check_id":"no-eval","path":"services/app.py","start":{"line":3}}]}'\nexit 1\n`;
+  await withFakeTools({ semgrep: script }, async () => {
+    const result = await semgrep.run(fixtures("semgrep"), "no-eval", resolution, { scope: ["services/**"] });
+    assert.equal(result.status, "fail");
+  });
+});
+
+test("semgrep run() does not attribute a finding outside the given scope to this contract's rule", async () => {
+  // Same defect as gitleaks: semgrep also scans the whole repository in one
+  // pass, so a real check_id match can sit outside the scope of the one
+  // rule bound to it.
+  const resolution = await semgrep.resolve(fixtures("semgrep"), "no-eval");
+  const script = `#!/bin/sh\necho '{"results":[{"check_id":"no-eval","path":"docs/notes.py","start":{"line":3}}]}'\nexit 1\n`;
+  await withFakeTools({ semgrep: script }, async () => {
+    const result = await semgrep.run(fixtures("semgrep"), "no-eval", resolution, { scope: ["services/**"] });
+    assert.equal(result.status, "pass");
+    assert.match(result.evidence, /outside this rule's scope/);
+  });
+});
+
 test("ast-grep's rule-file reader is independent of semgrep's: it reads a top-level id per YAML document", () => {
   const text = ["id: rule-one", "language: TypeScript", "rule:", "  pattern: foo()",
     "---", "id: rule-two", "rule:", "  pattern: bar()"].join("\n");
@@ -588,6 +619,30 @@ test("gitleaks run() reports pass when the report has findings but none for the 
   await withFakeTools({ gitleaks: script }, async () => {
     const result = await gitleaks.run(fixtures("gitleaks"), "aws-secret-key", resolution);
     assert.equal(result.status, "pass");
+  });
+});
+
+test("gitleaks run() reports fail when a finding for the contract falls within a given scope", async () => {
+  const resolution = await gitleaks.resolve(fixtures("gitleaks"), "aws-secret-key");
+  const script = `#!/bin/sh\nreportpath=""\nprev=""\nfor arg in "$@"; do\n  if [ "$prev" = "--report-path" ]; then reportpath="$arg"; fi\n  prev="$arg"\ndone\nprintf '[{"RuleID":"aws-secret-key","File":"services/a.py","StartLine":3}]' > "$reportpath"\nexit 1\n`;
+  await withFakeTools({ gitleaks: script }, async () => {
+    const result = await gitleaks.run(fixtures("gitleaks"), "aws-secret-key", resolution, { scope: ["services/**"] });
+    assert.equal(result.status, "fail");
+  });
+});
+
+test("gitleaks run() does not attribute a finding outside the given scope to this contract's rule", async () => {
+  // A finding for the exact contract this rule binds to, but sitting under a
+  // path the rule's own scope never names, must not surface as `fail` for a
+  // rule scoped elsewhere: the drift-drain's "which rule does this edit
+  // belong to" answer must never be second-guessed by a checker verdict that
+  // conflates "this contract failed somewhere" with "this rule failed".
+  const resolution = await gitleaks.resolve(fixtures("gitleaks"), "aws-secret-key");
+  const script = `#!/bin/sh\nreportpath=""\nprev=""\nfor arg in "$@"; do\n  if [ "$prev" = "--report-path" ]; then reportpath="$arg"; fi\n  prev="$arg"\ndone\nprintf '[{"RuleID":"aws-secret-key","File":"docs/notes.py","StartLine":3}]' > "$reportpath"\nexit 1\n`;
+  await withFakeTools({ gitleaks: script }, async () => {
+    const result = await gitleaks.run(fixtures("gitleaks"), "aws-secret-key", resolution, { scope: ["services/**"] });
+    assert.equal(result.status, "pass");
+    assert.match(result.evidence, /outside this rule's scope/);
   });
 });
 
@@ -778,6 +833,44 @@ test("--json emits the same information as machine-readable rows", async () => {
   assert.equal(parsed.rows.length, 1);
   assert.equal(parsed.rows[0].rule, "domain-imports-nothing");
   assert.equal(parsed.rows[0].status, "unavailable");
+});
+
+test("a row's scopeCoverage is repository-wide when the rule declares no scope at all", async () => {
+  const { root, decisions } = await scratchRepo();
+  await writeImportLinterConfig(root);
+  await writeDecision(
+    decisions,
+    "  - id: domain-imports-nothing\n    statement: x\n    severity: blocking\n    verification: deterministic\n    verified_by: import-linter#domain-isolation\n",
+  );
+  let captured = "";
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (chunk) => { captured += chunk; return true; };
+  try {
+    await checkRules(["--json"], root);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  const { rows } = JSON.parse(captured);
+  assert.equal(rows[0].scopeCoverage, "repository-wide");
+});
+
+test("a row's scopeCoverage is repository-wide when the rule declares a scope but its tool cannot be confined to one", async () => {
+  const { root, decisions } = await scratchRepo();
+  await writeImportLinterConfig(root);
+  await writeDecision(
+    decisions,
+    "  - id: domain-imports-nothing\n    statement: x\n    scope: [\"myapp/domain/**\"]\n    severity: blocking\n    verification: deterministic\n    verified_by: import-linter#domain-isolation\n",
+  );
+  let captured = "";
+  const originalWrite = process.stdout.write.bind(process.stdout);
+  process.stdout.write = (chunk) => { captured += chunk; return true; };
+  try {
+    await checkRules(["--json"], root);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+  const { rows } = JSON.parse(captured);
+  assert.equal(rows[0].scopeCoverage, "repository-wide");
 });
 
 test("narrative and review rules are counted, never resolved", async () => {

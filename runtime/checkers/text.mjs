@@ -1,23 +1,27 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join } from "node:path";
 
+import { SKIP_DIRECTORIES } from "../baseline/skip-directories.mjs";
+
 // Minimal glob: a literal relative path, "*" within one path segment, and
 // "**" meaning "any number of directories". No brace expansion, no character
 // classes. That is enough for the six tools' documented config candidates
 // and nothing more is attempted.
+//
+// This is deliberately its own, private matcher for resolving a checker
+// adapter's own configCandidates -- it is NOT the `scope` field's glob
+// matcher (that is runtime/drift/globs.mjs, reused verbatim by
+// runtime/migration/glob.mjs and validated at parse time by
+// runtime/baseline/decisions.mjs). The two intentionally support different,
+// incompatible syntax (`**.yml` expands to two segments here, and is
+// rejected outright there as "'**' mixed with other characters in one
+// segment"). Never point a decision's `scope` at this module, and never
+// treat a configCandidates pattern as an example of scope syntax --
+// shared/recording-decisions.md documents the scope-glob subset.
 function segmentToRegExp(segment) {
-  const escaped = segment.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, "[^/]*");
+  const escaped = segment.replace(/[.+^${}()|[\]\\?]/g, "\\$&").replace(/\*/g, "[^/]*");
   return new RegExp(`^${escaped}$`);
 }
-
-const SKIP_DIRECTORIES = new Set([
-  "node_modules",
-  ".git",
-  ".venv",
-  "venv",
-  "__pycache__",
-  ".tox",
-]);
 
 async function exists(path) {
   try {
@@ -69,7 +73,13 @@ function matchParts(fileParts, patternParts) {
   return matchParts(fileParts.slice(1), restPattern);
 }
 
-function matchesGlob(filePath, pattern) {
+// Named for exactly what it is (never "matchesGlob", "matchesScope", or
+// anything a reader could mistake for runtime/drift/globs.mjs's matcher):
+// this is the private config-candidate subset described in the module
+// comment above, exported only so test/glob-parity.test.mjs can pin its
+// behaviour against a shared table without a filesystem round-trip. Not for
+// use outside this file and that test.
+export function matchesConfigCandidateGlob(filePath, pattern) {
   return matchParts(filePath.split("/"), expandPatternParts(pattern));
 }
 
@@ -91,7 +101,7 @@ export async function findConfigFiles(root, candidates) {
     if (staticPrefix && !(await exists(join(root, staticPrefix)))) continue;
 
     for (const file of await walk(root, staticPrefix)) {
-      if (matchesGlob(file, candidate)) found.push(file);
+      if (matchesConfigCandidateGlob(file, candidate)) found.push(file);
     }
   }
   return [...new Set(found)];

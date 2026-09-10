@@ -20,9 +20,12 @@ byte-for-byte, no new packages.
 
 **Spec:** `docs/superpowers/specs/2026-09-09-sp6-release-hardening-design.md`
 
-**Depends on (already shipped by the time this plan starts):** SP2 `runtime/checkers/` (0.3.2), SP4
-`runtime/migration/` (0.3.3), SP5 `skills/threat-model/` and its checker bindings (0.3.4), SP3
-`runtime/drift/` and the hook manifest (0.3.5). This plan cites those modules by the interface shapes
+**Depends on (already shipped by the time this plan starts):** SP2 `runtime/checkers/` (0.3.2), SP3
+`runtime/drift/` and the hook manifest (0.3.5), SP4 `runtime/migration/` (0.3.6), SP5
+`skills/threat-model/` and its checker bindings (0.3.7). The build order actually executed was
+SP2 → SP3 → SP4 → SP5 → SP6, not the SP2 → SP4 → SP5 → SP3 → SP6 this upgrade was originally planned
+around (`0.3.3` and `0.3.4` were never cut — see `docs/release-0.4.0.md`'s SP → version mapping
+table). This plan cites those modules by the interface shapes
 `docs/superpowers/specs/2026-09-09-upgrade-decisions-sp2-sp6.md` commits to. Where a shipped signature
 differs in a harmless way (an extra flag, a renamed field), fix the call site here — the assertions
 are what this plan is actually protecting, not the exact spelling of a CLI flag.
@@ -104,7 +107,7 @@ The cheapest, highest-value regression net: today `skill-frontmatter-is-frozen` 
 - Consumes: nothing.
 - Produces: nothing programmatic — a `node:test` suite plus its fixture.
 
-- [ ] **Step 1: Snapshot the four originals' current frontmatter**
+- [x] **Step 1: Snapshot the four originals' current frontmatter**
 
 ```bash
 node -e '
@@ -127,7 +130,7 @@ Read the output. It must contain exactly the four original skill names with the 
 text currently shipping — this file becomes the thing every future release is compared against, so a
 mistake here freezes the wrong bytes.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/skill-freeze.test.mjs`:
 
@@ -199,12 +202,12 @@ test("the body manifest names every currently packaged skill", async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test test/skill-freeze.test.mjs`
 Expected: FAIL — `test/fixtures/skill-freeze/body-manifest.json` does not exist yet.
 
-- [ ] **Step 3: Generate the body manifest**
+- [x] **Step 3: Generate the body manifest**
 
 ```bash
 node -e '
@@ -222,7 +225,7 @@ import("node:fs/promises").then(async ({ readdir, readFile, writeFile }) => {
 });'
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `node --test test/skill-freeze.test.mjs`
 Expected: PASS — 4 frontmatter tests, 1 body-hash test, 1 manifest-completeness test.
@@ -261,7 +264,7 @@ assertion per new CLI, matching the one `build.test.mjs` already has for
   verb on `runtime/baseline/build-constitution.mjs`.
 - Produces: nothing new — extends an existing test.
 
-- [ ] **Step 1: Confirm the generic inventory test needs no code change**
+- [x] **Step 1: Confirm the generic inventory test needs no code change**
 
 ```bash
 node --test test/build.test.mjs -- --test-name-pattern "target inventories"
@@ -272,7 +275,7 @@ against a freshly-listed file set, not a hardcoded path list), no edit is needed
 the adapters' `runtimeTrees` declaration (`builders/adapters/{claude,codex}.mjs`) was narrowed to
 `runtime/baseline` specifically somewhere along SP2–SP5 — fix the adapter, not the test.
 
-- [ ] **Step 2: Add the failing per-CLI executability tests**
+- [x] **Step 2: Add the failing per-CLI executability tests**
 
 Append to `test/build.test.mjs`, next to the existing "the shipped generator runs from each target
 package" test:
@@ -342,7 +345,7 @@ rather than duplicating it.
   `pass | fail | unbound | unreadable-config | unavailable | error`.
 - Produces: nothing new — a Layer-1 suite over data.
 
-- [ ] **Step 1: Write the `import-linter` corpus**
+- [x] **Step 1: Write the `import-linter` corpus**
 
 `test/fixtures/checkers/import-linter/pass/.importlinter`:
 
@@ -406,7 +409,7 @@ root_package = svc
 `test/fixtures/checkers/import-linter/unavailable/` — copy `pass` verbatim; this fixture's test
 invocation runs with `import-linter` deliberately removed from `PATH`, so no config change is needed.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/checker-corpus.test.mjs`:
 
@@ -485,14 +488,14 @@ test("without --run, resolution is static only and nothing is spawned", async ()
 });
 ```
 
-- [ ] **Step 3: Run the tests to verify they fail**
+- [x] **Step 3: Run the tests to verify they fail**
 
 Run: `node --test test/checker-corpus.test.mjs`
 Expected: FAIL until SP2's `runtime/checkers/check-rules.mjs` exists on the branch this plan is
 executed against. If it already exists (build order places SP2 before SP6), failures instead point at
 fixture or flag mismatches — fix the fixture or the flag name, not the assertion.
 
-- [ ] **Step 4: Run against the real checker and fix fixtures until green**
+- [x] **Step 4: Run against the real checker and fix fixtures until green**
 
 ```bash
 node --test test/checker-corpus.test.mjs
@@ -503,7 +506,7 @@ Do not weaken an assertion to make a fixture pass — if `check-rules.mjs`'s act
 from what is asserted here (e.g., a different JSON field name), fix the assertion to match the real,
 shipped shape, and note the mismatch in this task's commit message.
 
-- [ ] **Step 5: Repeat for `gitleaks` and `semgrep`, pass and fail only**
+- [x] **Step 5: Repeat for `gitleaks` and `semgrep`, pass and fail only**
 
 `test/fixtures/checkers/gitleaks/pass/.gitleaks.toml` names one rule and the fixture repo contains
 nothing that matches it. `test/fixtures/checkers/gitleaks/fail/` is the same fixture with one file
@@ -536,7 +539,7 @@ git commit -m "Add the deterministic-checker corpus across tools and result stat
   committed fixture), `withPatch(path, patcher, fn): Promise<void>` (apply a change, run `fn`, always
   restore) — both exported from `test/e2e/support.mjs` for reuse by Tasks 5–7.
 
-- [ ] **Step 1: Write the shared E2E support module**
+- [x] **Step 1: Write the shared E2E support module**
 
 Create `test/e2e/support.mjs`:
 
@@ -570,7 +573,7 @@ export async function cleanup(dir) {
 }
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/e2e/bind-and-prove.test.mjs`:
 
@@ -631,7 +634,7 @@ test("E2E-1: a rule naming a contract that does not exist is unbound, never pass
 file's `verified_by` changed to name a contract absent from `.importlinter` — copy it in as a fixture
 directory rather than deriving it at test time, so the fixture is inspectable on its own.
 
-- [ ] **Step 3: Run the tests to verify they fail, then pass**
+- [x] **Step 3: Run the tests to verify they fail, then pass**
 
 ```bash
 node --test test/e2e/bind-and-prove.test.mjs
@@ -659,7 +662,7 @@ git commit -m "Add E2E-1: bind and prove, over the deterministic-checker corpus"
   `runDrain(dir, options): Promise<{ counts, findings }>`. Adjust the import to whichever SP3 actually
   shipped; the test only needs a callable that returns a categorized report.
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `test/fixtures/e2e/drift-observed/docs/architecture/decisions/0001-billing-boundary.md`:
 
@@ -705,7 +708,7 @@ def apply_discount(order):
 No `.importlinter` file ships in this fixture — the third rule is deliberately `deterministic` with
 no config present, so the drain must report it `unavailable`, never a stand-in judgement.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/e2e/drift-observed.test.mjs`:
 
@@ -765,7 +768,7 @@ test("E2E-2: CI's documented commands never read the drift queue", async () => {
 });
 ```
 
-- [ ] **Step 3: Run, fix fixture/flag mismatches against the real SP3 CLI, and pass**
+- [x] **Step 3: Run, fix fixture/flag mismatches against the real SP3 CLI, and pass**
 
 ```bash
 node --test test/e2e/drift-observed.test.mjs
@@ -790,14 +793,14 @@ git commit -m "Add E2E-2: drift observed, not asserted"
 - Consumes: `runtime/migration/migrate.mjs` (SP4) and `build-constitution.mjs promote` (SP4, added to
   `runtime/baseline/`).
 
-- [ ] **Step 1: Write the fixture — three prose ADRs, no schema decisions**
+- [x] **Step 1: Write the fixture — three prose ADRs, no schema decisions**
 
 `test/fixtures/e2e/bootstrap-migration/docs/adr/0001-rest-over-graphql.md`,
 `0002-postgres-for-orders.md`, `0003-events-for-billing.md` — three short, plausible Nygard-style
 prose ADRs with a `# Title`, `## Status`, `## Context`, `## Decision`, `## Consequences`, no
 frontmatter. No `docs/architecture/decisions/` directory exists in this fixture at all.
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/e2e/bootstrap-migration.test.mjs`:
 
@@ -883,7 +886,7 @@ test("E2E-3: promoting a subset changes the constitution by exactly that subset"
 });
 ```
 
-- [ ] **Step 3: Run, fix fixture/flag mismatches against the real SP4 CLI, and pass**
+- [x] **Step 3: Run, fix fixture/flag mismatches against the real SP4 CLI, and pass**
 
 ```bash
 node --test test/e2e/bootstrap-migration.test.mjs
@@ -910,7 +913,7 @@ git commit -m "Add E2E-3: bootstrap an undocumented repo through migration and p
   `threat-model` skill itself — the skill's judgement is graded by SP5's own `security.json`, not
   re-derived here (D3 in the design spec).
 
-- [ ] **Step 1: Write the fixture**
+- [x] **Step 1: Write the fixture**
 
 `test/fixtures/e2e/security-without-theatre/.gitleaks.toml`:
 
@@ -926,10 +929,14 @@ synthetic, obviously-fake credential matching the rule:
 
 `test/fixtures/e2e/security-without-theatre/docs/architecture/decisions/0001-service-boundary-security.md`:
 
+Status is `active`, not `proposed` — `check-rules.mjs` filters to `decisions.filter((decision) =>
+decision.status === "active")` before resolving any binding, so a `proposed` fixture would make E2E-4
+resolve zero rules and the "secret is found by gitleaks" assertion would never see a row to check.
+
 ```markdown
 ---
 id: 0001
-status: proposed
+status: active
 skill: threat-model
 date: 2026-09-09
 commit: ccccccc
@@ -957,7 +964,7 @@ rules:
 ## Consequences (cost)
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 Create `test/e2e/security-without-theatre.test.mjs`:
 
@@ -1001,7 +1008,7 @@ test("E2E-4: the decision carries one deterministic, one review, one narrative r
 });
 ```
 
-- [ ] **Step 3: Run, fix fixture mismatches, and pass**
+- [x] **Step 3: Run, fix fixture mismatches, and pass**
 
 ```bash
 node --test test/e2e/security-without-theatre.test.mjs
@@ -1025,7 +1032,7 @@ git commit -m "Add E2E-4: security decision without theatre"
 - Consumes: `runtime/baseline/build-constitution.mjs`'s `promote` verb (SP4) and `run()` (SP1, for the
   no-promotion-no-change case).
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `test/approval-gate.test.mjs`:
 
@@ -1122,7 +1129,7 @@ test("a hand-edited status: active is not mechanically blocked — documented li
 });
 ```
 
-- [ ] **Step 2: Run, fix against the real SP4 promote verb, and pass**
+- [x] **Step 2: Run, fix against the real SP4 promote verb, and pass**
 
 ```bash
 node --test test/approval-gate.test.mjs
@@ -1148,7 +1155,7 @@ Not automatable — this is where the plan is explicit that it is producing a *p
 - Consumes: all five scenario sets.
 - Produces: nothing programmatic.
 
-- [ ] **Step 1: Extend the "Running the scenarios" section**
+- [x] **Step 1: Extend the "Running the scenarios" section**
 
 Add a subsection to `docs/validating-skills.md`:
 
@@ -1200,7 +1207,7 @@ committed as the fix itself, not as the raw run.)
 - Consumes: nothing new.
 - Produces: nothing programmatic — documented commands, one of them (`gitleaks`) external.
 
-- [ ] **Step 1: Extend "Host validation before release"**
+- [x] **Step 1: Extend "Host validation before release"**
 
 Add to `docs/building-packages.md`:
 
@@ -1265,7 +1272,7 @@ git commit -m "Document the 0.4.0 clean-install and package-content audit proced
 - Consumes: every artifact this plan and SP2–SP5 produced.
 - Produces: nothing programmatic — the audit table itself.
 
-- [ ] **Step 1: Write the checklist**
+- [x] **Step 1: Write the checklist**
 
 Create `docs/release-checklist-0.4.0.md` with the ten sections from the design spec's "The checklist,
 closed," each carrying: the item as it now reads (§2 replaced verbatim with the wording in the design
@@ -1301,7 +1308,7 @@ reported as verified without a reliable check.
   named here so it is not mistaken for a gap.
 ```
 
-- [ ] **Step 2: Fill in the audit table's evidence column against the actual state of the branch**
+- [x] **Step 2: Fill in the audit table's evidence column against the actual state of the branch**
 
 Before commit, re-run every command the checklist cites and confirm each row's evidence is currently
 true, not aspirational.
@@ -1326,19 +1333,19 @@ git commit -m "Commit the ten-section pre-release checklist with its per-line au
 - Consumes: everything above.
 - Produces: the tagged release state.
 
-- [ ] **Step 1: Update README**
+- [x] **Step 1: Update README**
 
 Update the skill table and opening paragraph to name five skills. Extend "The baseline" section with
 one sentence each on verification (`check-rules.mjs`), migration (traceability report), and evolution
 (promote + drift drain) — pointing at `docs/` rather than duplicating detail.
 
-- [ ] **Step 2: Write `docs/release-0.4.0.md`**
+- [x] **Step 2: Write `docs/release-0.4.0.md`**
 
 Structure matching `docs/release-0.3.1.md`: What shipped (rolling up SP2–SP6), New capabilities,
 Breaking changes (state explicitly if empty), Known limitations (pull from Task 11's list),
 Compatibility, Upgrading from 0.3.x, Verification (the commands from Task 10).
 
-- [ ] **Step 3: Bump the version and update the reserved-string check**
+- [x] **Step 3: Bump the version and update the reserved-string check**
 
 In `package.json`, set `"version": "0.4.0"`.
 
@@ -1353,7 +1360,7 @@ State in `docs/release-0.4.0.md`'s Verification section exactly which files this
 (`package.json`, both manifests, this release doc, the checklist) so a reviewer can distinguish an
 expected hit from a stray leftover.
 
-- [ ] **Step 4: Rebuild, run everything, verify no diff**
+- [x] **Step 4: Rebuild, run everything, verify no diff**
 
 ```bash
 npm run build -- --target all

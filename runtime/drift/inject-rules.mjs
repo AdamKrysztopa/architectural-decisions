@@ -7,17 +7,10 @@
 // envelope is built -- one less way to fail schema validation.
 
 import { readFile, mkdir, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join, relative } from "node:path";
 
+import { discoverDirectory } from "../baseline/build-constitution.mjs";
 import { queueDirectory, resolveRoot } from "./queue.mjs";
-
-const CANDIDATES = [
-  "docs/architecture/constitution.md",
-  "docs/adr/constitution.md",
-  "doc/adr/constitution.md",
-  "adr/constitution.md",
-  "constitution.md",
-];
 
 // SessionStart output shares the 10,000-character cap on hook output strings.
 const BUDGET = 7000;
@@ -28,14 +21,23 @@ async function readStdin() {
   return Buffer.concat(chunks).toString("utf8");
 }
 
+// build-constitution.mjs is the one module that writes constitution.md, always
+// beside whichever decisions directory discoverDirectory resolves to (see its
+// own `run()`: `join(dirname(directory), "constitution.md")`). Deriving this
+// hook's path from that same function, rather than maintaining a private list
+// of candidate locations, is what keeps the two in agreement: a private list
+// here previously named two paths the generator never writes to and omitted
+// two of the four layouts the generator actually supports (`docs/adr` and
+// `doc/adr`, whose rollup lands at `docs/constitution.md` and
+// `doc/constitution.md` respectively -- one directory up from the decisions
+// directory, not beside it).
 async function findConstitution(root) {
-  for (const candidate of CANDIDATES) {
-    const path = join(root, candidate);
-    try {
-      if ((await stat(path)).isFile()) return { path, relative: candidate };
-    } catch {
-      // Keep looking.
-    }
+  const directory = await discoverDirectory(root);
+  const path = join(dirname(directory), "constitution.md");
+  try {
+    if ((await stat(path)).isFile()) return { path, relative: relative(root, path) };
+  } catch {
+    // No constitution at the resolved location.
   }
   return null;
 }

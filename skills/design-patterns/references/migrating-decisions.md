@@ -64,8 +64,12 @@ not reading it anyway.
    Decision` what a human must confirm as intended.
 4. **If nothing regular enough to propose was found, say so and propose nothing.** An invented
    narrative decision to have produced *something* is worse than an honest "insufficient evidence."
-5. One pass proposes at most 20 decisions. `build-migration-report.mjs` enforces this and refuses to
-   write the report above the cap — rank what matters most, and record what was left out and why.
+5. The decisions directory holds at most 20 `status: proposed` decisions at a time — a backlog cap,
+   not a per-pass one: it counts every proposed file already sitting in the directory, including ones
+   an earlier pass left unreviewed, not only what this pass adds. `build-migration-report.mjs`
+   enforces this and refuses to write the report while the directory is above the cap. If it refuses,
+   a human must promote or discard some of what is already `proposed` before this pass can add more —
+   rank what matters most, and record what was left out and why.
 6. Same manifest and report step as consolidation.
 
 ## Promoting

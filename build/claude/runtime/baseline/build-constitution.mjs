@@ -1,15 +1,15 @@
 #!/usr/bin/env node
 
-import { mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { readFile, stat } from "node:fs/promises";
 import { dirname, isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { parseDecision, validateDecisions } from "./decisions.mjs";
+import { decisionFilenames, loadDecisions, parseDecision } from "./decisions.mjs";
 import { renderConstitution } from "./constitution.mjs";
+import { writeAtomically } from "./write-atomically.mjs";
 
 export const CANDIDATES = ["docs/adr", "docs/architecture/decisions", "doc/adr", "adr"];
 const DEFAULT_DIRECTORY = "docs/architecture/decisions";
-const DECISION_FILENAME = /^\d{4}-[a-z0-9][a-z0-9-]*\.md$/;
 
 async function isDirectory(path) {
   try {
@@ -19,16 +19,16 @@ async function isDirectory(path) {
   }
 }
 
-// Filenames in `path` shaped like a decision file (NNNN-slug.md), regardless of
-// whether their contents parse. Empty when the directory is missing or empty.
-async function decisionFilenames(path) {
-  let entries;
+// Empty when the directory is missing or empty -- decisions.mjs's
+// decisionFilenames() throws on a missing directory, but discovery only ever
+// calls this on a directory it already confirmed exists via isDirectory, and
+// an existing-but-empty directory is a real, distinguishable case here.
+async function existingDecisionFilenames(path) {
   try {
-    entries = await readdir(path);
+    return await decisionFilenames(path);
   } catch {
     return [];
   }
-  return entries.filter((name) => DECISION_FILENAME.test(name)).sort();
 }
 
 // Discovery favors a directory that actually holds schema decisions over one that
@@ -47,7 +47,7 @@ export async function discoverDirectory(root) {
   }
 
   for (const path of existing) {
-    for (const name of await decisionFilenames(path)) {
+    for (const name of await existingDecisionFilenames(path)) {
       try {
         parseDecision(await readFile(join(path, name), "utf8"), name);
         return path;
@@ -58,7 +58,7 @@ export async function discoverDirectory(root) {
   }
 
   for (const path of existing) {
-    if ((await decisionFilenames(path)).length > 0) return path;
+    if ((await existingDecisionFilenames(path)).length > 0) return path;
   }
 
   return join(root, DEFAULT_DIRECTORY);
@@ -78,30 +78,6 @@ function parseArgs(argv) {
     }
   }
   return options;
-}
-
-async function loadDecisions(directory) {
-  const names = (await readdir(directory))
-    .filter((name) => name.endsWith(".md") && name !== "constitution.md")
-    .sort();
-
-  const decisions = [];
-  const errors = [];
-  for (const name of names) {
-    try {
-      decisions.push(parseDecision(await readFile(join(directory, name), "utf8"), name));
-    } catch (error) {
-      errors.push(error.message);
-    }
-  }
-  return { decisions, errors: [...errors, ...validateDecisions(decisions)] };
-}
-
-async function writeAtomically(path, contents) {
-  const temporary = `${path}.${process.pid}.tmp`;
-  await mkdir(dirname(path), { recursive: true });
-  await writeFile(temporary, contents, "utf8");
-  await rename(temporary, path);
 }
 
 export async function run(argv, cwd = process.cwd()) {
@@ -190,7 +166,7 @@ export async function runPromote(argv, cwd = process.cwd()) {
   // dependent, and collected (not overwritten) so a duplicate NNNN prefix is
   // refused up front instead of silently mutating whichever file readdir
   // happened to list first.
-  const names = (await readdir(directory)).filter((name) => name.endsWith(".md") && name !== "constitution.md").sort();
+  const names = await decisionFilenames(directory);
   const byId = new Map();
   const collisions = new Map();
   for (const name of names) {

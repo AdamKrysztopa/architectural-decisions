@@ -70,7 +70,8 @@
       ],
       "checker": {
         "status": "unbound",
-        "evidence": "no import-linter config found"
+        "evidence": "no import-linter config found",
+        "scopeCoverage": "repository-wide"
       },
       "judgement": "forbidden"
     }

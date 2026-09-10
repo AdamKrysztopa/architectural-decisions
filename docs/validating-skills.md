@@ -96,6 +96,59 @@ Fix whichever is wrong, and say which in the commit message. A scenario encodes 
 outcome; if the skill's reasoning turns out to be better than the scenario's expectation, change the
 scenario. Do not weaken a gate to make a scenario pass.
 
+## Re-running every set before a release
+
+Before any release, and always before `0.4.0`, re-run every scenario set that exists — not only the
+one that changed:
+
+| Set | Scenarios | Owning sub-project |
+|---|---|---|
+| `test/scenarios/test-patterns.json` | 12 | SP1 |
+| `test/scenarios/baseline-capture.json` | 6 | SP1 |
+| `test/scenarios/drift-drain.json` | 8 | SP3 |
+| `test/scenarios/migration.json` | 10 | SP4 |
+| `test/scenarios/security.json` | 12 | SP5 |
+
+Fresh session per scenario, prompt pasted verbatim without naming the skill, record pass/fail with the
+reason under `test-runs/<version>/<set>/<scenario-id>/`. A body edit to *any* skill (see
+`test/fixtures/skill-freeze/body-manifest.json`) requires this full re-run, not only the set that
+skill owns — a shared reference change (`shared/recording-decisions.md`, an SP2 checker binding
+guidance change) can shift behaviour across every skill that cites it.
+
+## The real-tool E2E lane
+
+By default, `test/e2e/bind-and-prove.test.mjs` (E2E-1) and `test/e2e/security-without-theatre.test.mjs`
+(E2E-4) exercise `runtime/checkers/import-linter.mjs` and `runtime/checkers/gitleaks.mjs` against a
+**fake** stand-in binary (`test/e2e/support.mjs`'s `withFakeLintImports`/`withFakeGitleaks`). That
+proves the shipped pipeline up to the process boundary — spawn, stdout/report-file parsing, status
+mapping — but never that the real tool's own current CLI contract (its flags, its exit codes, its
+report shape) still matches what the adapter invokes. `test/checker-corpus.test.mjs` and
+`test/checkers.test.mjs` exercise every adapter (`import-linter`, `gitleaks`, `semgrep`,
+`dependency-cruiser`, and the rest) the same way, always against a fake script — none of them has a
+real-tool opt-in of its own. `ARCH_CREW_E2E_REAL_TOOLS` is currently wired into exactly two suites
+(E2E-1 and E2E-4, below); a real-tool lane for the other adapters would be a separate addition.
+
+Setting `ARCH_CREW_E2E_REAL_TOOLS=1` switches E2E-1 and E2E-4 to the real binaries instead of the
+fakes:
+
+```sh
+ARCH_CREW_E2E_REAL_TOOLS=1 node --test test/e2e/bind-and-prove.test.mjs test/e2e/security-without-theatre.test.mjs
+```
+
+This requires two third-party binaries on `PATH` that nothing else in this repository needs:
+
+| Binary | Provides | Install |
+|---|---|---|
+| `lint-imports` | the `import-linter` CLI E2E-1 binds to | `pip install import-linter` |
+| `gitleaks` | the secret scanner E2E-4 binds to | see [gitleaks releases](https://github.com/gitleaks/gitleaks/releases) |
+
+Without `ARCH_CREW_E2E_REAL_TOOLS=1`, `npm test` (and CI) never notice a real tool's contract drifting
+out from under the shipped adapter — this is the one regression class the deterministic suite cannot
+catch on its own. Run this lane locally, with both binaries installed, as a periodic check — not on
+every commit, since the binaries are not part of this project's zero-dependency footprint — and
+always as part of pre-release verification (see `docs/release-checklist-0.4.0.md`'s §6/§8 rows and
+the "Documented limitations" list, which name this as a manual, non-CI step).
+
 ## Host validation before release
 
 The Node suites enforce the repository contract; they do not replace each host's parser and

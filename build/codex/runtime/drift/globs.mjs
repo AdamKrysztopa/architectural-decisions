@@ -67,7 +67,24 @@ export function compileGlob(pattern, label) {
   return new RegExp(source);
 }
 
+// git (drift's own path source) never emits a leading "./", but a checker
+// adapter filtering its own findings against `scope` (gitleaks, semgrep) is
+// handing this a file path some *other* tool produced, and at least one
+// common invocation shape (a "detect over --source ." style scan run from
+// the repository root) reports that path with a leading "./" on this
+// platform's /bin/sh. Stripping it here, once, centrally, means every
+// caller of matchesScope gets the same relative-path meaning for "services/**"
+// regardless of which tool's own path convention supplied `path` --
+// never silently treating an in-scope file as out-of-scope over a cosmetic
+// "./" a rule's `scope` was never written to account for.
+function normalizeRelativePath(path) {
+  let normalized = path;
+  while (normalized.startsWith("./")) normalized = normalized.slice(2);
+  return normalized;
+}
+
 export function matchesScope(path, patterns, label) {
   if (!Array.isArray(patterns) || patterns.length === 0) return false;
-  return patterns.some((pattern) => compileGlob(pattern, label).test(path));
+  const normalized = normalizeRelativePath(path);
+  return patterns.some((pattern) => compileGlob(pattern, label).test(normalized));
 }

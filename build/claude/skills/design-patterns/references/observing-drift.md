@@ -8,7 +8,7 @@ notice says edits are queued. Not on every edit: a trivial edit must never trigg
     node <plugin-root>/runtime/drift/drift.mjs drain --json
 
 `<plugin-root>` is `$CLAUDE_PLUGIN_ROOT` in Claude Code, and the installed plugin's directory in
-Codex. The drain reads `git` first and the observation queue second, so it works identically on a
+Codex. The drain reads the observation queue first and `git` second, so it works identically on a
 host with no hooks — there, `queue.observed` is simply `0`.
 
 If it exits 1, it could not do its job: fix the decision file it names. It never exits 2, because no
@@ -16,7 +16,7 @@ drift finding may fail a build.
 
 ## 2. Read `judgement` before reading anything else
 
-Every rule in the packet carries a `judgement` field. It is not advice.
+Every entry in `rules` carries a `judgement` field. It is not advice.
 
 - `forbidden` — a `deterministic` rule. **Report `checker.status` and `checker.evidence` verbatim and
   say nothing of your own.** This holds for **every** status other than `fail` — including
@@ -24,21 +24,29 @@ Every rule in the packet carries a `judgement` field. It is not advice.
   for a tool that did not run, or that errored rather than ran to a verdict, is the single worst
   failure this loop can produce.
 - `required` — a `review` rule. Classify it, under the gate in section 4.
-- `skipped` — a `narrative` rule. Report the count and nothing else. Nothing may grade compliance
-  against narrative intent.
 
-Rules absent from `rules` were not scoped to any changed path. `outOfScope` counts the changed paths
-no active rule covers. `scopeless` counts active rules recorded with no `scope` at all — such a rule
-can never appear here no matter what changes; a nonzero `scopeless` means a decision file needs a
-fix, not that nothing happened.
+Narrative rules never reach `rules` at all — they are **counted**, not carried: each one only adds
+to the top-level `narrativeSkipped` field. Report that count and nothing else. Nothing may grade
+compliance against narrative intent.
 
-## 3. Classify each `required` rule into exactly one class
+A rule can be absent from `rules` for three distinct reasons, and they mean different things: it is
+`narrative` (always excluded this way, counted in `narrativeSkipped`, as above); it is `scopeless` —
+active but recorded with no `scope` at all, so it can never appear here no matter what changes (a
+nonzero `scopeless` means a decision file needs a fix, not that nothing happened); or its declared
+`scope` simply did not match any path changed this run. `outOfScope` counts the changed paths no
+active rule's scope covers.
+
+## 3. Classify each finding into exactly one class
 
 ### Violation
 
-A `deterministic` rule whose bound contract a tool **ran and failed** — `checker.status` is `fail`.
-**This word is reserved for that case and is produced by nothing else.** Never write it about a
-`review` rule, however confident you are.
+**Scoped to `forbidden` rules only.** A `forbidden`-judgement, `deterministic` rule whose bound contract a tool **ran and failed** —
+`checker.status` is `fail`. **This word is reserved for that case and is produced by nothing else.**
+Never write it about a `required` (`review`) rule, however confident you are — those are classified
+into one of the four classes below instead. The checker ran against the whole repository, not only
+this rule's `scope` — `checker.evidence` may name a file the scoped edit never touched. Report it
+verbatim as a violation of the rule's bound contract; do not describe it as confined to `scope`,
+which only decided that this rule belongs in the packet at all.
 
 ### Suspected drift
 

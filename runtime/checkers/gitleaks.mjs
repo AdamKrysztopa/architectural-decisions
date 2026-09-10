@@ -1,5 +1,6 @@
 import { findConfigFiles, readLines } from "./text.mjs";
 import { spawnTool } from "./spawn.mjs";
+import { matchesScope } from "../drift/globs.mjs";
 import { mkdtemp, readFile, rm } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -111,7 +112,15 @@ async function resolve(root, contract) {
 // this adapter also accepts) would silently be scanned with the tool's
 // built-in ruleset instead of the file the contract was actually bound
 // against.
-async function run(root, contract, resolution) {
+//
+// Every finding names its own `File`, so — unlike import-linter or
+// dependency-cruiser — this adapter CAN confine its verdict to the calling
+// rule's `scope`: a decision with a narrow `scope` must never see a `fail`
+// for a secret gitleaks found somewhere else entirely (check-rules.mjs's
+// `scopeCoverage` field is what tells a JSON consumer this happened). Pass
+// no `scope` (or an empty one) to fall back to the old, unfiltered
+// repository-wide behaviour.
+async function run(root, contract, resolution, { scope = [] } = {}) {
   const reportDirectory = await mkdtemp(join(tmpdir(), "arch-crew-gitleaks-"));
   const reportPath = join(reportDirectory, "report.json");
   try {
@@ -140,14 +149,32 @@ async function run(root, contract, resolution) {
     } catch {
       return { status: "error", evidence: "gitleaks exited nonzero but its report was not parseable JSON" };
     }
-    const hit = findings.find((finding) => finding.RuleID === contract);
-    if (hit) {
+    const hits = findings.filter((finding) => finding.RuleID === contract);
+    if (hits.length === 0) {
+      return { status: "pass", evidence: `gitleaks found findings, but none for rule '${contract}'` };
+    }
+    if (scope.length === 0) {
+      const hit = hits[0];
       return { status: "fail", evidence: `gitleaks matched rule '${contract}' at ${hit.File}:${hit.StartLine}` };
     }
-    return { status: "pass", evidence: `gitleaks found findings, but none for rule '${contract}'` };
+    const inScope = hits.filter((hit) => matchesScope(hit.File, scope, `gitleaks#${contract}`));
+    if (inScope.length > 0) {
+      const hit = inScope[0];
+      return { status: "fail", evidence: `gitleaks matched rule '${contract}' at ${hit.File}:${hit.StartLine}` };
+    }
+    const outside = hits[0];
+    return {
+      status: "pass",
+      evidence:
+        `gitleaks matched rule '${contract}', but only outside this rule's scope ` +
+        `(e.g. ${outside.File}:${outside.StartLine}); not a violation of this scoped rule`,
+    };
   } finally {
     await rm(reportDirectory, { recursive: true, force: true });
   }
 }
 
-export default { tool: "gitleaks", configCandidates: CONFIG_CANDIDATES, resolve, run };
+// scopeAware: true means check-rules.mjs may hand run() a rule's `scope` and
+// trust it to have been honoured (see the run() comment above) — the
+// contract behind the JSON `scopeCoverage` field.
+export default { tool: "gitleaks", configCandidates: CONFIG_CANDIDATES, scopeAware: true, resolve, run };

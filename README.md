@@ -36,8 +36,15 @@ A `deterministic` rule's binding is resolved against the repository's real tool 
 `runtime/checkers/check-rules.mjs` — no tool installation required to catch a rule bound to a
 contract that does not exist; `--run` opts into actually evaluating it.
 
-A repository with existing prose ADRs, or none at all, has a path to a first baseline too — see
-`shared/migrating-decisions.md` for consolidation and reverse discovery.
+A repository with existing prose ADRs, or none at all, has a path to a first baseline too:
+`runtime/migration/build-migration-report.mjs` writes a traceability report giving every confirmed
+input exactly one disposition, so consolidating or reverse-discovering a baseline never loses a
+decision without a trace — see `shared/migrating-decisions.md`.
+
+The baseline evolves the same way after capture: `node runtime/baseline/build-constitution.mjs
+promote NNNN` is the only path from `status: proposed` to `active`, and draining observed drift
+(below) is how a rule's real-world compliance gets checked once it's active — see
+[`docs/building-packages.md`](docs/building-packages.md).
 
 ## Noticing drift
 

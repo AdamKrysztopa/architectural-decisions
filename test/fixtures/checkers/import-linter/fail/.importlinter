@@ -1,0 +1,8 @@
+[importlinter]
+root_package = svc
+
+[importlinter:contract:svc-db-isolation]
+name = svc-db-isolation
+type = forbidden
+source_modules = svc.billing
+forbidden_modules = svc.catalog.db

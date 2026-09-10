@@ -42,6 +42,12 @@ constraint, name the cost once, and proceed to the design layers. Don't relitiga
 when the user has already closed it — in real work they've often *already decided* and want the
 layered design, not a re-argument of whether to build at all.
 
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
+
 ## Mode A — Greenfield: the layered design interview
 
 Read `references/decision-tree.md` and walk it from the **autonomy gate** up.

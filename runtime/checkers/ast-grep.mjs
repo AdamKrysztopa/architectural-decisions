@@ -144,13 +144,23 @@ async function resolve(root, contract) {
 // stable across versions than semgrep's, and no scenario in this release
 // depends on it. --run always reports the rule unavailable rather than
 // guessing at an output format; a stated v1 limitation, not a silent gap.
-async function run() {
+// `scope` is still accepted (and ignored) so the signature already matches
+// gitleaks.mjs/semgrep.mjs: whenever --run is implemented, its findings will
+// carry their own file path just like theirs, and it must filter against
+// `scope` the same way before reporting `fail` — never widen `scopeAware`
+// below without that filtering in place.
+async function run(root, contract, resolution, { scope } = {}) {
+  void scope;
   return { status: "unavailable", evidence: "ast-grep --run is not implemented in this release; static resolution only" };
 }
 
+// scopeAware: true documents the intended contract for when --run lands
+// (see above); it changes nothing today because run() never reports
+// anything but "unavailable", so no verdict is ever produced to misattribute.
 export default {
   tool: "ast-grep",
   configCandidates: [SGCONFIG_CANDIDATE, ...FALLBACK_CANDIDATES],
+  scopeAware: true,
   resolve,
   run,
 };

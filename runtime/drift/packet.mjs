@@ -10,14 +10,20 @@ export const JUDGEMENT = {
   narrative: "skipped",
 };
 
+// scopeCoverage rides along verbatim from check-rules.mjs's own row — see
+// runtime/checkers/check-rules.mjs's scopeCoverageFor() for what the two
+// values mean. When there is no real row to copy it from (check-rules never
+// ran, or reported nothing for this rule), default to "repository-wide": the
+// conservative answer, since nothing here confirms the verdict was ever
+// confined to this rule's scope.
 function checkerFor(rule, checkerRows) {
   if (rule.verification !== "deterministic") return null;
   if (!Array.isArray(checkerRows)) {
-    return { status: "not-run", evidence: "check-rules did not run" };
+    return { status: "not-run", evidence: "check-rules did not run", scopeCoverage: "repository-wide" };
   }
   const row = checkerRows.find((candidate) => candidate.rule === rule.id);
-  if (!row) return { status: "not-run", evidence: "check-rules reported no row for this rule" };
-  return { status: row.status, evidence: row.evidence ?? "" };
+  if (!row) return { status: "not-run", evidence: "check-rules reported no row for this rule", scopeCoverage: "repository-wide" };
+  return { status: row.status, evidence: row.evidence ?? "", scopeCoverage: row.scopeCoverage ?? "repository-wide" };
 }
 
 export function buildPacket({ root, base, decisions, paths, queue, checkerRows }) {

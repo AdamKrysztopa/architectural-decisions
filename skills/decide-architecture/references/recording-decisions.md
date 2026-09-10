@@ -47,6 +47,17 @@ one's. Name your file `NNNN-slug.md`, taking the next free number.
 `status` is always `proposed` on capture. **Never write `active`, and never promote another file's
 status** — a human does that in review. `commit` is the repository's current short SHA.
 
+`scope` is a list of glob patterns naming the paths a rule governs — the same vocabulary the drift
+drain and every checker adapter use for path matching. The supported subset is deliberately small:
+literal path segments, `*` within a segment, `?` for exactly one character, and `**` as a whole
+segment (leading, trailing, or in the middle). A pattern with no wildcard at all is a module name — it
+matches itself and everything under it. Brace expansion (`{a,b}`), character classes (`[a-z]`),
+negation (`!`), and backslashes are **not** supported and are rejected when the decision file loads,
+naming the rule and the pattern — write the equivalent as two separate scope entries instead of one
+brace-expanded one, and spell out a character range as separate literal patterns rather than a class.
+
+
+
 Frontmatter is a small, fixed subset: `key: value`, inline lists (`["a", "b"]`), and one level of
 list-of-maps. Anything else — block scalars, anchors, nested maps — is rejected with a line number.
 
@@ -65,6 +76,18 @@ Prose holds the reasoning. Never rewrite the prose of an existing decision file.
   Before raising a rule to `deterministic`, run
   `node <plugin-root>/runtime/checkers/check-rules.mjs` and confirm this rule's row is not `unbound`
   or `unreadable-config` — do not raise a rule on the strength of believing the contract exists.
+
+  A checker's verdict is **repository-wide by default** — every adapter scans the whole repository in
+  one pass, never only the paths a rule's `scope` names. `import-linter`, `dependency-cruiser`,
+  `oasdiff`, and `pytest-archon` can never be confined to a `scope`: a `fail` from one of these may
+  point at a finding anywhere the tool looked, no matter what the rule's `scope` says. `gitleaks` and
+  `semgrep` are the exception — their findings carry a file path, so `check-rules.mjs` filters each
+  rule's own verdict down to the paths its `scope` names before reporting `fail` (`ast-grep` follows
+  the same discipline once its `--run` ships). Never infer which case applies from the tool's name or
+  from this prose: every row `check-rules.mjs` emits, and the `checker` object the drift packet copies
+  it into, carries a `scopeCoverage` field — `"scope-matched"` when the verdict was confined to this
+  rule's `scope`, `"repository-wide"` when it was not (no `scope` declared, or this tool cannot be
+  confined to one). A consumer reading the JSON must go by that field, not guess.
 
 Start every rule at `narrative` and raise it only when the binding genuinely exists. Do not invent a
 binding to make a rule look enforced — an unbacked `deterministic` claim is worse than an honest

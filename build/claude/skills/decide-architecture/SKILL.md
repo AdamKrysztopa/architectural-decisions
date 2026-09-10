@@ -32,6 +32,12 @@ If the user is building an **agentic / LLM system** (an agent that reasons, call
 that's a different axis set — say so and hand off to the `agentic-patterns` skill, which owns that
 decision tree. This skill covers regular software systems.
 
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
+
 ## Mode A — Greenfield: the selection interview
 
 Read `references/decision-tree.md` and walk it.

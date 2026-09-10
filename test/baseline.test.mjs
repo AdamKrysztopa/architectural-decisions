@@ -96,6 +96,19 @@ test("rejects a verified_by naming an unknown tool", () => {
   assert.ok(KNOWN_TOOLS.includes("import-linter"));
 });
 
+test("rejects a scope glob using an unsupported construct, naming the rule and the filename", () => {
+  // Validated at parse time (the one place every consumer -- build-
+  // constitution, check-rules, drift, build-migration-report -- goes
+  // through), so a bad pattern in one decision fails loading that one file
+  // with a clear message instead of surfacing later as an uncaught crash
+  // deep inside the drift drain's own scope matching.
+  const text = decisionText(validFrontmatter.replace('scope: ["services/**"]', 'scope: ["src/[a-z]*/handlers.py"]'));
+  assert.throws(
+    () => parseDecision(text, "0004-events-over-shared-db.md"),
+    /0004-events-over-shared-db\.md: rule 'no-shared-db-writes': scope pattern 'src\/\[a-z\]\*\/handlers\.py' uses an unsupported construct/,
+  );
+});
+
 test("KNOWN_TOOLS includes ast-grep, added alongside its checker adapter", () => {
   assert.ok(KNOWN_TOOLS.includes("ast-grep"));
 });

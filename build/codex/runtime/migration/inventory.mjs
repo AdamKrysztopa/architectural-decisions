@@ -1,15 +1,14 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
+import { SKIP_DIRECTORIES } from "../baseline/skip-directories.mjs";
 import { matchGlob } from "./glob.mjs";
-
-const SKIPPED = new Set(["node_modules", ".git"]);
 
 async function walk(root, prefix = "") {
   const entries = await readdir(join(root, prefix), { withFileTypes: true });
   const files = [];
   for (const entry of entries) {
-    if (SKIPPED.has(entry.name)) continue;
+    if (SKIP_DIRECTORIES.has(entry.name)) continue;
     const relativePath = prefix ? `${prefix}/${entry.name}` : entry.name;
     if (entry.isDirectory()) {
       files.push(...(await walk(root, relativePath)));

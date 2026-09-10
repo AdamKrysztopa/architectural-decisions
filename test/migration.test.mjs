@@ -370,6 +370,59 @@ test("countPatternOccurrences skips node_modules and .git", async () => {
   assert.equal(result.total, 1);
 });
 
+test("countPatternOccurrences skips every directory runtime/checkers/text.mjs's walk also skips", async () => {
+  // SKIP_DIRECTORIES (runtime/baseline/skip-directories.mjs) is shared with
+  // runtime/checkers/text.mjs's config-file walk -- both must agree, or the
+  // same repository yields two different "N of M modules" totals depending
+  // only on which walk answered. This exercises every entry, not only
+  // node_modules/.git.
+  const root = await scratchTree({
+    "src/domain/a.py": "clean\n",
+    "node_modules/pkg/index.js": "from infra import x\n",
+    ".git/HEAD": "ref: refs/heads/main\n",
+    ".venv/lib/vendored.py": "from infra import x\n",
+    "venv/lib/vendored.py": "from infra import x\n",
+    "__pycache__/cached.py": "from infra import x\n",
+    ".tox/env/lib.py": "from infra import x\n",
+    ".arch-crew/drift-queue.jsonl": "from infra import x\n",
+  });
+  const result = await countPatternOccurrences(root, "**", "from infra");
+  assert.equal(result.total, 1, "only src/domain/a.py should be walked");
+});
+
+test("inventory.mjs's walk and checkers/text.mjs's walk agree on the same file set for the same root", async () => {
+  const root = await scratchTree({
+    "src/domain/a.py": "clean\n",
+    "src/domain/nested/b.py": "clean\n",
+    "node_modules/pkg/index.py": "clean\n",
+    ".git/index.py": "clean\n",
+    ".venv/lib/vendored.py": "clean\n",
+    "venv/lib/vendored.py": "clean\n",
+    "__pycache__/cached.py": "clean\n",
+    ".tox/env/lib.py": "clean\n",
+    ".arch-crew/queue.py": "clean\n",
+  });
+  const { findConfigFiles } = await import("../runtime/checkers/text.mjs");
+  const viaText = (await findConfigFiles(root, ["**/*.py"])).sort();
+  const viaInventory = (await countPatternOccurrences(root, "**", "")).matches.sort();
+  assert.deepEqual(viaText, ["src/domain/a.py", "src/domain/nested/b.py"]);
+  assert.deepEqual(viaInventory, viaText);
+});
+
+test("SKIP_DIRECTORIES pins queue.mjs's QUEUE_DIRECTORY, as its own module comment claims", async () => {
+  // runtime/baseline/skip-directories.mjs's comment says ".arch-crew" is
+  // "duplicated as a literal here, not imported ... a test pins the two
+  // constants equal" -- this is that test. Without it, queue.mjs's
+  // QUEUE_DIRECTORY could be renamed with nothing catching that the walks in
+  // text.mjs and inventory.mjs still skip the old, now-wrong literal.
+  const { SKIP_DIRECTORIES } = await import("../runtime/baseline/skip-directories.mjs");
+  const { QUEUE_DIRECTORY } = await import("../runtime/drift/queue.mjs");
+  assert.ok(
+    SKIP_DIRECTORIES.has(QUEUE_DIRECTORY),
+    `SKIP_DIRECTORIES does not contain queue.mjs's QUEUE_DIRECTORY ('${QUEUE_DIRECTORY}')`,
+  );
+});
+
 import { run as buildMigrationReport } from "../runtime/migration/build-migration-report.mjs";
 
 async function scratchDecisionsDir(names) {
@@ -481,6 +534,33 @@ test("the cap counts every status: proposed decision file, even with an empty ma
   const code = await buildMigrationReport(["--manifest", manifest, "--dir", decisions, "--cap", "1"], root);
   assert.equal(code, 1);
   await assert.rejects(readFile(join(decisions, "../migration-report.md"), "utf8"));
+});
+
+test("the cap-refusal message names the directory's whole backlog, not just what this pass proposed", async () => {
+  // This pass's own manifest proposes nothing (empty inputs/dispositions) --
+  // it is the two pre-existing proposed decisions already in the directory
+  // that exceed the cap. The old message ("This run proposes N decisions")
+  // was unfollowable here: there was nothing in this run to rank.
+  const { root, decisions } = await scratchDecisionsDir([
+    "0011-events-over-shared-db.md",
+    "0012-billing-scope-note.md",
+  ]);
+  const manifest = await writeManifest(root, { inputs: [], dispositions: [] });
+  const original = process.stderr.write;
+  let captured = "";
+  process.stderr.write = (chunk) => {
+    captured += chunk;
+    return true;
+  };
+  let code;
+  try {
+    code = await buildMigrationReport(["--manifest", manifest, "--dir", decisions, "--cap", "1"], root);
+  } finally {
+    process.stderr.write = original;
+  }
+  assert.equal(code, 1);
+  assert.match(captured, /This directory holds 2 unreviewed proposed decisions \(cap 1\)/);
+  assert.doesNotMatch(captured, /This run proposes/);
 });
 
 test("the cap is not bypassed by routing new proposed decisions through a 'superseded' disposition", async () => {

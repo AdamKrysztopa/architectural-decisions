@@ -17,7 +17,7 @@ control that closes it is named alongside its cost.
 |-----------|------|
 | `references/decision-tree.md` | Always, in both modes. The boundary-first interview, the 15 gates across identity/access, data protection, and supply chain, and the existing-system inspection list. |
 | `references/catalog.md` | Whenever you need a control's force, cost, or review cue — identity and access, data protection, secrets, supply chain, boundary and network posture, plus the review anti-patterns. |
-| `references/evidence.md` | Whenever a finding is written, and in every review. The cross-cutting guardrail: the four-part finding shape, the three evidence classes, the scanner-binding table, and the anti-scoring rule. It has no branch of its own — it applies to every row, in both modes. |
+| `references/evidence.md` | Whenever a finding is written, and in every review. The cross-cutting guardrail: what a finding is, the four-part review-finding shape, the three evidence classes, the scanner-binding table, and the anti-scoring rule. It has no branch of its own — it applies to every row, in both modes. |
 | `references/agent-agency.md` | **Only** when the system contains an agent, an automated actor, or a tool-calling loop. The six permission-and-blast-radius gates. Skip it for an ordinary service — most systems have none. |
 | `references/recording-decisions.md` | At the end of a run that recommends something — read the existing constitution, then write the single decision file (see "Recording the outcome"). |
 
@@ -48,6 +48,12 @@ reach and what one wrong autonomous action costs, not how the loop is built. If 
 a system's **structure or topology** — coupling, deployment, data flow — hand off to
 `decide-architecture`. If the question has become **which tests would buy this evidence**, hand off to
 `test-patterns`'s `Security testing` gate.
+
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
 
 ## Mode A — Greenfield: the boundary-first threat interview
 
@@ -88,7 +94,7 @@ proportionate; no change is currently justified", "insufficient evidence — no 
 design detail confirms or contradicts it" are first-class outcomes. Give the reason and the signal
 that would reopen it; don't pad the report to look thorough.
 
-## Mode B — Existing system: the security review
+## Mode B — Refactoring: the security review
 
 Read `references/decision-tree.md` **Step 8** and walk its inspection list, in order:
 
@@ -103,8 +109,8 @@ Read `references/decision-tree.md` **Step 8** and walk its inspection list, in o
 9. If an agent exists, its tool registry and credential scope — read `references/agent-agency.md`.
 
 Use the review cues in `references/catalog.md` and the anti-patterns in its §VI as a lens, not a
-form — report a genuine problem even if no cue names it. Assess every candidate finding against
-`references/evidence.md`'s four-part shape before writing it down.
+form — report a genuine problem even if no cue names it. Assess every candidate review finding
+against `references/evidence.md`'s four-part shape before writing it down.
 
 **Recommend exactly ONE primary highest-leverage move.** Secondary observations are allowed, as a
 short ordered list, never as a wholesale rewrite. **"This design is proportionate to its threat model;
@@ -228,7 +234,7 @@ signal for every closed gate and accepted assumption.>
 
 Classify every rule honestly (default `narrative`) and regenerate the constitution.
 
-**Existing system → a dated review report.** Write it to `docs/security-review-<YYYY-MM-DD>.md`
+**Refactoring → a dated review report.** Write it to `docs/security-review-<YYYY-MM-DD>.md`
 (create `docs/` if absent) with the output contract above. If the design is already proportionate,
 say so plainly and keep the report short — a clean bill of health is a valid outcome, not a failure
 to find work. If the primary move is a direction the user commits to, capture it the same way — one

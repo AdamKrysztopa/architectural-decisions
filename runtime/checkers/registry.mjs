@@ -1,3 +1,15 @@
+// The full checker-status vocabulary — the single source every consumer
+// checks a status against. check-rules.mjs's own rows only ever carry
+// "unbound", "unreadable-config", "unavailable", "pass", or "fail" (an
+// adapter's resolve()/run() result, copied through verbatim) or "error"
+// (checkRule() itself, on a missing adapter or a thrown error). "not-run" is
+// packet-only: runtime/drift/packet.mjs's checkerFor() synthesizes it when
+// check-rules never ran at all, or ran but reported no row for a given rule.
+// It is listed here anyway, rather than left an undocumented seventh value,
+// so check-rules.mjs's gates and shared/observing-drift.md's judgement list
+// can both be generated from this one array — see test/status-vocabulary.test.mjs,
+// which asserts no adapter, check-rules.mjs, or the drift packet ever emits
+// a status literal absent from this list.
 export const CHECK_STATUSES = Object.freeze([
   "pass",
   "fail",
@@ -5,6 +17,7 @@ export const CHECK_STATUSES = Object.freeze([
   "unreadable-config",
   "unavailable",
   "error",
+  "not-run",
 ]);
 
 const adapters = new Map();

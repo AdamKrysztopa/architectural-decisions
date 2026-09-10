@@ -30,6 +30,12 @@ The request usually tells you: "how should I design X?" / "what's the cleanest w
 greenfield; "is this the right pattern?" / a file to look at / "review this class" = refactoring.
 Ask only if genuinely ambiguous.
 
+## What "finding" means in this skill's output
+
+**A finding is a specific, actionable conclusion — what's wrong, where, why it matters, and the
+fix — never a bare impression, and never a substitute for a tool's own verified result (a
+violation, reported on its own).**
+
 ## Mode A — Greenfield: which-pattern interview
 
 Read `references/decision-tree.md` and route.
