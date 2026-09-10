@@ -298,6 +298,41 @@ scenario in its own file. They are listed in gate-record §11.5 and **have not b
 friction logs). **This row is NOT satisfied** — and the corrected reason is genuine skill defects, not
 an unloadable skill.
 
+---
+
+### Second re-run (2026-09-10, after remediation) — [gate record §12](release-gate-0.4.0.md#12-second-re-run--2026-09-10-after-the-remediation)
+
+**48 of 48 graded — no ungraded cases for the first time. 40 pass, 8 fail.**
+Runner tier **Sonnet**, grader tier **Opus**, logged per N13.
+
+| Set | In set | §11 (graded/pass/fail) | **§12** | What moved |
+|---|---|---|---|---|
+| `baseline-capture.json` | 6 | 6 / 5 / 1 | **6 / 6 / 0** | — |
+| `test-patterns.json` | 12 | 11 / 5 / 6 | **12 / 9 / 3** | N1 Step-3 routing confirmed fixed |
+| `security.json` | 12 | 12 / 4 / 8 | **12 / 9 / 3** | D9 boundary-first held 12/12 |
+| `drift-drain.json` | 8 | 6 / 5 / 1 | **8 / 7 / 1** | the void and the unidentified case both graded |
+| `migration.json` | 10 | 10 / 4 / 6 | **10 / 9 / 1** | fixtures; cap ranks rather than refuses |
+| **Total** | **48** | **45 / 23 / 22** | **48 / 40 / 8** | **3 ungraded → 0** |
+
+**The 8 failures: 1 skill defect, 1 harness, 6 run-quality.** Both the skill defect (**N15** — the
+drain regenerated `constitution.md`, changing what is enforced with no human promotion) and the
+harness gap (`committed-secret-found-by-tool` had no fixture) are **fixed in this branch**. The six
+run-quality failures trace to no line of shipped text — but three are the same dropped-output-contract-field
+failure D2/D3 were supposed to close, which is a signal about how easy the text is to follow.
+
+**Confirmed working by this re-run:** N1 (Step 3 routing, no run failed on it), D9 (boundary-first
+12/12), N6 (cap ranks, exercised end-to-end through the real CLI), A1. **A4, A5 and A6 all pass once
+correctly staged and therefore need no amendment** — per §11.5's own condition.
+
+> **This re-run does NOT discharge the gate, and §12.1 says so at length.** The protocol requires a
+> fresh session per scenario with the prompt pasted verbatim and the skill not named. These were
+> fresh *subagent contexts within one session*, each told which skill to read. Triggering was
+> therefore not measured at all, and one cross-run contamination was confirmed by a grader. This is
+> the best measurement available short of installing the candidate and launching 48 sessions — and it
+> is not the measurement the protocol asks for.
+
+**This row remains NOT satisfied.**
+
 **Also periodic, not gating this release:** the real-tool E2E lane
 (`ARCH_CREW_E2E_REAL_TOOLS=1 node --test test/e2e/bind-and-prove.test.mjs
 test/e2e/security-without-theatre.test.mjs`, `lint-imports` and `gitleaks` on `PATH`) re-verifies that
@@ -472,3 +507,48 @@ with tiers logged → re-decide. Reviewed by: [name at re-decision time].
   detection, security-control adequacy) is graded by agent-driven runs against `drift-drain.json`,
   `migration.json`, and `security.json`, never by a deterministic check — this is by design (rule 6),
   named here so it is not mistaken for a gap.
+
+---
+
+## Decision: **NO-GO — 2026-09-10 (third pass, after the full remediation)**
+
+This supersedes the second-pass NO-GO above. Every prior decision is left standing as written.
+
+**What changed since the second pass.** Both product blockers from the
+[reconciliation spec](superpowers/specs/2026-09-10-requirements-reconciliation.md) are built: the
+documentation mode is restored, persisted and user-selected (§2), and the authoritative-source
+registry exists with designation, provenance, precedence, conflict reporting and baseline
+traceability (§3). The ADR → living-document path is proven end-to-end on 30 ADRs with six-category
+traceability (§4). The recorded defect list — **N1–N15, D1–D7, D9, A1–A3, B2, B3′, B4** — is closed.
+A4–A6 were correctly *not* amended and now pass with proper staging. Two real product defects were
+found by running the tools rather than reading them, and fixed. The scenario tally moved from
+**45 graded / 23 pass / 22 fail** to **48 / 40 / 8**, with no ungraded cases.
+
+**Why it is still NO-GO.** Three reasons, in order of weight:
+
+| # | Gate condition | Why it does not hold |
+|---|---|---|
+| 1 | Existing workflows regressed | **The gate's own protocol was not executed.** `docs/validating-skills.md` requires a fresh session per scenario, prompt verbatim, skill not named. These 48 runs were fresh *subagent contexts inside one session*, each told which skill to read. **Triggering was not measured at all**, and one cross-run contamination was confirmed by a grader (`public-api-surface-change` cited a symbol from another scenario's fixture). A GO on this evidence would rest on a method this project's own documentation rejects. |
+| 2 | Existing workflows regressed | **A skill defect was found in this run and its fix is unmeasured.** N15: the drift drain followed `recording-decisions.md` "unchanged" and so regenerated `constitution.md`, retiring the superseded rule — changing what the repository *enforces*, from an observed edit, with no human promotion. The `proposed` gate was defeated from the other side. Fixed here; the fix edits a shared reference every skill cites, so it owes a re-run. |
+| 3 | Authority changed silently | **The candidate has never run as an installed package.** `~/.claude/plugins` is still pinned to `0.3.0` with four skills. The clean-install check verified the *built tree*; nothing has verified the *installed plugin* behaving as 0.4.0 in a real session — and a stale install is exactly what voided the last security set. |
+
+The other two gate rows — *migration lost a decision without a trace* and *a deterministic violation
+reported verified without a reliable check* — **do hold**, and the second is stronger than it was:
+the real-tool lane caught `import-linter` silently reporting `error` for every rule against a tool
+that had just passed.
+
+**Do not tag 0.4.0.** What remains, and nothing less:
+
+1. Install the built Claude package; confirm the session sees five skills including `threat-model`.
+2. Re-run all 48 from genuinely fresh sessions — prompt verbatim, skill not named — with tiers logged.
+3. Grade all 48; no ungraded cases.
+4. Confirm the six run-quality failures do not recur. If the same output-contract fields are dropped
+   again by different runs, D2/D3 are not closed and the text is at fault after all.
+5. Re-run `drift-drain/rule-outlived-its-subject` specifically against the N15 fix.
+6. Work, or consciously accept, the eleven carried-forward items in
+   [gate record §12.6](release-gate-0.4.0.md#126-outstanding-carried-forward--flagged-by-graders-deliberately-not-amended).
+
+**Current test counts, this commit:** `npm test` **379 passing, 0 failing** (was 332 at the second
+pass). `npm run sync:check` clean. Both targets rebuild byte-for-byte. Real-tool E2E lane **5/5**
+with a real `import-linter` and `gitleaks 8.30.1`. Package-content gitleaks audit over `build/`:
+1.29 MB scanned, **no leaks**. GitHub Actions Node-runtime deprecation **cleared**, not accepted.

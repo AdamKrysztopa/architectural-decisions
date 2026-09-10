@@ -1,0 +1,7 @@
+title = "orders-api"
+
+[[rules]]
+id = "generic-api-key"
+description = "Generic API key assigned to a variable"
+regex = '''(?i)(api[_-]?key|secret)\s*[:=]\s*['"][0-9a-zA-Z\-_]{24,}['"]'''
+tags = ["key", "generic"]

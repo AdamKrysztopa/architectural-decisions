@@ -1001,3 +1001,178 @@ declined for the reason §11.3(c) gives: the layer it bought is real advice.
 pass:** re-installing 0.4.0 and re-staging removed 4 of the security set's 11 failures and reclassified
 2 more. The remaining 5 security failures and the 5 clean non-security text defects should be treated
 as real and fixed before the second gate is run.
+
+---
+
+# 12. Second re-run — 2026-09-10, after the remediation
+
+**This section supersedes §11 for the tally, and §11 supersedes §1–§10.** Everything above is left
+standing as written.
+
+**Headline: 48 of 48 scenarios graded — no ungraded cases for the first time. 40 pass, 8 fail. One
+failure is a genuine skill defect (now fixed), one is a missing fixture (now built), and six are
+run-quality. The verdict remains NO-GO, and §12.5 says exactly why on grounds that have nothing to
+do with the tally.**
+
+## 12.1 Method, and its one material deviation
+
+| | |
+|---|---|
+| Runner tier | **Sonnet** (all 48) |
+| Grader tier | **Opus** (all 48) |
+| Skill source | **This repository's working tree** — `skills/*/`, `shared/*` |
+| Fixtures | The 13 under `test/fixtures/scenarios/` |
+| Artifacts | `test-runs/0.4.0/<set>/<scenario-id>/{output.md,friction.md}` (gitignored) — 48 outputs, 39 friction logs |
+
+Tiers are logged because **N13** now requires it.
+
+> ### The deviation, stated plainly because it limits what this section can conclude
+>
+> `docs/validating-skills.md` requires a **fresh session per scenario, with the prompt pasted
+> verbatim and the skill not named**. These 48 runs were executed as **fresh subagent contexts within
+> one session, and each was told which skill to read.**
+>
+> Two consequences, and neither is cosmetic:
+>
+> 1. **Triggering was not tested at all.** Whether a user's words actually summon the right skill is
+>    half of what a fresh session measures, and none of it was measured here.
+> 2. **One session means cross-run contamination is possible**, and it demonstrably occurred once:
+>    `security/public-api-surface-change` cited `authorize_invoice_access`, a symbol that exists only
+>    in a *different* scenario's fixture. The grader caught it. That is one confirmed leak, which
+>    means the isolation this method claims is not absolute.
+>
+> **This re-run therefore does not discharge the gate.** It is the best measurement available without
+> installing the candidate and launching 48 sessions, it found real defects, and it is not the thing
+> the protocol asks for. Treating it as the thing the protocol asks for would be the same move the
+> reconciliation spec exists to condemn: re-specifying a requirement until the available evidence
+> satisfies it.
+
+## 12.2 Result
+
+| Set | In set | Graded | Pass | Fail | vs §11 |
+|---|---|---|---|---|---|
+| `baseline-capture.json` | 6 | 6 | **6** | 0 | 5/1 → **6/0** |
+| `test-patterns.json` | 12 | 12 | **9** | 3 | 5/6 → **9/3** |
+| `security.json` | 12 | 12 | **9** | 3 | 4/8 → **9/3** |
+| `drift-drain.json` | 8 | 8 | **7** | 1 | 5/1 (6 graded) → **7/1 (8 graded)** |
+| `migration.json` | 10 | 10 | **9** | 1 | 4/6 → **9/1** |
+| **Total** | **48** | **48** | **40** | **8** | 45/23/22 → **48/40/8** |
+
+**Three previously ungraded scenarios are now graded** (`B3′`, `B4`): `test-patterns/healthy-existing-suite`,
+`drift-drain/rule-outlived-its-subject`, and the drift-drain case §2.1 could not even identify — all six
+drift-drain cases were re-run, which was cheaper than recovering the record.
+
+## 12.3 The eight failures, by cause
+
+| # | Scenario | Criterion | Cause |
+|---|---|---|---|
+| 1 | `drift-drain/rule-outlived-its-subject` | `no-silent-writes` | **skill-defect** |
+| 2 | `security/committed-secret-found-by-tool` | `failsIf` #3 | **harness** |
+| 3 | `security/no-scanner-installed` | `expect` — the config snippet | run-quality |
+| 4 | `security/public-api-surface-change` | fixture fidelity | run-quality |
+| 5 | `test-patterns/glue-shaped-ui-product` | `cost-and-ownership`, `reopening-signals` | run-quality |
+| 6 | `test-patterns/ml-inference-service` | `reopening-signals` (D3) | run-quality |
+| 7 | `test-patterns/healthy-existing-suite` | output-contract fields (D2) | run-quality |
+| 8 | `migration/reverse-discovery-cap-exceeded` | `explicit-inputs-only` | run-quality |
+
+### N15 — the one skill defect, and it is a real safety hole
+
+`shared/observing-drift.md` §5.3 said *"follow `recording-decisions.md` **unchanged**"*. That document's
+supersession procedure sets `status: superseded` on the old file **and regenerates
+`constitution.md`** — both of which §6 of the same file forbids outright. The two instructions are
+flatly incompatible for the one class where superseding is the entire point, and the run followed the
+one it was pointed at.
+
+**Why this is more than a contradiction.** Regenerating the rollup at drain time changes what the
+repository *enforces*: the superseded rule stops being active, on the strength of an observed edit,
+with no human promotion anywhere in the chain. The `proposed`-status gate is not defeated by writing
+`status: active` — it is defeated from the other side, by retiring the rule the new one replaces. The
+run's own evidence: the constitution's hash changed, `d599071…` → `52f413a…`.
+
+**Fixed in this commit.** At drain time the run writes the new proposed file and nothing else; the
+supersede edit and the regeneration are deferred to promotion, and §6 now names them explicitly —
+including that running the generator counts.
+
+### The harness failure
+
+`security/committed-secret-found-by-tool` carries `toolBoundGate: true` and a `failsIf` binding to a
+literal tool-reported file and commit, but shipped **no fixture and no recorded tool output**. The run
+wrote placeholders — the honest move; inventing a plausible commit hash would have been far worse —
+and the `failsIf` fired anyway. The scenario was unsatisfiable as staged. **Fixed in this commit:** a
+fixture with a `.gitleaks.toml` and a recorded `ci/gitleaks-report.txt` naming a real rule id, file
+and commit, parallel to `public-api-surface-change`'s `ci/oasdiff-check.txt`. The fixture itself is
+gitleaks-clean.
+
+### The six run-quality failures
+
+None traces to a line of shipped skill text; in each the skill was clear and the run did not follow
+it. They are not release blockers on their own, but **six of forty-eight is a signal about how easy
+the text is to follow correctly**, and three of them (5, 6, 7) are the *same* failure — a required
+output-contract field dropped from a row, or a whole row dropped — which is D2/D3 recurring after
+D2/D3 were fixed. The text now says the right thing; runs still lose the fields.
+
+## 12.4 What the fixes are confirmed to have bought
+
+- **N1 (Step 3 routing) — confirmed working.** Both scenarios requiring the always-on gates bought
+  them with full rows; 11 of 12 runs name them; `healthy-existing-suite` carries an explicit
+  *"Step 7 routes into Step 3, not around it"* heading. **No run failed on Step 3 routing.**
+- **D9 (boundary-first) — confirmed working, 12/12.** Checked per-output: every one opens
+  System context → Assets → Actors → Boundaries, with no control, Findings table or recommendation
+  block above it. No score, grade, percentage or OWASP tick-sheet in any of the twelve.
+- **N6 (cap ranks, never refuses) — confirmed working end-to-end** through the real CLI: 22 findings
+  ranked, 20 proposed into the headroom, 2 recorded `omitted` with reasons.
+- **A1 — confirmed.** `pure-math-library` split the contract gate into halves, bought API-surface
+  evidence, named which half opened, and refused Pact-style tooling for want of a known consumer.
+- **A6 — needs no amendment.** With the fixture staged, `reverse-discovery-narrative-with-exceptions`
+  passes on its own discriminator: it names exactly the four real exceptions by path, and the
+  `countPatternOccurrences` return shape proves the tool was run rather than narrated. Per §11.5's own
+  condition — amend only if it still fails with correct staging — **the `expect` survives verbatim.**
+- **A4, A5 — pass with fixtures.** Both were provisional `scenario-expectation-wrong` classifications
+  resting on the staging fault. Correctly staged, both pass. **Neither needs amending.**
+- **B4 — `rule-outlived-its-subject` is properly staged and graded.** The grader independently re-ran
+  `stage.sh`: nine pinned commits, `HEAD~6` = `67b908a`, deleting `src/legacy/gateway/`. The evidence
+  is genuinely git-sourced.
+
+## 12.5 Verdict — **NO-GO**
+
+The tally improved from 22 failures to 8, every scenario is graded for the first time, and both
+product blockers are built. **It is still NO-GO, on three grounds, in order of weight:**
+
+1. **The gate's own protocol was not executed.** §12.1's deviation is disqualifying by itself: no
+   fresh sessions, no triggering measured, and one confirmed cross-run contamination. A GO resting on
+   this evidence would be a GO resting on a method the project's own documentation rejects.
+2. **A skill defect was found in this very run**, and its fix has not been re-measured. N15 is a
+   safety hole in the drain — the one place the package promises never to change what is enforced.
+   Fixing it edits `shared/observing-drift.md`, which every skill cites, so the fix owes a re-run.
+3. **The candidate has never been installed and exercised as a package.** The developer's own
+   `~/.claude/plugins` is still pinned to `0.3.0` with four skills. The clean-install check verified
+   the *built tree*; nothing has verified the *installed* plugin behaving as 0.4.0 in a real session.
+
+**What a GO now requires, and nothing less:**
+
+1. Install the built 0.4.0 Claude package and confirm the session sees five skills, `threat-model`
+   among them.
+2. Re-run all 48 from **genuinely fresh sessions**, prompt verbatim, skill not named, tiers logged.
+3. Grade all 48 with no ungraded cases.
+4. Confirm the six run-quality failures do not recur; if the same output-contract fields are dropped
+   again by different runs, the text is at fault after all and D2/D3 are not closed.
+5. Re-run `drift-drain/rule-outlived-its-subject` against the N15 fix specifically.
+
+## 12.6 Outstanding, carried forward — flagged by graders, deliberately NOT amended
+
+Each of these was raised by a grader with an argument, and each is left alone because amending a
+criterion on the strength of one run is how a gate stops meaning anything.
+
+| # | Where | What |
+|---|---|---|
+| O1 | `drift-drain.json` | No scenario exercises the 0.4.0 authoritative-`sources` packet layer, and `shared/observing-drift.md` never explains it. A shipped field with no gate case is how the reserved-Violation property erodes next release. |
+| O2 | `security.json` `agentic-support-bot` | `gatesOpen` omits *Untrusted content in the context window*, which `agent-agency.md`'s own text opens (customer message → refund tool). The set currently teaches that a read-only summariser opens the gate but a bot holding an irreversible money tool does not. |
+| O3 | `threat-model` output contract | No slot for a **closed** gate's reopening signal, nor for a "confirmed, no change" answer. Two runs improvised two incompatible answers — the proof it is a gap, not a style choice. |
+| O4 | `security.json` `deliberate-omissions` | Has no correct answer when nothing heavier was genuinely declined, and pressures a run to manufacture a straw control. Needs the escape hatch `no-change-permitted` already gives the other direction. |
+| O5 | `migration.json` `cap-forces-ranking` | Hardcodes 20 where the skill defines *headroom*. Cannot grade a directory that already holds proposed decisions. |
+| O6 | `migration.json` `traceability-exhaustive` | "Every confirmed input" is undefined for reverse discovery, where step 1 confirms a code *scope*. Two runs used structurally incompatible manifests and neither can be called wrong. |
+| O7 | `migration.json` `reverse-discovery-cap-exceeded` | `expect` demands "which 15+ were left out"; the fixture honestly supports 22 findings, not 35. The clause grades fixture scale rather than behaviour. |
+| O8 | `baseline-capture.json` | The set carries **no `prompt` field**, so it structurally cannot be run by its own documented procedure. Affects all six equally. |
+| O9 | `test-patterns.json` `safety-critical-regulated` | `gatesClosed: []`, so its central `failsIf` is mechanically uncheckable — a regression inferring blanket E2E from "regulated" would pass `npm test` untouched. |
+| O10 | `shared/observing-drift.md` | `defaultBase()` can resolve to `HEAD`, making `git diff HEAD...HEAD` empty so a stale rule never surfaces at all. No guidance on a degenerate base. |
+| O11 | `test-patterns` Mode B | Nothing tells a **no-change** review how to render the output contract with zero purchases; the closed-gate refusals *are* the rows, and the skill never says so. |

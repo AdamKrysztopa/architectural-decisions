@@ -88,14 +88,33 @@ For *Legitimate evolution* and *Stale or contradictory documentation*:
 
 1. Say what the new decision would be about, and which rule it would supersede.
 2. **Ask.** Do not write a decision file the user has not agreed to.
-3. On agreement, follow `references/recording-decisions.md` unchanged: one new file, `status:
-   proposed`, superseding rather than editing, the old file's prose untouched.
+3. On agreement, write **one new decision file** at `status: proposed`, following
+   `references/recording-decisions.md` for its shape and content — **with one exception, which is
+   not optional.**
+
+> **At drain time you write the new file and nothing else.** `recording-decisions.md`'s supersession
+> procedure — set `status: superseded` and `superseded_by` on the old file, then regenerate
+> `constitution.md` — is **deferred to promotion**. Do not perform it here. Name in the new file's
+> body which rule it would supersede and why, and say to the user that the supersession takes effect
+> when they promote it.
+>
+> This is not bookkeeping. Regenerating `constitution.md` at drain time changes what the repository
+> *enforces* — the superseded rule stops being active — and it does so on the strength of an observed
+> edit, with no human promotion anywhere in the chain. That is precisely the gate below, defeated
+> from the other side: it does not matter that the new decision is `proposed` if the old one was
+> retired to make room for it. A drain that regenerates the rollup has already changed the answer.
 
 A `proposed` file changes `constitution.md` by exactly zero bytes until a human promotes it. That is
-the gate, and it already exists — do not work around it by writing `status: active`.
+the gate, and it already exists — do not work around it by writing `status: active`, and do not work
+around it by retiring the rule it would replace.
 
 ## 6. What this step may never do
 
 Modify code. Modify documentation. Edit a rule, a decision file's prose, or `constitution.md`. Write
-into a tool's config. Promote a status. The only file this step may create is one new decision file
-at `status: proposed`, and only after the user agrees.
+into a tool's config. Promote a status. **Set `status: superseded` or `superseded_by` on an existing
+decision, or regenerate `constitution.md` — even by running the generator, which is still this step
+changing what is enforced.** The only file this step may create is one new decision file at
+`status: proposed`, and only after the user agrees.
+
+If you believe a rule must be retired, that is a proposal like any other: say so, write the proposed
+replacement, and leave the retirement to the human who promotes it.

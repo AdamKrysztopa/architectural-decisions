@@ -71,8 +71,15 @@
         "A control is recommended before assets, actors, and boundaries are named.",
         "Boundary authentication is skipped because the network is described as private."
       ],
-      "gatesOpen": ["Boundary authentication", "Secret management"],
-      "gatesClosed": ["Tenant isolation", "Encryption at rest", "Third-party service trust"]
+      "gatesOpen": [
+        "Boundary authentication",
+        "Secret management"
+      ],
+      "gatesClosed": [
+        "Tenant isolation",
+        "Encryption at rest",
+        "Third-party service trust"
+      ]
     },
     {
       "id": "multi-tenant-saas",
@@ -91,8 +98,14 @@
         "Tenant isolation opens without naming another tenant as the actor.",
         "Authorization placement and tenant isolation are treated as the same decision."
       ],
-      "gatesOpen": ["Tenant isolation", "Authorization placement", "Audit logging"],
-      "gatesClosed": ["Encryption at rest"]
+      "gatesOpen": [
+        "Tenant isolation",
+        "Authorization placement",
+        "Audit logging"
+      ],
+      "gatesClosed": [
+        "Encryption at rest"
+      ]
     },
     {
       "id": "payments-card-data",
@@ -111,11 +124,17 @@
         "The full card number is stored without tokenisation being considered.",
         "A maturity score or PCI checklist is produced as the deliverable rather than named findings."
       ],
-      "gatesOpen": ["Data classification", "Encryption in transit", "Encryption at rest", "Data minimisation and retention"],
+      "gatesOpen": [
+        "Data classification",
+        "Encryption in transit",
+        "Encryption at rest",
+        "Data minimisation and retention"
+      ],
       "gatesClosed": []
     },
     {
       "id": "committed-secret-found-by-tool",
+      "fixture": "test/fixtures/scenarios/security/committed-secret-found-by-tool",
       "mode": "review",
       "title": "The secret is gitleaks's finding, not the model's",
       "prompt": "Can you review how we handle secrets? I think there might be an old API key sitting in the repo somewhere from a while back.",
@@ -131,7 +150,9 @@
         "The finding is reported as a Finding or an Assumption instead of a Violation.",
         "The rule id or the file/commit the tool reported is not named."
       ],
-      "gatesOpen": ["Secret management"],
+      "gatesOpen": [
+        "Secret management"
+      ],
       "gatesClosed": [],
       "toolBoundGate": true
     },
@@ -154,7 +175,9 @@
         "The rule is classified deterministic without a resolved contract.",
         "arch-crew writes .gitleaks.toml rather than offering the snippet."
       ],
-      "gatesOpen": ["Secret management"],
+      "gatesOpen": [
+        "Secret management"
+      ],
       "gatesClosed": [],
       "insufficientEvidence": true
     },
@@ -175,7 +198,12 @@
         "The shared service account's broader scope is not named as a finding.",
         "The agent's read-only order-lookup ability is conflated with the refund tool's write ability."
       ],
-      "gatesOpen": ["Tool permission scoping", "Blast radius of an autonomous action", "Human approval on irreversible actions", "Agent credential scope"],
+      "gatesOpen": [
+        "Tool permission scoping",
+        "Blast radius of an autonomous action",
+        "Human approval on irreversible actions",
+        "Agent credential scope"
+      ],
       "gatesClosed": []
     },
     {
@@ -195,8 +223,13 @@
         "Human approval is recommended for a summary field nobody acts on automatically.",
         "The absence of an outbound channel is not checked or named."
       ],
-      "gatesOpen": ["Untrusted content in the context window"],
-      "gatesClosed": ["Human approval on irreversible actions", "Agent action audit trail"]
+      "gatesOpen": [
+        "Untrusted content in the context window"
+      ],
+      "gatesClosed": [
+        "Human approval on irreversible actions",
+        "Agent action audit trail"
+      ]
     },
     {
       "id": "public-api-surface-change",
@@ -216,8 +249,13 @@
         "Tenant isolation opens without a second-tenant actor.",
         "The rule is classified deterministic without confirming the CI check actually resolved."
       ],
-      "gatesOpen": ["Boundary authentication", "Authorization placement"],
-      "gatesClosed": ["Tenant isolation"],
+      "gatesOpen": [
+        "Boundary authentication",
+        "Authorization placement"
+      ],
+      "gatesClosed": [
+        "Tenant isolation"
+      ],
       "toolBoundGate": true
     },
     {
@@ -237,8 +275,14 @@
         "The published library's own build and release path is not identified as the primary asset.",
         "The review defaults to a generic checklist instead of the two gates that actually apply."
       ],
-      "gatesOpen": ["Dependency provenance", "Build and release integrity"],
-      "gatesClosed": ["Encryption at rest", "Tenant isolation"]
+      "gatesOpen": [
+        "Dependency provenance",
+        "Build and release integrity"
+      ],
+      "gatesClosed": [
+        "Encryption at rest",
+        "Tenant isolation"
+      ]
     },
     {
       "id": "already-hardened-service",
@@ -280,8 +324,12 @@
         "An OWASP Top-10 checklist is produced as the deliverable rather than folded into the interview as a coverage prompt.",
         "The refusal is not accompanied by the actual findings — declining and stopping is also a failure."
       ],
-      "gatesOpen": ["Boundary authentication"],
-      "gatesClosed": ["Encryption at rest"],
+      "gatesOpen": [
+        "Boundary authentication"
+      ],
+      "gatesClosed": [
+        "Encryption at rest"
+      ],
       "refusesScore": true
     },
     {
@@ -301,8 +349,12 @@
         "The contractor's laptop is not named as the actor that reopens the assumption.",
         "Tenant isolation is opened without a real second tenant."
       ],
-      "gatesOpen": ["Service-to-service identity"],
-      "gatesClosed": ["Tenant isolation"]
+      "gatesOpen": [
+        "Service-to-service identity"
+      ],
+      "gatesClosed": [
+        "Tenant isolation"
+      ]
     }
   ]
 }
