@@ -1,4 +1,4 @@
-// The front door: `/arch-crew <intent>`.
+// The front door: `/arch-crew:help <intent>`.
 //
 // Two things are under test here, and they are different kinds of thing. The
 // first is a Markdown file that a model reads, so what can be asserted about it
@@ -20,7 +20,7 @@ import { readConfig } from "../runtime/baseline/config.mjs";
 import { verbs } from "../runtime/arch.mjs";
 
 const repositoryRoot = resolve(fileURLToPath(new URL("..", import.meta.url)));
-const routerPath = join(repositoryRoot, "commands/arch-crew.md");
+const routerPath = join(repositoryRoot, "commands/help.md");
 
 async function router() {
   return readFile(routerPath, "utf8");
@@ -117,10 +117,11 @@ test("every capability the door routes to is reachable, and every verb it names 
   }
 
   // Every sibling command, so no capability is stranded behind a name only the
-  // author remembers.
+  // author remembers. Plugin commands are only reachable namespaced, so the
+  // door must name them the way a user can actually type them.
   const commands = (await readdir(join(repositoryRoot, "commands")))
-    .filter((name) => name.endsWith(".md") && name !== "arch-crew.md")
-    .map((name) => `/${name.replace(/\.md$/, "")}`);
+    .filter((name) => name.endsWith(".md") && name !== "help.md")
+    .map((name) => `/arch-crew:${name.replace(/\.md$/, "")}`);
   for (const command of commands) {
     assert.ok(text.includes(command), `the door never mentions ${command}`);
   }
@@ -139,15 +140,15 @@ test("the door covers every workflow the specification names, in the user's lang
     "baseline from prose ADRs": /consolidation/,
     "baseline from a repository that documents nothing": /reverse.discovery/,
     "drift review": /drift/,
-    "deterministic verification": /arch-check/,
-    "documentation mode": /arch-mode/,
+    "deterministic verification": /arch-crew:check/,
+    "documentation mode": /arch-crew:mode/,
     "ADR to living migration": /living/,
-    "authoritative sources": /arch-sources/,
+    "authoritative sources": /arch-crew:sources/,
     testing: /test-patterns/,
     "design patterns": /design-patterns/,
     "agentic architecture": /agentic-patterns/,
     security: /threat-model/,
-    promotion: /arch-promote/,
+    promotion: /arch-crew:promote/,
   };
   for (const [workflow, pattern] of Object.entries(workflows)) {
     assert.match(text, pattern, `the door has no route for ${workflow}`);
@@ -169,14 +170,58 @@ test("the door asks one question when the reading changes the work, and does not
   // A detail the destination was always going to ask for is not ambiguity, and
   // must not become a second turn at the door. The 0.4.1 scenario run caught
   // this: "make this decision active" was held at the door for an id that
-  // /arch-promote asks for itself.
+  // /arch-crew:promote asks for itself.
   assert.match(text, /A missing detail is not ambiguity/);
+});
+
+test("the door never forwards the user's prose as a sibling command's arguments", async () => {
+  // Found in the field on 0.4.1: the door routed a question correctly to
+  // /arch-crew:check and then handed it a rewritten SENTENCE as arguments.
+  // Every /arch-crew:* command interpolates its $ARGUMENTS into a pre-executed
+  // shell line, so the sentence became argv and the user got
+  // "Unknown argument 'Resolve'" instead of an answer.
+  const text = await router();
+  assert.match(text, /## Entering a sibling command/);
+  assert.match(text, /\*\*no arguments at all\*\*/);
+  assert.match(text, /genuine CLI\nflags/);
+  assert.match(text, /Never pass the\nuser's wording through/);
+  assert.match(text, /not yours\nto forward/);
+});
+
+test("every sibling command really does interpolate its arguments into a shell line", async () => {
+  // The reason the rule above exists. If this ever stops being true the rule is
+  // over-cautious rather than load-bearing, and someone should know.
+  const directory = join(repositoryRoot, "commands");
+  const siblings = (await readdir(directory)).filter((name) => name.endsWith(".md") && name !== "help.md");
+  const interpolating = [];
+  for (const name of siblings) {
+    const text = await readFile(join(directory, name), "utf8");
+    if (/!`[^`]*\$ARGUMENTS[^`]*`/.test(text)) interpolating.push(name);
+  }
+  assert.ok(
+    interpolating.length > 0,
+    "no command interpolates $ARGUMENTS into a pre-executed line; the door's no-prose rule may be stale",
+  );
+});
+
+test("the door names the limits of the tool instead of inventing a capability", async () => {
+  // "Seed a hook to monitor code quality" sounds like arch-crew's job. It is
+  // not: the drift hooks self-register, and writing into a tool's config is
+  // something this package refuses by architectural rule. A door with no answer
+  // for that invents one.
+  const text = await router();
+  assert.match(text, /## When nothing here owns it/);
+  assert.match(text, /register themselves when the plugin is installed/);
+  assert.match(text, /never writes into a tool's config/);
+  // And it must point at the real neighbour rather than just refusing.
+  assert.match(text, /`\/arch-crew:check` resolves each rule's `verified_by`/);
+  assert.match(text, /Route to the real\nneighbour/);
 });
 
 test("the door offers --run rather than assuming it", async () => {
   // `--run` spawns the repository's real third-party tools. Routing may not
   // acquire that side effect on the user's behalf -- the 0.4.1 scenario run
-  // found a run that went straight to `/arch-check --run` on a sentence that
+  // found a run that went straight to `/arch-crew:check --run` on a sentence that
   // asked only whether the boundaries were still valid.
   const text = await router();
   assert.match(text, /offered, never assumed/);
@@ -312,16 +357,19 @@ test("--json carries the same facts the text rendering does", async () => {
 
 // --- the lower-level surfaces the door sits on are untouched ---------------
 
-test("every 0.4.0 command still ships, and the door is additive", async () => {
+test("every 0.4.0 capability still ships, under the name it is now typed with", async () => {
+  // The 0.5.0 rename dropped the `arch-` prefix every one of these carried: it
+  // stuttered against the namespace they are actually reached through. Nothing
+  // was removed, and `help` is the front door added in 0.4.1.
   const files = (await readdir(join(repositoryRoot, "commands"))).filter((name) => name.endsWith(".md")).sort();
   assert.deepEqual(files, [
-    "arch-check.md",
-    "arch-constitution.md",
-    "arch-crew.md",
-    "arch-drift.md",
-    "arch-migrate.md",
-    "arch-mode.md",
-    "arch-promote.md",
-    "arch-sources.md",
+    "check.md",
+    "constitution.md",
+    "drift.md",
+    "help.md",
+    "migrate.md",
+    "mode.md",
+    "promote.md",
+    "sources.md",
   ]);
 });

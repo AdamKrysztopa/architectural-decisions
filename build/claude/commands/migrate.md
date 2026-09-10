@@ -22,7 +22,7 @@ The shape of the work:
    came from. Cite sources honestly; where the evidence is thin, say
    "insufficient evidence" rather than inventing a rationale.
 4. A structural conflict is reported as a conflict, not silently resolved.
-5. Promotion is a separate, explicit act — `/arch-promote`. Do not chain into it.
+5. Promotion is a separate, explicit act — `/arch-crew:promote`. Do not chain into it.
 
 If the proposal cap is hit, the answer is to rank what matters most and promote
 or discard some, not to raise the cap.

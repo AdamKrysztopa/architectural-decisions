@@ -29,7 +29,7 @@ Two fields do different jobs, and it is worth getting them right:
 - `--covers` — the **subjects** this source is authoritative about. Two sources
   covering one subject is how a conflict becomes visible at all.
 - `--scope` — the **code** it governs, in the same glob dialect a rule's scope
-  uses. This is what lets `/arch-drift` say an edit falls under this document.
+  uses. This is what lets `/arch-crew:drift` say an edit falls under this document.
 
 Ask for provenance (`--by`, `--on`, `--provenance`) rather than leaving it
 blank. "Who said this is binding, and when" is the question a reader of the

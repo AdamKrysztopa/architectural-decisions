@@ -146,7 +146,7 @@ test("the Stop hook reports a stale constitution alongside the queue notice", as
   const message = JSON.parse(stdout).systemMessage;
   assert.match(message, /1 edit observed/);
   assert.match(message, /constitution is stale/);
-  assert.match(message, /\/arch-constitution/);
+  assert.match(message, /\/arch-crew:constitution/);
 });
 
 test("the Stop hook stays silent when there is nothing to say", async () => {
@@ -183,7 +183,7 @@ test("every shipped command names a dispatcher verb that exists", async () => {
 });
 
 test("the promote command never runs promotion for the user", async () => {
-  const text = await readFile(join(repositoryRoot, "commands/arch-promote.md"), "utf8");
+  const text = await readFile(join(repositoryRoot, "commands/promote.md"), "utf8");
   // The `!` prefix executes at expansion time, before the model can decide
   // anything. Promotion is an explicit human act, so it must not be pre-run.
   assert.doesNotMatch(

@@ -576,11 +576,11 @@ test("the security outcomes that are easy to lose are covered", async () => {
 // This set grades a COMMAND, not a skill, and it grades the one judgement the
 // command exists to make: given a sentence a user actually typed, which
 // existing capability owns that outcome. The runner is never told the answer --
-// the prompt is the whole input, exactly as the user would type it, `/arch-crew`
+// the prompt is the whole input, exactly as the user would type it, `/arch-crew:help`
 // included.
 
 const routerScenarioFile = join(repositoryRoot, "test/scenarios/router.json");
-const routerCommand = join(repositoryRoot, "commands/arch-crew.md");
+const routerCommand = join(repositoryRoot, "commands/help.md");
 
 // The closed vocabulary of destinations. A scenario that expects something not
 // on this list is expecting a capability arch-crew does not ship.
@@ -605,6 +605,7 @@ const routerDestinations = [
 const requiredRouterScenarioIds = [
   "agent-autonomy",
   "ambiguous-review-this-architecture",
+  "asks-for-a-hook-arch-crew-does-not-install",
   "bare-invocation",
   "capability-help",
   "deliberate-divergence",
@@ -614,6 +615,7 @@ const requiredRouterScenarioIds = [
   "drift-on-this-branch",
   "greenfield-architecture",
   "inherited-undocumented-repository",
+  "no-prose-into-a-sibling-command",
   "open-ended-what-should-i-do",
   "promote-a-decision",
   "prose-adrs-to-consolidate",
@@ -628,7 +630,9 @@ const requiredRouterCriteriaIds = [
   "evolution-not-defect",
   "gates-survive-routing",
   "help-is-cheap",
+  "no-capability-invented-for-a-near-miss",
   "no-invented-capability",
+  "no-prose-as-arguments",
   "no-side-effects-from-routing",
   "one-question-at-most",
   "routes-not-reimplements",
@@ -646,9 +650,9 @@ test("the router scenario set is complete and well formed", async () => {
   assert.deepEqual(set.criteria.map((criterion) => criterion.id).sort(), requiredRouterCriteriaIds);
 
   for (const scenario of set.scenarios) {
-    // The prompt IS the input. It carries `/arch-crew` because this set grades
+    // The prompt IS the input. It carries `/arch-crew:help` because this set grades
     // the public door, not the skill behind it.
-    assert.ok(scenario.prompt?.startsWith("/arch-crew"), `${scenario.id}'s prompt is not typed at the door`);
+    assert.ok(scenario.prompt?.startsWith("/arch-crew:help"), `${scenario.id}'s prompt is not typed at the door`);
     assert.ok(scenario.forces?.length > 40, `${scenario.id} names no forces`);
     assert.ok(
       routerDestinations.includes(scenario.expect.routesTo),
@@ -705,18 +709,18 @@ test("every destination the scenarios name is one the shipped command describes"
   const text = (await readFile(routerCommand, "utf8")).toLowerCase();
   const described = {
     "agentic-patterns": /agentic-patterns/,
-    check: /arch-check/,
+    check: /arch-crew:check/,
     clarify: /ask exactly one/,
-    constitution: /arch-constitution/,
+    constitution: /arch-crew:constitution/,
     "decide-architecture": /decide-architecture/,
     "design-patterns": /design-patterns/,
-    drift: /arch-drift/,
+    drift: /arch-crew:drift/,
     help: /capability map/,
     "migrate-consolidation": /consolidation/,
     "migrate-reverse-discovery": /reverse.discovery/,
-    mode: /arch-mode/,
-    promote: /arch-promote/,
-    sources: /arch-sources/,
+    mode: /arch-crew:mode/,
+    promote: /arch-crew:promote/,
+    sources: /arch-crew:sources/,
     "test-patterns": /test-patterns/,
     "threat-model": /threat-model/,
   };
