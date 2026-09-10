@@ -11,6 +11,10 @@
 //   arch mode adr [--dir docs/architecture/decisions]
 //   arch mode living --document docs/architecture/overview.md [--document ...]
 //
+// Either mode also takes --rollup <path>, which says where the generated
+// constitution.md goes. It matters most in `living` mode, whose default puts
+// the rollup in the same directory as the authored documents.
+//
 // Setting `living` requires at least one document, because in that mode the
 // document IS the human record: a living mode with no living document would be
 // a mode with no record in it.
@@ -23,15 +27,17 @@ import { CONFIG_FILENAME, MODES, readConfig, resolveProjectPath, writeConfig } f
 import { resolveRecord } from "./record.mjs";
 
 const USAGE =
-  "Usage: arch mode [adr|living] [--dir <path>] [--document <path>]...\n" +
+  "Usage: arch mode [adr|living] [--dir <path>] [--document <path>]... [--rollup <path>]\n" +
   "\n" +
   "  (no argument)   print the selected documentation mode and where the record lives\n" +
   "  adr             many ADR files are the human record; --dir names their directory\n" +
   "  living          one or several living architecture documents are the human record;\n" +
-  "                  --document names each one (repeatable, required)\n";
+  "                  --document names each one (repeatable, required)\n" +
+  "  --rollup        where the generated constitution.md goes; defaults to beside the\n" +
+  "                  decisions directory in adr mode, beside the documents in living mode\n";
 
 function parseArgs(argv) {
-  const options = { mode: null, dir: null, documents: [] };
+  const options = { mode: null, dir: null, documents: [], rollup: null };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (MODES.includes(argument)) {
@@ -40,6 +46,10 @@ function parseArgs(argv) {
     } else if (argument === "--dir") {
       options.dir = argv[index + 1];
       if (!options.dir) throw new Error("--dir needs a path");
+      index += 1;
+    } else if (argument === "--rollup") {
+      options.rollup = argv[index + 1];
+      if (!options.rollup) throw new Error("--rollup needs a path");
       index += 1;
     } else if (argument === "--document") {
       const path = argv[index + 1];
@@ -86,8 +96,8 @@ export async function run(argv, cwd = process.cwd()) {
   }
 
   if (!options.mode) {
-    if (options.dir || options.documents.length > 0) {
-      process.stderr.write(`--dir and --document only mean something with a mode.\n\n${USAGE}`);
+    if (options.dir || options.documents.length > 0 || options.rollup) {
+      process.stderr.write(`--dir, --document and --rollup only mean something with a mode.\n\n${USAGE}`);
       return 1;
     }
     return report(cwd);
@@ -128,6 +138,9 @@ export async function run(argv, cwd = process.cwd()) {
   } else if (options.dir) {
     documentation.decisions = options.dir;
   }
+  // Only written when given: an absent --rollup leaves whatever the config
+  // already says, so switching modes does not silently reset the path.
+  if (options.rollup) documentation.rollup = options.rollup;
 
   try {
     await writeConfig(cwd, { documentation });

@@ -14,9 +14,10 @@ export const SEVERITIES = ["blocking", "warning"];
 // constitution.md" -- treats a README.md or template.md left beside real
 // decisions (the standard adr-tools layout) as a decision file, and
 // parseDecision then fails it loudly instead of the directory being usable
-// at all. discover-candidates.mjs deliberately uses a wider ADR_SHAPED test
-// of its own (it is only building a menu of candidates to migrate, not
-// loading decision files), so it is not a caller of this helper.
+// at all. discover-candidates.mjs deliberately uses a wider test of its own
+// (every *.md minus a few known non-decision names: it is only building a
+// menu of candidates to migrate, not loading decision files), so it is not a
+// caller of this helper.
 export const DECISION_FILENAME = /^\d{4}-[a-z0-9][a-z0-9-]*\.md$/;
 
 export async function decisionFilenames(directory) {

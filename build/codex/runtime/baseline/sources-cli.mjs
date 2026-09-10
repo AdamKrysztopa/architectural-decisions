@@ -146,6 +146,24 @@ async function list(root, options) {
   return 0;
 }
 
+// What `add` and `change` print after the fact: one confirmation line, plus a
+// single line if the registry now reports a conflict. NOT the whole registry.
+// Reprinting it after every add turned designating four sources into ten entry
+// blocks, cumulatively -- one entry, then two, then three, then four -- where
+// four confirmation lines were wanted. `sources list` already exists for the
+// listing, and /arch-sources calls it first.
+//
+// The exit code still distinguishes a conflict (3) from a clean write (0), so
+// nothing a CI gate could key on is lost by not printing the entries.
+async function confirm(root) {
+  const conflicts = findConflicts((await loadSources(root)).sources);
+  if (conflicts.length === 0) return 0;
+  process.stdout.write(
+    `${conflicts.length} conflict(s) now reported between designated sources. See: arch sources list\n`,
+  );
+  return 3;
+}
+
 export async function run(argv, cwd = process.cwd()) {
   let parsed;
   try {
@@ -175,7 +193,7 @@ export async function run(argv, cwd = process.cwd()) {
         }
         await addSource(cwd, options);
         process.stdout.write(`Designated '${options.id}' (${options.kind}) → ${options.path}\n`);
-        return list(cwd, {});
+        return confirm(cwd);
       }
 
       case "remove": {
@@ -202,7 +220,7 @@ export async function run(argv, cwd = process.cwd()) {
         if (scope.length > 0) changes.scope = scope;
         await changeSource(cwd, id, changes);
         process.stdout.write(`Updated '${id}'.\n`);
-        return list(cwd, {});
+        return confirm(cwd);
       }
 
       case "checked": {

@@ -6,7 +6,24 @@ import { fileURLToPath } from "node:url";
 
 import { CANDIDATES } from "../baseline/build-constitution.mjs";
 
-const ADR_SHAPED = /^(\d{4}-[a-z0-9][a-z0-9-]*\.md|.*adr.*\.md)$/i;
+// Nothing here is a filename *shape* test. An earlier version accepted only
+// `NNNN-slug.md` (four digits) or a name containing "adr", which silently hid
+// a whole three-digit ADR set: the directory was found, every file in it was
+// skipped, and the empty result was indistinguishable from a repository that
+// genuinely records nothing. Since listing is not adopting -- the caller must
+// still get a human to confirm a subset -- a wider menu costs nothing and a
+// narrower one loses the user's decisions.
+//
+// So: every `*.md` in a known ADR directory, minus the handful of names that
+// live in such a directory without ever being a decision. Excluded by NAME,
+// never by shape.
+const NOT_A_CANDIDATE = new Set(["constitution.md", "migration-report.md", "readme.md", "template.md"]);
+
+function isCandidate(entry) {
+  if (!entry.isFile()) return false;
+  const name = entry.name.toLowerCase();
+  return name.endsWith(".md") && !NOT_A_CANDIDATE.has(name);
+}
 
 async function isDirectory(path) {
   try {
@@ -16,17 +33,17 @@ async function isDirectory(path) {
   }
 }
 
-// A menu, not a decision. Lists filenames shaped like a decision or ADR in
-// every known candidate directory. Reads no content and adopts nothing — the
-// caller must still get the user to confirm a subset before touching any of
-// these paths.
+// A menu, not a decision. Lists every Markdown file in every known candidate
+// directory that is not one of the known non-decision names. Reads no content
+// and adopts nothing: the caller must still get the user to confirm a subset
+// before touching any of these paths.
 export async function listCandidates(root) {
   const found = [];
   for (const candidate of CANDIDATES) {
     const directory = join(root, candidate);
     if (!(await isDirectory(directory))) continue;
-    const entries = await readdir(directory);
-    for (const name of entries.filter((entry) => ADR_SHAPED.test(entry)).sort()) {
+    const entries = await readdir(directory, { withFileTypes: true });
+    for (const name of entries.filter(isCandidate).map((entry) => entry.name).sort()) {
       found.push(`${candidate}/${name}`);
     }
   }

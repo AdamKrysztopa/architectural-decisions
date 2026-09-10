@@ -368,6 +368,97 @@ test("the rollup lands beside the human record, and --check agrees with it", asy
   assert.equal(await constitution(["--check"], root), 2);
 });
 
+test("a configured rollup path is honoured in living mode, and nothing is written beside the documents", async () => {
+  // The living-mode default drops a GENERATED file into the directory holding
+  // the AUTHORED documents. A project whose test asserts "every *.md here is
+  // an authored document" cannot have that, and --dir does not move it, so the
+  // path is stated once in the config.
+  const root = await livingProject();
+  await writeFile(
+    join(root, "arch-crew.json"),
+    `${JSON.stringify(
+      {
+        version: 1,
+        documentation: {
+          mode: "living",
+          documents: ["docs/architecture/overview.md"],
+          rollup: "docs/generated/constitution.md",
+        },
+      },
+      null,
+      2,
+    )}\n`,
+    "utf8",
+  );
+
+  const record = await resolveRecord(root);
+  assert.equal(record.rollup, join(root, "docs/generated/constitution.md"));
+
+  assert.equal(await constitution([], root), 0);
+  const rollup = await readFile(join(root, "docs/generated/constitution.md"), "utf8");
+  assert.match(rollup, /overview\.md#data-ownership/);
+  await assert.rejects(readFile(join(root, "docs/architecture/constitution.md"), "utf8"));
+
+  // --check reads the same configured path, so a configured project can still
+  // gate on freshness.
+  assert.equal(await constitution(["--check"], root), 0);
+  await writeFile(join(root, "docs/generated/constitution.md"), "stale\n", "utf8");
+  assert.equal(await constitution(["--check"], root), 2);
+});
+
+test("a project that configures no rollup keeps the per-mode default, in both modes", async () => {
+  const living = await livingProject();
+  assert.equal((await resolveRecord(living)).rollup, join(living, "docs/architecture/constitution.md"));
+
+  const adr = await adrProject();
+  // adr mode has never had the problem: the rollup lands one level ABOVE the
+  // decisions directory, never among the decision files.
+  assert.equal((await resolveRecord(adr)).rollup, join(adr, "docs/architecture/constitution.md"));
+});
+
+test("a configured rollup also holds in adr mode and against an explicit --dir", async () => {
+  // --dir says which directory the rules are read FROM. Where the generated
+  // summary of them belongs is a fact about the project, not about one
+  // invocation.
+  const root = await adrProject();
+  await writeFile(
+    join(root, "arch-crew.json"),
+    `${JSON.stringify({ version: 1, documentation: { mode: "adr", rollup: "docs/generated/constitution.md" } }, null, 2)}\n`,
+    "utf8",
+  );
+  assert.equal((await resolveRecord(root)).rollup, join(root, "docs/generated/constitution.md"));
+  const elsewhere = await adrProject();
+  const record = await resolveRecord(root, { dir: join(elsewhere, "docs/architecture/decisions") });
+  assert.equal(record.rollup, join(root, "docs/generated/constitution.md"));
+});
+
+test("arch mode --rollup persists the path, and a later mode change does not reset it", async () => {
+  const root = await livingProject();
+  assert.equal(
+    await mode(["living", "--document", "docs/architecture/overview.md", "--rollup", "docs/generated/constitution.md"], root),
+    0,
+  );
+  assert.equal((await readConfig(root)).rollup, "docs/generated/constitution.md");
+
+  // Re-selecting the mode without --rollup leaves the configured path alone.
+  assert.equal(await mode(["living", "--document", "docs/architecture/overview.md"], root), 0);
+  assert.equal((await readConfig(root)).rollup, "docs/generated/constitution.md");
+});
+
+test("a rollup path that is not a Markdown file, or climbs out of the project, is refused", async () => {
+  assert.throws(
+    () => normalizeConfig({ documentation: { rollup: "docs/generated" } }),
+    (error) => error instanceof ConfigError && /must name a Markdown file/.test(error.message),
+  );
+  const root = await adrProject();
+  await writeFile(
+    join(root, "arch-crew.json"),
+    `${JSON.stringify({ version: 1, documentation: { mode: "adr", rollup: "../outside/constitution.md" } }, null, 2)}\n`,
+    "utf8",
+  );
+  await assert.rejects(resolveRecord(root), /must not climb above the project root/);
+});
+
 test("--dir overrides the mode for one invocation without changing it", async () => {
   const root = await livingProject();
   const elsewhere = await adrProject();

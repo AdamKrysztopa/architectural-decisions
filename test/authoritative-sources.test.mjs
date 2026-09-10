@@ -217,6 +217,65 @@ test("a source that disappeared, and one that moved since it was checked, are bo
   assert.match(stale.note, /unverified, not wrong/);
 });
 
+// Captures what a CLI wrote to stdout, so output volume can be asserted on
+// rather than eyeballed. Restores the real write even if the run throws.
+async function capture(work) {
+  const written = [];
+  const original = process.stdout.write;
+  process.stdout.write = (chunk) => {
+    written.push(String(chunk));
+    return true;
+  };
+  try {
+    const code = await work();
+    return { code, out: written.join("") };
+  } finally {
+    process.stdout.write = original;
+  }
+}
+
+test("add confirms in one line and does not reprint the whole registry", async () => {
+  // Designating four sources used to print the registry four times, growing
+  // each time: ten entry blocks where four confirmation lines were wanted.
+  const root = await project();
+  const added = [
+    ["add", "--id", "payments-prd", "--kind", "prd", "--path", "docs/prd.md"],
+    ["add", "--id", "sec-reqs", "--kind", "security-requirement", "--path", "docs/security.md"],
+    ["add", "--id", "payments-api", "--kind", "api-contract", "--path", "api/payments.yaml"],
+  ];
+  const { out } = await capture(async () => {
+    for (const argv of added) assert.equal(await sourcesCli(argv, root), 0);
+    return 0;
+  });
+
+  assert.equal(out.split("\n").filter((line) => line.startsWith("Designated ")).length, 3);
+  // One line per add, and nothing from the entry renderer.
+  assert.equal(out.trim().split("\n").length, 3);
+  assert.doesNotMatch(out, /^ {2}path: {8}/m);
+  assert.doesNotMatch(out, /^ {2}designated: {2}/m);
+  // The registry itself is unaffected: this is an output change, not a write change.
+  assert.deepEqual((await loadSources(root)).sources.map((source) => source.id).sort(), [
+    "payments-api",
+    "payments-prd",
+    "sec-reqs",
+  ]);
+});
+
+test("add still exits 3, in one line, when the write creates a conflict", async () => {
+  // The volume goes, the signal does not: a CI gate keying on exit 3 keeps working.
+  const root = await project();
+  const { code, out } = await capture(async () => {
+    await sourcesCli(["add", "--id", "payments-prd", "--kind", "prd", "--path", "docs/prd.md", "--covers", "payments"], root);
+    return sourcesCli(
+      ["add", "--id", "payments-api", "--kind", "api-contract", "--path", "api/payments.yaml", "--covers", "payments", "--precedence", "40"],
+      root,
+    );
+  });
+  assert.equal(code, 3);
+  assert.match(out, /conflict\(s\) now reported between designated sources\. See: arch sources list/);
+  assert.doesNotMatch(out, /^ {2}path: {8}/m);
+});
+
 test("the list command exits 3 on a conflict, distinct from a failed invocation", async () => {
   const root = await project();
   assert.equal(await sourcesCli(["list"], root), 0);
