@@ -56,7 +56,7 @@ async function seedDecisions(root) {
 test("every verb the dispatcher advertises resolves to a real delegate", async () => {
   assert.deepEqual(
     [...verbs].sort(),
-    ["candidates", "check", "constitution", "drift", "migrate", "mode", "promote"].sort(),
+    ["candidates", "check", "constitution", "drift", "migrate", "mode", "promote", "sources"].sort(),
   );
   for (const verb of verbs) {
     assert.match(helpText(), new RegExp(`\\n  ${verb}\\b`), `${verb} is missing from --help`);

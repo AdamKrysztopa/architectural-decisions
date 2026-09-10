@@ -6,6 +6,7 @@ import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { resolveRecord } from "../baseline/record.mjs";
+import { findConflicts, loadSources } from "../baseline/sources.mjs";
 import { buildPacket } from "./packet.mjs";
 import {
   clearNotifiedCount,
@@ -182,11 +183,28 @@ export async function run(argv, cwd = process.cwd()) {
     sources.set(path, entry);
   }
 
+  // The designated authoritative sources. Loaded here, beside the decisions,
+  // because the drain's job is to say what this session's edits bear on -- and
+  // a designated API contract or security requirement bears on them exactly as
+  // a decision file does. Registry problems are reported, never fatal: a
+  // malformed registry must not take down drift reporting.
+  let designated = [];
+  let sourceConflicts = [];
+  try {
+    const loaded = await loadSources(root);
+    designated = loaded.sources;
+    sourceConflicts = findConflicts(designated);
+  } catch (error) {
+    sourceConflicts = [{ kind: "registry-unreadable", subject: "sources", sources: [], note: error.message }];
+  }
+
   const times = drained.observations.map((observation) => observation.t).sort();
   const packet = buildPacket({
     root,
     base,
     decisions,
+    sources: designated,
+    sourceConflicts,
     paths: [...sources.values()].map((entry) => ({
       path: entry.path,
       sources: [...entry.sources].sort(),

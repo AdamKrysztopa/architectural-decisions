@@ -76,6 +76,8 @@
       "judgement": "forbidden"
     }
   ],
+  "sources": [],
+  "sourceConflicts": [],
   "narrativeSkipped": 1,
   "scopeless": 0,
   "outOfScope": 1

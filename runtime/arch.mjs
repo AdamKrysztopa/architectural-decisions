@@ -21,6 +21,11 @@ const VERBS = {
     usage: "mode [adr|living] [--dir <path>] [--document <path>]...",
     load: async () => (await import("./baseline/mode.mjs")).run,
   },
+  sources: {
+    summary: "Designate, list and reconcile the artifacts this project treats as authoritative.",
+    usage: "sources <list|add|remove|change|checked> [options]",
+    load: async () => (await import("./baseline/sources-cli.mjs")).run,
+  },
   constitution: {
     summary: "Generate docs/<dir>/constitution.md from the decision files, or --check it is current.",
     usage: "constitution [--dir <path>] [--check]",

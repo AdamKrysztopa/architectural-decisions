@@ -26,7 +26,61 @@ function checkerFor(rule, checkerRows) {
   return { status: row.status, evidence: row.evidence ?? "", scopeCoverage: row.scopeCoverage ?? "repository-wide" };
 }
 
-export function buildPacket({ root, base, decisions, paths, queue, checkerRows }) {
+// The designated-authoritative-source layer of the packet.
+//
+// This is what lets the drain say "this contradicts the API contract and the
+// security requirements you designated as authoritative" instead of only "this
+// contradicts a decision file". It reports two establishable facts and nothing
+// else:
+//
+//   - `governs`: an observed edit landed inside code a designated source's
+//     `scope` governs;
+//   - `edited`: the designated artifact itself was edited.
+//
+// **The evidence gate holds here without exception.** No tool ran, so nothing
+// in this layer is ever a violation. Every entry carries `judgement: "review"`
+// and states in its own words that it is a pointer to a document a human must
+// read, not a verdict about the code. A source cannot be "failed": it can only
+// be read, and the reading is the human's.
+function sourceContext(sources, sortedPaths) {
+  const reported = [];
+
+  for (const source of sources) {
+    const governed = Array.isArray(source.scope) && source.scope.length > 0
+      ? sortedPaths
+          .filter((entry) => matchesScope(entry.path, source.scope, `source ${source.id}`))
+          .map((entry) => entry.path)
+      : [];
+    const edited = sortedPaths.filter((entry) => entry.path === source.path).map((entry) => entry.path);
+
+    if (governed.length === 0 && edited.length === 0) continue;
+
+    reported.push({
+      id: source.id,
+      kind: source.kind,
+      path: source.path,
+      precedence: source.precedence,
+      covers: source.covers,
+      scope: source.scope,
+      governs: governed,
+      edited: edited.length > 0,
+      present: source.present,
+      checkedAt: source.checked_at,
+      changedSinceChecked: source.changedSinceChecked,
+      // Never "forbidden": no checker speaks for a designated source, so the
+      // deterministic lane is not available to it and must not be implied.
+      judgement: "review",
+      note:
+        edited.length > 0
+          ? `${source.path} is designated authoritative (${source.kind}) and was edited this session. Whatever it now says is what this repository is held to — re-read it before treating the change as settled.`
+          : `${governed.length} edited path(s) fall inside code governed by ${source.path}, which this project designated authoritative (${source.kind}). Read it against the change; no tool checked this, so this is a finding, not a violation.`,
+    });
+  }
+
+  return reported.sort((left, right) => right.precedence - left.precedence || (left.id < right.id ? -1 : 1));
+}
+
+export function buildPacket({ root, base, decisions, paths, queue, checkerRows, sources = [], sourceConflicts = [] }) {
   const active = decisions.filter((decision) => decision.status === "active");
   const rules = active
     .flatMap((decision) => decision.rules)
@@ -78,6 +132,11 @@ export function buildPacket({ root, base, decisions, paths, queue, checkerRows }
     queue,
     paths: sortedPaths,
     rules: reported,
+    // Designated authoritative sources touched by this session's edits, and
+    // any conflicts the registry reports between them. Both are advisory by
+    // construction — see sourceContext above.
+    sources: sourceContext(sources, sortedPaths),
+    sourceConflicts,
     narrativeSkipped,
     scopeless,
     outOfScope: sortedPaths.filter((entry) => !matchedPaths.has(entry.path)).length,
