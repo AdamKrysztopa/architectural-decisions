@@ -10,7 +10,7 @@
     { "id": "narrative-by-default", "statement": "Every rule reverse discovery proposes starts at verification: narrative. Raising it is never done in the same run." },
     { "id": "proposed-only", "statement": "Every generated decision is status: proposed. The constitution is unaffected until a human runs promote." },
     { "id": "no-score", "statement": "No percentage, coverage number, or maturity score appears anywhere in a migration report or its summary." },
-    { "id": "cap-forces-ranking", "statement": "When more candidates are warranted than the decisions directory's remaining headroom holds — the cap of 20 minus the proposed decisions already sitting there — the run ranks them, proposes up to the headroom, and records every candidate below the line with the reason it ranked there. Proposing all of them, or stopping at the headroom without saying what was left out, both fail. Where the headroom is zero the run proposes nothing and says which findings are waiting on a promote-or-discard." }
+    { "id": "cap-forces-ranking", "statement": "When more candidates are warranted than the decisions directory's remaining headroom holds — the cap of 20 minus the proposed decisions already sitting there — the run ranks them, proposes up to the headroom, and records every candidate below the line with the reason it ranked there. Proposing all of them, or stopping at the headroom without saying what was left out, both fail. Where the headroom is zero the run proposes nothing, still writes the migration report, and says which findings are waiting on a promote-or-discard." }
   ],
   "scenarios": [
     {
@@ -62,9 +62,9 @@
     {
       "id": "reverse-discovery-cap-exceeded",
       "fixture": "test/fixtures/scenarios/migration/reverse-discovery-cap-exceeded",
-      "prompt": "This monorepo has no architecture documentation at all and I've just inherited it. Can you work out what decisions it's already living with and write them down?",
-      "forces": "A large undocumented monorepo — fourteen services and a shared platform library — with no decisions directory yet, so the headroom is the full cap of 20. A thorough pass over it finds more regularities worth recording than that headroom holds.",
-      "expect": { "notes": "The run proposes no more than the headroom, ranked by what a human most needs to confirm, and every candidate that fell below the line appears in the report with the reason it ranked there. What is graded is that the ranking exists and nothing was dropped silently — not how many candidates the fixture happens to support." }
+      "prompt": "I've just inherited this monorepo. Someone started writing our architecture decisions down and then stopped — can you work out what else it's already living with and get those recorded too?",
+      "forces": "A large undocumented monorepo — fourteen services and a shared platform library — whose decisions directory already holds two unreviewed status: proposed decisions left by an earlier pass. This pass's headroom is therefore 18, not the cap of 20. A thorough pass over the code finds more regularities worth recording than that headroom holds.",
+      "expect": { "notes": "The headroom is computed from what is already in the directory — the cap minus the two decisions sitting there — and not assumed to be the cap. The run proposes no more than that, ranked by what a human most needs to confirm, and every candidate that fell below the line appears in the report with the reason it ranked there. What is graded is that the headroom was derived rather than assumed, that the ranking exists, and that nothing was dropped silently — not how many candidates the fixture happens to support." }
     },
     {
       "id": "promotion-is-a-separate-explicit-act",

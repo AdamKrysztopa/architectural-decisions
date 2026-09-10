@@ -555,7 +555,7 @@ that had just passed.
    prompt and so could not be run by the documented procedure) and O10 (a degenerate git base
    silently suppressing every committed change).
 
-**Current test counts, this commit:** `npm test` **385 passing, 0 failing** (379 before the §12.7
+**Current test counts, this commit:** `npm test` **386 passing, 0 failing** (379 before the §12.7
 amendments; 332 at the second pass). `npm run sync:check` clean. Both targets rebuild byte-for-byte. Real-tool E2E lane **5/5**
 with a real `import-linter` and `gitleaks 8.30.1`. Package-content gitleaks audit over `build/`:
 1.29 MB scanned, **no leaks**. GitHub Actions Node-runtime deprecation **cleared**, not accepted.

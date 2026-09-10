@@ -108,9 +108,14 @@ licence to go hunting for the real file, or as a reason to produce nothing.
    the evidence is thin, never for the case where there is too much of it.
 
    Promote-or-discard applies in exactly one case: the directory is **already at the cap**, so the
-   headroom is zero and nothing can be added at all. There `build-migration-report.mjs` refuses to
-   write the report, and a human must promote or discard some of what is already `proposed` before
-   this pass can add anything — say which findings are waiting on that, and why.
+   headroom is zero and nothing can be added at all. Propose nothing — **and still write the manifest
+   and run `build-migration-report.mjs`.** It writes the report at zero headroom: the cap refuses only
+   once the directory would go *past* it, which is exactly what adding a decision here would do.
+   Record every waiting candidate with its ranking and the reason it is waiting, and say that a human
+   must promote or discard some of what is already `proposed` before any of them can become a
+   proposed decision. The report is the whole of the value of a zero-headroom pass — a pass that
+   proposes nothing and records nothing has lost the ranking, which is the traceability this step
+   exists to preserve.
 6. Same manifest and report step as consolidation — **over different inputs, and the difference is
    not cosmetic.** Step 1 confirmed a code *scope*, not a list of documents, so the scope is not the
    unit of traceability and neither is the file. **The manifest's inputs are the candidate

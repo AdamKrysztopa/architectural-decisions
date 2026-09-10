@@ -561,6 +561,24 @@ test("the cap counts every status: proposed decision file, even with an empty ma
   await assert.rejects(readFile(join(decisions, "../migration-report.md"), "utf8"));
 });
 
+// Zero headroom is NOT the refusal case: the cap refuses once the directory
+// would go PAST it, which is what adding a decision at zero headroom would do.
+// A pass that proposes nothing when the directory is exactly at the cap must
+// still get its report -- the ranked list of what is waiting is the entire
+// value of that pass, and shared/migrating-decisions.md says so. If this test
+// ever flips, the prose and the runtime have come apart again.
+test("at exactly the cap, a pass that proposes nothing still gets its report", async () => {
+  const { root, decisions } = await scratchDecisionsDir([
+    "0011-events-over-shared-db.md",
+    "0012-billing-scope-note.md",
+  ]);
+  const manifest = await writeManifest(root, { inputs: [], dispositions: [] });
+  const code = await buildMigrationReport(["--manifest", manifest, "--dir", decisions, "--cap", "2"], root);
+  assert.equal(code, 0, "at the cap with nothing added, the report is owed, not refused");
+  const written = await readFile(join(decisions, "../migration-report.md"), "utf8");
+  assert.match(written, /# Migration Report/);
+});
+
 test("the cap-refusal message names the directory's whole backlog, not just what this pass proposed", async () => {
   // This pass's own manifest proposes nothing (empty inputs/dispositions) --
   // it is the two pre-existing proposed decisions already in the directory

@@ -1213,9 +1213,30 @@ The drift set grew from 8 scenarios to 11, so the full re-run is **51 sessions, 
 Both skill bodies changed, so `test/fixtures/skill-freeze/body-manifest.json` was updated deliberately
 and both target packages were rebuilt; `npm test` is 385 passing, 0 failing.
 
-### Deliberately not done
+### Two more, from the re-review of these amendments
 
-`reverse-discovery-cap-exceeded`'s fixture still has no decisions directory, so its headroom is the
-full cap. The amended criterion grades a partially-full directory correctly, but no scenario exercises
-one. That is a coverage gap, recorded here rather than closed by inflating a fixture with sixteen
-throwaway proposed decisions.
+The amendments above were reviewed at commit `6318574`. O3/O11, O6 and the move to 51 sessions were
+approved as implemented and are not to be reshaped further before the run. Two things were sent back,
+and both are done here.
+
+**The partial-headroom gap is closed, without inflating a fixture.**
+`reverse-discovery-cap-exceeded` exercised only `headroom = 20`, which is precisely the case O5's
+amended criterion was *not* rewritten for. The fixture's decisions directory now holds two
+`status: proposed` decisions left by a stalled earlier pass — cursor pagination on list endpoints,
+per-service configuration from the environment — so this pass's headroom is **18, derived rather than
+assumed**. The scenario's prompt, forces and expectation say so, and the expectation now grades that
+the headroom was *computed from the directory* rather than taken to be the cap. No scenario was
+added: the set is still 51.
+
+**A prose/runtime contradiction found while closing it, fixed in the prose.**
+`shared/migrating-decisions.md` said that at zero headroom `build-migration-report.mjs` *refuses to
+write the report*. It does not: it refuses only when `proposedCount > cap`, so a pass that proposes
+nothing against a directory sitting exactly at the cap gets its report. The runtime behaviour is the
+better one — the ranked list of what is waiting is the entire value of a zero-headroom pass, and
+refusing the report would lose exactly the traceability the step exists to preserve. The prose now
+says propose nothing, write the manifest, run the report, record every waiting candidate with its
+ranking and reason, and name the promote-or-discard the human owes. `cap-forces-ranking` agrees, and
+`test/migration.test.mjs` pins it: *at exactly the cap, a pass that proposes nothing still gets its
+report.*
+
+`npm test` is 386 passing, 0 failing.
