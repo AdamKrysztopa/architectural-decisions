@@ -5,6 +5,16 @@ function pad(id) {
   return String(id).padStart(4, "0");
 }
 
+// In `adr` mode a decision's filename is a file in the sibling decisions/
+// directory. In `living` mode it is already a `path#anchor` relative to the
+// project root, and the rollup sits beside the document, so the document's own
+// directory prefix is dropped to keep the link relative to this file.
+function sourceLink(decision, mode) {
+  if (mode !== "living") return `decisions/${decision.filename}`;
+  const slash = decision.filename.lastIndexOf("/");
+  return slash === -1 ? decision.filename : decision.filename.slice(slash + 1);
+}
+
 function verificationNote(rule) {
   if (rule.verification === "deterministic") {
     return (
@@ -19,7 +29,12 @@ function verificationNote(rule) {
   return "Narrative intent — **not** verifiable. Do not grade compliance against it.";
 }
 
-export function renderConstitution(decisions) {
+// `mode` changes exactly one thing: the sentence naming where the human record
+// lives, and how each rule links back to it. Every rule, severity, scope and
+// verification note below is MACHINE ENFORCEMENT METADATA and is rendered
+// identically whichever mode produced it -- a diff of this file between the two
+// modes shows the source links and nothing else.
+export function renderConstitution(decisions, { mode = "adr" } = {}) {
   const active = decisions.filter((decision) => decision.status === "active");
   const byId = new Map(active.map((decision) => [decision.id, decision]));
   const rules = active
@@ -31,8 +46,12 @@ export function renderConstitution(decisions) {
     "",
     "# Architecture Constitution",
     "",
-    "The active rules of this repository, rolled up from the decision files that state them.",
-    "Edit a decision file and regenerate; never edit this file.",
+    mode === "living"
+      ? "The active rules of this repository, rolled up from the living architecture documents that state them."
+      : "The active rules of this repository, rolled up from the decision files that state them.",
+    mode === "living"
+      ? "Edit the living document and regenerate; never edit this file."
+      : "Edit a decision file and regenerate; never edit this file.",
     "",
     "## Rules",
     "",
@@ -51,13 +70,13 @@ export function renderConstitution(decisions) {
       lines.push(`- Scope: ${rule.scope.map((entry) => `\`${entry}\``).join(", ")}`);
     }
     lines.push(`- ${verificationNote(rule)}`);
-    lines.push(`- Source: [${pad(decision.id)} ${decision.title}](decisions/${decision.filename})`);
+    lines.push(`- Source: [${pad(decision.id)} ${decision.title}](${sourceLink(decision, mode)})`);
     lines.push("");
   }
 
   lines.push("## Active decisions", "");
   for (const decision of [...active].sort((left, right) => left.id - right.id)) {
-    lines.push(`- [${pad(decision.id)} ${decision.title}](decisions/${decision.filename}) — ${decision.skill}`);
+    lines.push(`- [${pad(decision.id)} ${decision.title}](${sourceLink(decision, mode)}) — ${decision.skill}`);
   }
   lines.push("");
 

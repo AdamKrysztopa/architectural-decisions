@@ -2,7 +2,7 @@
 
 // One entry point for every deterministic operation this package ships.
 //
-// The six underlying CLIs each export `run(argv, cwd)` returning an exit code,
+// The underlying CLIs each export `run(argv, cwd)` returning an exit code,
 // so this dispatcher delegates in-process: no child process, no PATH lookup,
 // and every underlying exit code reaches the caller unchanged. That matters —
 // `check`'s 0/2/3 vocabulary is what makes it usable as a CI gate, and a
@@ -16,6 +16,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const VERBS = {
+  mode: {
+    summary: "Show or set the human documentation mode: many ADRs, or living architecture documents.",
+    usage: "mode [adr|living] [--dir <path>] [--document <path>]...",
+    load: async () => (await import("./baseline/mode.mjs")).run,
+  },
   constitution: {
     summary: "Generate docs/<dir>/constitution.md from the decision files, or --check it is current.",
     usage: "constitution [--dir <path>] [--check]",

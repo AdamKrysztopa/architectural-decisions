@@ -50,7 +50,12 @@ function asList(value) {
   return Array.isArray(value) ? value : [value];
 }
 
-function parseRule(raw, decisionId, filename) {
+// Exported for living.mjs, which builds the same rule objects out of
+// `arch-rule` blocks embedded in a living architecture document. The machine
+// enforcement layer must not vary by documentation mode, and the only way to
+// guarantee that is for both modes to run the same validation, not a copy of
+// it: one severity vocabulary, one binding grammar, one scope-glob matcher.
+export function parseRule(raw, decisionId, filename) {
   for (const field of ["id", "statement", "severity", "verification"]) {
     if (typeof raw[field] !== "string") fail(filename, `rule is missing '${field}'`);
   }
@@ -104,6 +109,32 @@ function parseRule(raw, decisionId, filename) {
   };
 }
 
+// The identity fields every decision carries, whatever documented it. Shared
+// with living.mjs for the same reason parseRule is: `status`, `skill`, `date`,
+// `commit` and `superseded_by` mean exactly one thing across both modes, and a
+// second implementation of "what a valid status is" would be the first place
+// the two modes drifted apart.
+export function parseDecisionHeader(values, filename) {
+  for (const field of REQUIRED) {
+    if (typeof values[field] !== "string") fail(filename, `frontmatter is missing '${field}'`);
+  }
+  const id = Number(values.id);
+  if (!Number.isInteger(id)) fail(filename, `id '${values.id}' is not an integer`);
+  if (!STATUSES.includes(values.status)) {
+    fail(filename, `status '${values.status}' is not one of ${STATUSES.join(", ")}`);
+  }
+
+  let supersededBy = null;
+  if (values.superseded_by !== undefined) {
+    supersededBy = Number(values.superseded_by);
+    if (!Number.isInteger(supersededBy)) {
+      fail(filename, `superseded_by '${values.superseded_by}' is not an integer`);
+    }
+  }
+
+  return { id, status: values.status, skill: values.skill, date: values.date, commit: values.commit, supersededBy };
+}
+
 export function parseDecision(text, filename) {
   const name = FILENAME.exec(filename);
   if (!name) fail(filename, "filename must be NNNN-slug.md");
@@ -117,40 +148,20 @@ export function parseDecision(text, filename) {
   }
   const { values, body } = parsed;
 
-  for (const field of REQUIRED) {
-    if (typeof values[field] !== "string") fail(filename, `frontmatter is missing '${field}'`);
-  }
-  const id = Number(values.id);
-  if (!Number.isInteger(id)) fail(filename, `id '${values.id}' is not an integer`);
-  if (id !== Number(name[1])) fail(filename, `id ${values.id} does not match the filename`);
-  if (!STATUSES.includes(values.status)) {
-    fail(filename, `status '${values.status}' is not one of ${STATUSES.join(", ")}`);
-  }
+  const header = parseDecisionHeader(values, filename);
+  if (header.id !== Number(name[1])) fail(filename, `id ${values.id} does not match the filename`);
 
   const heading = /^# (.+)$/m.exec(body);
   if (!heading) fail(filename, "body has no '# Title' heading");
 
   const rules = asList(values.rules).map((raw) => {
     if (typeof raw !== "object") fail(filename, "rules must be a list of maps");
-    return parseRule(raw, id, filename);
+    return parseRule(raw, header.id, filename);
   });
 
-  let supersededBy = null;
-  if (values.superseded_by !== undefined) {
-    supersededBy = Number(values.superseded_by);
-    if (!Number.isInteger(supersededBy)) {
-      fail(filename, `superseded_by '${values.superseded_by}' is not an integer`);
-    }
-  }
-
   return {
-    id,
+    ...header,
     slug: name[2],
-    status: values.status,
-    skill: values.skill,
-    date: values.date,
-    commit: values.commit,
-    supersededBy,
     title: heading[1].trim(),
     body,
     rules,

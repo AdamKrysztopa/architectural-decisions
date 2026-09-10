@@ -9,7 +9,7 @@
 import { readFile, mkdir, stat } from "node:fs/promises";
 import { dirname, join, relative } from "node:path";
 
-import { discoverDirectory } from "../baseline/build-constitution.mjs";
+import { resolveRecord } from "../baseline/record.mjs";
 import { queueDirectory, resolveRoot } from "./queue.mjs";
 
 // SessionStart output shares the 10,000-character cap on hook output strings.
@@ -32,8 +32,10 @@ async function readStdin() {
 // `doc/constitution.md` respectively -- one directory up from the decisions
 // directory, not beside it).
 async function findConstitution(root) {
-  const directory = await discoverDirectory(root);
-  const path = join(dirname(directory), "constitution.md");
+  // Via the mode-aware seam, so the injected rules follow the rollup wherever
+  // the selected documentation mode puts it -- beside the decisions directory
+  // in `adr` mode, beside the living document in `living` mode.
+  const { rollup: path } = await resolveRecord(root);
   try {
     if ((await stat(path)).isFile()) return { path, relative: relative(root, path) };
   } catch {

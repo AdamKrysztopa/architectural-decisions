@@ -3,8 +3,8 @@
 import { isAbsolute, resolve as resolvePath } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { discoverDirectory } from "../baseline/build-constitution.mjs";
-import { KNOWN_TOOLS, loadDecisions } from "../baseline/decisions.mjs";
+import { KNOWN_TOOLS } from "../baseline/decisions.mjs";
+import { resolveRecord } from "../baseline/record.mjs";
 import { CHECK_STATUSES, assertRegistryAgreesWithKnownTools, getAdapter, registerAdapter } from "./registry.mjs";
 
 import astGrep from "./ast-grep.mjs";
@@ -139,11 +139,10 @@ function printHuman(rows, skippedNonDeterministic) {
 
 export async function run(argv, cwd = process.cwd()) {
   const options = parseArgs(argv);
-  const directory = options.dir
-    ? (isAbsolute(options.dir) ? options.dir : resolvePath(cwd, options.dir))
-    : await discoverDirectory(cwd);
-
-  const { decisions, errors } = await loadDecisions(directory);
+  // Reads the machine enforcement layer through the one mode-aware seam, so a
+  // repository documenting itself in living documents is checked by exactly the
+  // same code, against exactly the same rules, as one keeping ADR files.
+  const { decisions, errors } = await resolveRecord(cwd, { dir: options.dir });
   if (errors.length > 0) {
     for (const error of errors) process.stderr.write(`${error}\n`);
     return 1;

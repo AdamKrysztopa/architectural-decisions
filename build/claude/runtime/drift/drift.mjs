@@ -5,8 +5,7 @@ import { stat } from "node:fs/promises";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { loadDecisions } from "../baseline/decisions.mjs";
-import { discoverDirectory } from "../baseline/build-constitution.mjs";
+import { resolveRecord } from "../baseline/record.mjs";
 import { buildPacket } from "./packet.mjs";
 import {
   clearNotifiedCount,
@@ -154,17 +153,15 @@ export async function run(argv, cwd = process.cwd()) {
     return 0;
   }
 
-  const directory = options.dir
-    ? (isAbsolute(options.dir) ? options.dir : resolve(root, options.dir))
-    : await discoverDirectory(root);
-  try {
-    if (!(await stat(directory)).isDirectory()) throw new Error("not a directory");
-  } catch {
+  // The drain classifies observed edits against the active rules. Which rules
+  // those are is a machine-layer question, so it goes through the mode-aware
+  // seam and the drain itself stays mode-blind.
+  const { decisions, errors, directory, missingDirectory } = await resolveRecord(root, { dir: options.dir });
+  if (missingDirectory) {
     process.stderr.write(`No decisions directory at ${directory}\n`);
     return 1;
   }
 
-  const { decisions, errors } = await loadDecisions(directory);
   if (errors.length > 0) {
     for (const error of errors) process.stderr.write(`${error}\n`);
     return 1;

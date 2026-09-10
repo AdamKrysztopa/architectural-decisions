@@ -6,6 +6,8 @@ import { fileURLToPath } from "node:url";
 
 import { decisionFilenames, loadDecisions, parseDecision } from "./decisions.mjs";
 import { renderConstitution } from "./constitution.mjs";
+import { promoteInDocument } from "./living.mjs";
+import { resolveRecord } from "./record.mjs";
 import { writeAtomically } from "./write-atomically.mjs";
 
 export const CANDIDATES = ["docs/adr", "docs/architecture/decisions", "doc/adr", "adr"];
@@ -82,23 +84,24 @@ function parseArgs(argv) {
 
 export async function run(argv, cwd = process.cwd()) {
   const options = parseArgs(argv);
-  const directory = options.dir
-    ? (isAbsolute(options.dir) ? options.dir : resolve(cwd, options.dir))
-    : await discoverDirectory(cwd);
+  // The rollup is MACHINE ENFORCEMENT METADATA and is generated identically in
+  // both documentation modes. What changes is only where the decisions were
+  // read from: separate ADR files, or the sections of a living architecture
+  // document. Nothing below this line knows which.
+  const { decisions, errors, mode, directory, rollup, missingDirectory } = await resolveRecord(cwd, { dir: options.dir });
 
-  if (!(await isDirectory(directory))) {
+  if (missingDirectory) {
     process.stderr.write(`No decisions directory at ${directory}\n`);
     return 1;
   }
 
-  const { decisions, errors } = await loadDecisions(directory);
   if (errors.length > 0) {
     for (const error of errors) process.stderr.write(`${error}\n`);
     return 1;
   }
 
-  const rendered = renderConstitution(decisions);
-  const target = join(dirname(directory), "constitution.md");
+  const rendered = renderConstitution(decisions, { mode });
+  const target = rollup;
 
   if (options.check) {
     let current = null;
@@ -138,6 +141,47 @@ export function promoteStatusLine(text, id, filename) {
   throw new Error(`${filename}: frontmatter has no 'status' field`);
 }
 
+// Two-phase for the same reason the `adr` path is: every requested id is
+// resolved and checked against the documents as they sit on disk before any
+// document is written, so a second id's failure never leaves the first one
+// flipped.
+async function promoteInLiving(record, ids) {
+  const edits = new Map();
+  const promoted = [];
+
+  for (const id of ids) {
+    let done = false;
+    for (const path of record.documents) {
+      const text = edits.get(path) ?? (await readFile(path, "utf8"));
+      let next;
+      try {
+        next = promoteInDocument(text, id, path);
+      } catch (error) {
+        process.stderr.write(`${error.message}\n`);
+        return 1;
+      }
+      if (next === null) continue;
+      edits.set(path, next);
+      promoted.push({ id, path });
+      done = true;
+      break;
+    }
+    if (!done) {
+      process.stderr.write(
+        `No decision numbered ${String(id).padStart(4, "0")} in ${record.documents.join(", ")}\n`,
+      );
+      return 1;
+    }
+  }
+
+  for (const [path, text] of edits) await writeAtomically(path, text);
+  for (const { id, path } of promoted) {
+    process.stdout.write(`Promoted ${String(id).padStart(4, "0")} to active in ${path}\n`);
+  }
+  process.stdout.write("Regenerate the rollup: arch constitution\n");
+  return 0;
+}
+
 export async function runPromote(argv, cwd = process.cwd()) {
   const ids = [];
   let dir = null;
@@ -153,6 +197,15 @@ export async function runPromote(argv, cwd = process.cwd()) {
     }
   }
   if (ids.length === 0) throw new Error("promote needs at least one decision id, e.g. 'promote 0007 0009'");
+
+  // In `living` mode the decision is a section of a living architecture
+  // document, not a file of its own. Promotion is the same explicit human act
+  // in both modes -- and it is the act the reviewer's "authoritative only after
+  // explicit human approval" requirement names -- so it is available in both.
+  if (!dir) {
+    const record = await resolveRecord(cwd);
+    if (record.mode === "living") return promoteInLiving(record, ids);
+  }
 
   const directory = dir
     ? (isAbsolute(dir) ? dir : resolve(cwd, dir))
