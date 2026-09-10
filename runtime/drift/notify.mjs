@@ -12,6 +12,7 @@
 // count changes, and a drain or `discard` clears the mark along with the queue.
 
 import { countObservations, readNotifiedCount, resolveRoot, writeNotifiedCount } from "./queue.mjs";
+import { constitutionIsStale } from "./staleness.mjs";
 
 async function readStdin() {
   const chunks = [];
@@ -29,17 +30,30 @@ async function main() {
 
   const root = resolveRoot(process.env, input, process.cwd());
   const observed = await countObservations(root);
-  if (observed === 0) return;
-
   const lastNotified = await readNotifiedCount(root);
-  if (observed === lastNotified) return;
-  await writeNotifiedCount(root, observed);
 
-  process.stdout.write(
-    `${JSON.stringify({
-      systemMessage: `arch-crew: ${observed} edit${observed === 1 ? "" : "s"} observed this session. Run the drift drain to classify them against the active rules.`,
-    })}\n`,
-  );
+  // The queue notice is deduped on the observation count. The staleness notice
+  // is deliberately subordinate to it: it is only computed, and only shown, on a
+  // turn that already has something to say. That keeps Stop off the decisions
+  // directory on every ordinary turn -- the same budget discipline observe.mjs
+  // holds itself to -- and it costs nothing real, because the edits that make a
+  // constitution stale are exactly the edits that put something in the queue.
+  // A stale constitution with an empty queue is reported by `arch constitution
+  // --check`, which is the lane that exists to report it loudly.
+  const notices = [];
+  if (observed > 0 && observed !== lastNotified) {
+    notices.push(
+      `${observed} edit${observed === 1 ? "" : "s"} observed this session. Run /arch-drift to classify them against the active rules.`,
+    );
+  }
+  if (notices.length > 0 && (await constitutionIsStale(root))) {
+    notices.push("The committed constitution is stale. Run /arch-constitution to regenerate it.");
+  }
+  if (notices.length === 0) return;
+
+  if (observed > 0) await writeNotifiedCount(root, observed);
+
+  process.stdout.write(`${JSON.stringify({ systemMessage: `arch-crew: ${notices.join(" ")}` })}\n`);
 }
 
 main().catch(() => {}).finally(() => {

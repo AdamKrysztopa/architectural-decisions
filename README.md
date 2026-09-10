@@ -55,6 +55,38 @@ only the rules judgement is actually allowed on. A tool failure is a violation; 
 finding, an honest "insufficient evidence", or a proposed decision. No hook can block an edit, no
 finding fails a build, and on Codex — which has no hooks — the same drain runs from git.
 
+## Running the deterministic tools
+
+Everything deterministic this package ships is reachable from one dispatcher, so there is no set of
+module paths to remember:
+
+```sh
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs"            # the six verbs
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check      # resolve every verified_by binding
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check --run  # and evaluate it with the real tool
+```
+
+The verbs are `constitution`, `promote`, `check`, `drift`, `migrate` and `candidates`. Each one
+delegates to the CLI that already owned it, and **exit codes pass through unchanged** — `check`
+returns 2 for a blocking failure and 3 for a warning, which is what makes it usable as a CI gate.
+
+On Claude Code you rarely type any of that. Five slash commands wrap the verbs and carry the
+procedure the output has to be read against:
+
+| Command | What it does |
+|---|---|
+| `/arch-check` | Resolves every deterministic rule and reports the status vocabulary honestly — `unavailable` is not a pass. |
+| `/arch-drift` | Drains the queue and classifies it per `observing-drift.md`, evidence gate included. |
+| `/arch-constitution` | Regenerates the constitution, or `--check`s that it is current. |
+| `/arch-promote` | Promotes named decisions — and asks first, because promotion is a human act. |
+| `/arch-migrate` | Lists candidates and proposes decisions from a manifest you confirm. |
+
+The Stop hook points at the two you would otherwise forget: it tells you when edits are queued, and
+when the committed constitution has gone stale. It only ever reports — no hook here writes to your
+repository or blocks a turn.
+
+Slash commands are a Claude Code surface; the Codex package ships the same dispatcher without them.
+
 ## Install for Claude Code
 
 Add the marketplace and install the plugin:

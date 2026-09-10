@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { readdir, stat } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { isAbsolute, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CANDIDATES } from "../baseline/build-constitution.mjs";
@@ -33,14 +33,35 @@ export async function listCandidates(root) {
   return found;
 }
 
+// The `run(argv, cwd)` shape every other CLI in this package exports, so one
+// dispatcher can delegate to all of them without special-casing this one.
+// "No candidates" exits 0, not 1: an empty repository is a correct answer to
+// this question, not a failure of it. A caller distinguishes the two cases by
+// stdout being empty, and test/migration.test.mjs pins that contract.
+export async function run(argv, cwd = process.cwd()) {
+  let root = cwd;
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === "--root") {
+      root = isAbsolute(argv[index + 1]) ? argv[index + 1] : resolve(cwd, argv[index + 1]);
+      index += 1;
+    } else {
+      throw new Error(`Unknown argument '${argv[index]}'. Usage: discover-candidates.mjs [--root <path>]`);
+    }
+  }
+
+  const found = await listCandidates(root);
+  if (found.length === 0) {
+    process.stderr.write("No candidates found in any known ADR directory.\n");
+    return 0;
+  }
+  process.stdout.write(`${found.join("\n")}\n`);
+  return 0;
+}
+
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
-  listCandidates(process.cwd())
-    .then((found) => {
-      if (found.length === 0) {
-        process.stderr.write("No candidates found in any known ADR directory.\n");
-        return;
-      }
-      process.stdout.write(`${found.join("\n")}\n`);
+  run(process.argv.slice(2))
+    .then((code) => {
+      process.exitCode = code;
     })
     .catch((error) => {
       process.stderr.write(`${error.message}\n`);

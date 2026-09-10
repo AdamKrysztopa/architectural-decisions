@@ -93,9 +93,13 @@ function marketplace({ metadata }) {
 
 export default {
   outputDirectory: "claude",
+  // `commands` is Claude-only: slash commands are a Claude Code plugin surface,
+  // and Codex has no equivalent. The Markdown is copied byte-for-byte like every
+  // other prose file in this package -- never rendered, never token-substituted.
   runtimeTrees: ({ packaging }) => [
     { source: packaging.canonicalSkills, destination: "skills" },
     { source: packaging.canonicalRuntime, destination: "runtime" },
+    { source: packaging.canonicalCommands, destination: "commands" },
   ],
   manifestPath: ".claude-plugin/plugin.json",
   manifest,

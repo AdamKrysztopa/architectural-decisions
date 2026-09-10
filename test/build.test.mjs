@@ -195,16 +195,26 @@ test("repeated builds are idempotent", async () => {
 // target file must cost a deliberate edit here as well as in package.json.
 const expectedGeneratedTargetFiles = { claude: ["hooks/hooks.json"], codex: [] };
 
-test("target inventories contain only their manifest, generated target files, skills, and the runtime", async () => {
+test("target inventories contain only their manifest, generated target files, skills, the runtime, and (claude) the commands", async () => {
   const metadata = await readJson(join(repositoryRoot, "package.json"));
   assert.deepEqual(metadata.agentPackaging.generatedTargetFiles, expectedGeneratedTargetFiles);
 
   const skillFiles = (await listFiles(canonicalSkills)).map((file) => `skills/${file}`);
   const runtimeFiles = (await listFiles(join(repositoryRoot, "runtime"))).map((file) => `runtime/${file}`);
+  // Claude-only: slash commands are a Claude Code plugin surface with no Codex
+  // equivalent, so this asymmetry is deliberate and is asserted in both
+  // directions -- present under build/claude, absent from build/codex.
+  const commandFiles = (await listFiles(join(repositoryRoot, "commands"))).map((file) => `commands/${file}`);
 
   assert.deepEqual(
     (await listFiles(join(repositoryRoot, "build/claude"))).sort(),
-    [".claude-plugin/plugin.json", ...expectedGeneratedTargetFiles.claude, ...skillFiles, ...runtimeFiles].sort(),
+    [
+      ".claude-plugin/plugin.json",
+      ...expectedGeneratedTargetFiles.claude,
+      ...skillFiles,
+      ...runtimeFiles,
+      ...commandFiles,
+    ].sort(),
   );
   assert.deepEqual(
     (await listFiles(join(repositoryRoot, "build/codex"))).sort(),
