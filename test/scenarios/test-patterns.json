@@ -63,11 +63,14 @@
         "Real invariants exist: round-trips, idempotence, symmetry, conservation",
         "No user journey, no deployment wiring, no external consumer contract"
       ],
-      "gatesOpen": ["Unit tests", "Static analysis and typing", "Code review"],
+      "gatesOpen": [
+        "Unit tests",
+        "Static analysis and typing",
+        "Code review"
+      ],
       "gatesClosed": [
         "Integration tests",
         "End-to-end tests",
-        "Contract tests",
         "Independent assurance / sign-off",
         "Performance"
       ],
@@ -75,8 +78,12 @@
       "failsIf": [
         "An E2E or integration layer is recommended with no named journey or boundary",
         "A pyramid is prescribed as the starting point",
-        "Property-based testing is offered as a substitute for example-based tests rather than a complement"
-      ]
+        "Property-based testing is offered as a substitute for example-based tests rather than a complement",
+        "Consumer-driven contract tooling is recommended with no known consumer to drive it"
+      ],
+      "gatesClosedNotes": {
+        "Contract tests": "Stays SHUT, but on its SECOND half only. The gate's first half is legitimately open for a library published to a package index -- a public interface whose consumers are unknown, and a producer with no way to discover who consumes it. It stays shut because the second half is not met: no consumer-driven drift has been demonstrated. A run may therefore buy API-surface and compatibility evidence -- that is a DIFFERENT purchase from consumer-driven contract tooling (Pact and its kin), which needs a known consumer to drive it. Buying the tooling fails this scenario; buying API-surface evidence and saying which half of the gate opened does not."
+      }
     },
     {
       "id": "crud-service-real-database",
@@ -88,8 +95,17 @@
         "Queries, migrations, constraints, and type coercion fail only against the real engine",
         "One team, one deployable, no independently released consumer"
       ],
-      "gatesOpen": ["Integration tests", "Unit tests", "Static analysis and typing", "Security testing"],
-      "gatesClosed": ["Contract tests", "End-to-end tests", "Mutation testing"],
+      "gatesOpen": [
+        "Integration tests",
+        "Unit tests",
+        "Static analysis and typing",
+        "Security testing"
+      ],
+      "gatesClosed": [
+        "Contract tests",
+        "End-to-end tests",
+        "Mutation testing"
+      ],
       "expect": "Narrow integration evidence against a real ephemeral PostgreSQL at the persistence seam carries the most value per test. Unit tests stay light because the code is mostly wiring. Negative authorization cases are asserted at the seam that enforces them.",
       "failsIf": [
         "The persistence layer is verified only against a mocked driver or an in-memory substitute of a different engine",
@@ -107,8 +123,14 @@
         "Compatibility drift has broken the consumer before — the recurrence clause is satisfied",
         "Broad E2E is currently being used to discover interface renames"
       ],
-      "gatesOpen": ["Contract tests", "Integration tests", "Unit tests"],
-      "gatesClosed": ["End-to-end tests"],
+      "gatesOpen": [
+        "Contract tests",
+        "Integration tests",
+        "Unit tests"
+      ],
+      "gatesClosed": [
+        "End-to-end tests"
+      ],
       "expect": "Contract testing is justified: the independence question answers yes and drift is a demonstrated, recurring risk. The E2E tests currently detecting schema drift are relocated to the contract; a small number may remain if deployment, routing, or identity is a distinct risk, which must be named separately.",
       "failsIf": [
         "Contract testing is justified by the existence of a service boundary alone",
@@ -126,8 +148,14 @@
         "A compile step and shared types already catch signature drift",
         "No independent release cadence anywhere in the system"
       ],
-      "gatesOpen": ["Unit tests", "Integration tests"],
-      "gatesClosed": ["Contract tests", "End-to-end tests"],
+      "gatesOpen": [
+        "Unit tests",
+        "Integration tests"
+      ],
+      "gatesClosed": [
+        "Contract tests",
+        "End-to-end tests"
+      ],
       "expect": "Contract testing is refused with its reason: the independence gate does not open, so a shared type or a narrow integration test is cheaper and equally truthful. The reopening signal is a second team or a second deployable taking on the interface.",
       "failsIf": [
         "Contract tests are recommended because module boundaries exist",
@@ -144,8 +172,14 @@
         "Failures are host-page and browser-integration failures that no narrower test reproduces",
         "Named journeys exist and depend on complete wiring"
       ],
-      "gatesOpen": ["End-to-end tests", "Unit tests"],
-      "gatesClosed": ["Contract tests", "Mutation testing"],
+      "gatesOpen": [
+        "End-to-end tests",
+        "Unit tests"
+      ],
+      "gatesClosed": [
+        "Contract tests",
+        "Mutation testing"
+      ],
       "expect": "A significant E2E share is proportionate and correct here — both halves of the E2E gate are satisfied and the risk genuinely lives at the top. The output must also buy determinism deliberately (hermetic fixtures, stable selectors, injected clocks) so the portfolio does not degrade into an ice-cream cone, and must still place any genuinely tricky parser or state machine at unit scope.",
       "failsIf": [
         "E2E is discouraged on principle or capped by a shape heuristic",
@@ -170,7 +204,10 @@
         "Production monitoring of the pipeline",
         "Unit tests"
       ],
-      "gatesClosed": ["Data contracts", "End-to-end tests"],
+      "gatesClosed": [
+        "Data contracts",
+        "End-to-end tests"
+      ],
       "expect": "Code tests and data-quality evidence stay distinct: deterministic assertions over transformation code, threshold-bearing assertions over data. Build-time assertions over the candidate artifact may block the publish; data-cadence assertions page an owner instead. Idempotency, late-arriving records, and backfill are tested deterministically on fixtures. A full pipeline run on sample data is the E2E analogue and is not bought.",
       "failsIf": [
         "Code tests and data-quality checks are merged into one bucket",
@@ -197,7 +234,10 @@
         "Release evidence — baseline comparison and rollback",
         "Drift and quality-degradation monitoring"
       ],
-      "gatesClosed": ["Slice performance and behavioral cases", "Calibrated model-based judges"],
+      "gatesClosed": [
+        "Slice performance and behavioral cases",
+        "Calibrated model-based judges"
+      ],
       "expect": "Software tests and model evaluation stay distinct: feature computation, serving, and persistence are asserted; discrimination and calibration are evaluated. Baseline comparison applies to the first model too — against a trivial or rules-based alternative — and rollback is gated separately on deployment consequence. Slice evidence stays light until a stakeholder names a segment.",
       "failsIf": [
         "Model metrics are offered as evidence that the serving code is correct",
@@ -223,7 +263,10 @@
         "Deterministic evaluators",
         "Unit tests"
       ],
-      "gatesClosed": ["Calibrated model-based judges", "End-to-end tests"],
+      "gatesClosed": [
+        "Calibrated model-based judges",
+        "End-to-end tests"
+      ],
       "expect": "The system is split explicitly: deterministic scaffolding is asserted with real model calls suppressed; semantic quality is evaluated against a small reviewed case set with deterministic evaluators applied first. A judge stays shut until a named claim, an insufficiency argument, a human-labelled calibration set, and drift monitoring are all available.",
       "failsIf": [
         "Evaluations are offered as a substitute for scaffold tests",
@@ -243,7 +286,10 @@
         "Coverage is being cited as the evidence of quality"
       ],
       "oracleGate": true,
-      "gatesOpen": ["Acceptance criteria / example-based specification", "Mutation testing"],
+      "gatesOpen": [
+        "Acceptance criteria / example-based specification",
+        "Mutation testing"
+      ],
       "gatesClosed": [],
       "expect": "The generated suite is rejected or flagged for missing oracle independence, and the five-question gate is run rather than asserted. Coverage is named as execution, not verification. The repair is an independent oracle — written acceptance examples, a specification, an invariant, a reference model, historical defect cases — and mutation or manual fault injection to demonstrate assertion strength. Labelled characterization tests remain a legitimate exception.",
       "failsIf": [
@@ -254,6 +300,7 @@
     },
     {
       "id": "healthy-existing-suite",
+      "fixture": "test/fixtures/scenarios/test-patterns/healthy-existing-suite",
       "title": "Healthy existing suite",
       "mode": "review",
       "prompt": "Review our test suite. 900 unit tests in 20 seconds, 60 integration tests against ephemeral containers in 3 minutes, 4 E2E journeys in 6 minutes, no reruns configured, no flaky quarantine list, and no production defect in the last two quarters that a test should have caught.",
@@ -264,7 +311,11 @@
       ],
       "expectNoChange": true,
       "gatesOpen": [],
-      "gatesClosed": ["End-to-end tests", "Mutation testing", "Contract tests"],
+      "gatesClosed": [
+        "End-to-end tests",
+        "Mutation testing",
+        "Contract tests"
+      ],
       "expect": "The correct result is no change. The report is short, names what is already right, and does not manufacture findings. Any observation offered is explicitly marked as optional rather than promoted to a highest-leverage move.",
       "failsIf": [
         "Findings are invented to fill the template",
@@ -307,8 +358,15 @@
         "A specific hot path exists whose cost is a property of the code",
         "Capacity behavior is per-service, not emergent across the system"
       ],
-      "gatesOpen": ["Performance", "Unit tests", "Production feedback and observability"],
-      "gatesClosed": ["End-to-end tests", "Resilience and failure behavior"],
+      "gatesOpen": [
+        "Performance",
+        "Unit tests",
+        "Production feedback and observability"
+      ],
+      "gatesClosed": [
+        "End-to-end tests",
+        "Resilience and failure behavior"
+      ],
       "expect": "Performance evidence corresponds to the named claim: a deterministic microbenchmark or complexity guard over the serializer at unit scope, plus integration-scoped load against the service API where the p99 commitment lives. Load testing is not treated as automatically E2E. Production percentiles are named as the truthful ongoing signal. Bounds and relative regressions are asserted, never wall-clock absolutes on shared CI hardware.",
       "failsIf": [
         "A load rig is recommended that defends no named number",

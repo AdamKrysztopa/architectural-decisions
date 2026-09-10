@@ -40,6 +40,7 @@
     },
     {
       "id": "reverse-discovery-narrative-with-exceptions",
+      "fixture": "test/fixtures/scenarios/migration/reverse-discovery-narrative-with-exceptions",
       "forces": "The user asks for a baseline for src/domain/**. 47 of 51 files avoid importing infra directly; 4 do not.",
       "expect": { "notes": "A narrative rule is proposed, its Context names the count and lists all four exceptions by path. Nothing is deterministic or review at proposal time." }
     },

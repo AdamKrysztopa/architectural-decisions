@@ -199,6 +199,7 @@
     },
     {
       "id": "public-api-surface-change",
+      "fixture": "test/fixtures/scenarios/security/public-api-surface-change",
       "mode": "review",
       "title": "Bound to the check that actually caught it",
       "prompt": "We just changed our public API — can you check whether the new endpoint accidentally introduced an authorization gap?",
@@ -240,6 +241,7 @@
     },
     {
       "id": "already-hardened-service",
+      "fixture": "test/fixtures/scenarios/security/already-hardened-service",
       "mode": "review",
       "title": "The proportionate design, reported plainly",
       "prompt": "Can you review the security of our billing service? We've already been through two audits and made a lot of changes since then.",
@@ -261,6 +263,7 @@
     },
     {
       "id": "maturity-score-request",
+      "fixture": "test/fixtures/scenarios/security/maturity-score-request",
       "mode": "review",
       "title": "Declined in one sentence, then delivered anyway",
       "prompt": "Review our API's security and give it a score out of ten, and check it against the OWASP Top 10 as a checklist.",

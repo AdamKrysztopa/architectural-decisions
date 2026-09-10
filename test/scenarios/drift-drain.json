@@ -5,7 +5,7 @@
   "criteria": [
     {
       "id": "violation-is-reserved",
-      "statement": "The word 'violation' appears only where checker.status is fail. No run writes violation about a review rule, however confident the evidence."
+      "statement": "No finding is classified as a Violation unless checker.status is fail. No run writes violation about a review rule, however confident the evidence. (A run may name the word while explaining the taxonomy; what is reserved is the CLASSIFICATION, not the token.)"
     },
     {
       "id": "no-model-for-a-tool",
@@ -73,6 +73,8 @@
     },
     {
       "id": "rule-outlived-its-subject",
+      "fixture": "test/fixtures/scenarios/drift-drain/rule-outlived-its-subject",
+      "fixtureSetup": "The evidence has to come from git. Run the fixture's stage.sh against an empty directory to materialise nine pinned commits; the commit that deleted src/legacy/gateway is HEAD~6, and the drain queue is already in place.",
       "forces": "An active review rule names src/legacy/gateway, a directory deleted six commits ago. The evidence comes from git, not the run's assertions.",
       "expect": {
         "class": "Stale or contradictory documentation",
