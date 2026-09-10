@@ -151,7 +151,7 @@ async function list(root, options) {
 // Reprinting it after every add turned designating four sources into ten entry
 // blocks, cumulatively -- one entry, then two, then three, then four -- where
 // four confirmation lines were wanted. `sources list` already exists for the
-// listing, and /arch-sources calls it first.
+// listing, and /arch-crew:sources calls it first.
 //
 // The exit code still distinguishes a conflict (3) from a clean write (0), so
 // nothing a CI gate could key on is lost by not printing the entries.

@@ -86,7 +86,7 @@ test("listCandidates lists a three-digit ADR set, and never the generated or boi
   // The defect this pins: a `\d{4}-` shape test hid a whole 000-..010- ADR
   // set. The directory was found, every file in it was skipped, and the empty
   // listing was indistinguishable from a repository with nothing to migrate --
-  // which left /arch-migrate with nothing to confirm.
+  // which left /arch-crew:migrate with nothing to confirm.
   const root = await mkdtemp(join(tmpdir(), "arch-crew-migration-"));
   await mkdir(join(root, "docs/adr"), { recursive: true });
   await writeFile(join(root, "docs/adr/000-implementation-plan.md"), "# plan\n");

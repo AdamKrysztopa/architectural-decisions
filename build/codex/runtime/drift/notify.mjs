@@ -43,11 +43,11 @@ async function main() {
   const notices = [];
   if (observed > 0 && observed !== lastNotified) {
     notices.push(
-      `${observed} edit${observed === 1 ? "" : "s"} observed this session. Run /arch-drift to classify them against the active rules.`,
+      `${observed} edit${observed === 1 ? "" : "s"} observed this session. Run /arch-crew:drift to classify them against the active rules.`,
     );
   }
   if (notices.length > 0 && (await constitutionIsStale(root))) {
-    notices.push("The committed constitution is stale. Run /arch-constitution to regenerate it.");
+    notices.push("The committed constitution is stale. Run /arch-crew:constitution to regenerate it.");
   }
   if (notices.length === 0) return;
 

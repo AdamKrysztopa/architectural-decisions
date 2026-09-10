@@ -16,7 +16,7 @@ allowlisted install trees in `build/<target>/`; generated artifacts are committe
 marketplaces can install a target package directly.
 
 `commands/` holds the Claude-only slash-command surface (Codex has no equivalent, so the adapter
-ships it to `build/claude` alone). `commands/arch-crew.md` is the public front door: it reads a
+ships it to `build/claude` alone). `commands/help.md` is the public front door: it reads a
 user's intent, routes it into an existing skill, command or workflow, and enters it. It is a router
 with no authority of its own — the one command it pre-executes is `arch status`, which reads and
 never writes. Adding a capability means adding a route there, and a scenario in

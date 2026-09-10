@@ -1,6 +1,6 @@
 {
   "name": "arch-crew",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "type": "module",
   "license": "MIT",
   "description": "A cross-agent suite of architectural-decision skills for selecting new designs or reviewing existing code against explicit pattern trade-offs.",

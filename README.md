@@ -30,14 +30,14 @@ the cost of every pick.
 You do not need to remember any of the names below. Describe the architectural task:
 
 ```text
-/arch-crew help
-/arch-crew review this branch for architectural drift
-/arch-crew help me establish this project's architecture
-/arch-crew migrate our ADRs to living documentation
-/arch-crew review our security architecture
+/arch-crew:help help
+/arch-crew:help review this branch for architectural drift
+/arch-crew:help help me establish this project's architecture
+/arch-crew:help migrate our ADRs to living documentation
+/arch-crew:help review our security architecture
 ```
 
-`/arch-crew` reads the intent, picks the capability that owns that outcome, and **enters it** — you
+`/arch-crew:help` reads the intent, picks the capability that owns that outcome, and **enters it** — you
 should not have to issue a second arch-crew command unless the workflow itself requires a separate
 human act, as promotion and designating a source do. With no intent, or `help`, it prints a short
 capability map grouped by what you might want to accomplish, coloured by what this repository
@@ -49,8 +49,9 @@ The door is a router, not an authority: routing alone never promotes a decision,
 documentation mode, designates a source, or edits the baseline, and every approval gate inside the
 capability it enters stays exactly where it was.
 
-> Claude Code namespaces plugin commands, so the door may appear in the picker as
-> `/arch-crew:arch-crew`. The lower-level commands below all still work and are unchanged.
+> Claude Code namespaces plugin commands: the name **is** `/arch-crew:help`, and a bare `/arch-crew`
+> does not resolve. Every command in this package is reached the same way — `/arch-crew:check`,
+> `/arch-crew:drift`, and so on — so the slash commands and the `arch` verbs now read alike.
 
 ## The baseline
 
@@ -100,18 +101,18 @@ delegates to the CLI that already owned it, and **exit codes pass through unchan
 returns 2 for a blocking failure and 3 for a warning, which is what makes it usable as a CI gate.
 
 On Claude Code you rarely type any of that. Slash commands wrap the verbs and carry the procedure
-the output has to be read against — and `/arch-crew` above wraps all of them:
+the output has to be read against — and `/arch-crew:help` above wraps all of them:
 
 | Command | What it does |
 |---|---|
-| `/arch-crew` | The front door: describe the task, and it routes you into the right one of the rest. |
-| `/arch-check` | Resolves every deterministic rule and reports the status vocabulary honestly — `unavailable` is not a pass. |
-| `/arch-drift` | Drains the queue and classifies it per `observing-drift.md`, evidence gate included. |
-| `/arch-constitution` | Regenerates the constitution, or `--check`s that it is current. |
-| `/arch-promote` | Promotes named decisions — and asks first, because promotion is a human act. |
-| `/arch-migrate` | Lists candidates and proposes decisions from a manifest you confirm. |
-| `/arch-mode` | Shows or sets whether the human record is many ADRs or living documents. |
-| `/arch-sources` | Designates, lists and reconciles what this project treats as authoritative. |
+| `/arch-crew:help` | The front door: describe the task, and it routes you into the right one of the rest. |
+| `/arch-crew:check` | Resolves every deterministic rule and reports the status vocabulary honestly — `unavailable` is not a pass. |
+| `/arch-crew:drift` | Drains the queue and classifies it per `observing-drift.md`, evidence gate included. |
+| `/arch-crew:constitution` | Regenerates the constitution, or `--check`s that it is current. |
+| `/arch-crew:promote` | Promotes named decisions — and asks first, because promotion is a human act. |
+| `/arch-crew:migrate` | Lists candidates and proposes decisions from a manifest you confirm. |
+| `/arch-crew:mode` | Shows or sets whether the human record is many ADRs or living documents. |
+| `/arch-crew:sources` | Designates, lists and reconciles what this project treats as authoritative. |
 
 The Stop hook points at the two you would otherwise forget: it tells you when edits are queued, and
 when the committed constitution has gone stale. It only ever reports — no hook here writes to your
@@ -128,7 +129,7 @@ Add the marketplace and install the plugin:
 /plugin install arch-crew
 ```
 
-Then type `/arch-crew` and describe what you need. Invoking a skill directly
+Then type `/arch-crew:help` and describe what you need. Invoking a skill directly
 (e.g. `arch-crew:decide-architecture`) still works, and so does simply describing an architecture
 decision with no command at all — the right skill triggers on its own.
 

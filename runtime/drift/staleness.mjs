@@ -3,7 +3,7 @@
 // Read-only, and deliberately so: this is reached from the Stop hook, and a
 // hook that rewrote a tracked file in the user's repository without being asked
 // would be a surprise the loop's own discipline forbids. It reports; the user
-// runs /arch-constitution.
+// runs /arch-crew:constitution.
 //
 // Every failure answers "not stale". A missing decisions directory, an
 // unparseable decision, a missing living document, an unreadable file — none of them is evidence that the

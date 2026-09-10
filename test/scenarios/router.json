@@ -1,6 +1,6 @@
 {
   "skill": "command:arch-crew",
-  "about": "Force-driven scenarios for the public front door, /arch-crew. Each scenario is a real user sentence and the capability that owns its outcome. The runner is NOT told which capability to pick -- that judgement is the thing under test. There is no numeric scoring: a run passes when it enters the capability that owns the outcome, for the stated reason, without doing work the intent did not ask for and without acquiring authority the door does not have. The scenarios that matter most are the three refusals: help that stays cheap, a deliberate divergence that is not a defect, and a promotion that still has to be asked for.",
+  "about": "Force-driven scenarios for the public front door, /arch-crew:help. Each scenario is a real user sentence and the capability that owns its outcome. The runner is NOT told which capability to pick -- that judgement is the thing under test. There is no numeric scoring: a run passes when it enters the capability that owns the outcome, for the stated reason, without doing work the intent did not ask for and without acquiring authority the door does not have. The scenarios that matter most are the four refusals: help that stays cheap, a deliberate divergence that is not a defect, a promotion that still has to be asked for, and a sibling command entered without the user's sentence stapled to it as arguments.",
   "howToRun": "docs/validating-skills.md",
   "criteria": [
     {
@@ -9,7 +9,7 @@
     },
     {
       "id": "enters-the-workflow",
-      "statement": "Where the capability needs no separate human act, the run BEGINS it in the same turn. Replying only 'run /arch-drift' when the drift workflow could have started is a failure, not a courtesy."
+      "statement": "Where the capability needs no separate human act, the run BEGINS it in the same turn. Replying only 'run /arch-crew:drift' when the drift workflow could have started is a failure, not a courtesy."
     },
     {
       "id": "help-is-cheap",
@@ -34,12 +34,20 @@
     {
       "id": "no-invented-capability",
       "statement": "The run routes only to capabilities that exist. It never promises an analysis arch-crew does not ship, and it never invents a command name."
+    },
+    {
+      "id": "no-prose-as-arguments",
+      "statement": "A sibling command is entered with no arguments, or with genuine CLI flags. The user's wording, and any rewritten instruction of the run's own, is never passed through as arguments -- every /arch-crew:* command interpolates $ARGUMENTS into a pre-executed shell line, so prose there becomes argv and the user gets an error instead of an answer."
+    },
+    {
+      "id": "no-capability-invented-for-a-near-miss",
+      "statement": "An intent that sounds like arch-crew's job but is not gets one honest line saying so, plus the nearest capability that is real. No run promises to write a hook, a linter config, a CI gate, or a refactor."
     }
   ],
   "scenarios": [
     {
       "id": "capability-help",
-      "prompt": "/arch-crew what can you do in this repository?",
+      "prompt": "/arch-crew:help what can you do in this repository?",
       "forces": "A repository with a baseline already in place. The user is orienting, not asking for work; nothing in the sentence names a task.",
       "expect": {
         "routesTo": "help",
@@ -51,7 +59,7 @@
     },
     {
       "id": "bare-invocation",
-      "prompt": "/arch-crew",
+      "prompt": "/arch-crew:help",
       "forces": "No intent at all. The status block is the only thing the run knows.",
       "expect": {
         "routesTo": "help",
@@ -63,7 +71,7 @@
     },
     {
       "id": "open-ended-what-should-i-do",
-      "prompt": "/arch-crew what should I do?",
+      "prompt": "/arch-crew:help what should I do?",
       "forces": "Three proposed decisions are waiting and the queue holds observed edits, so the status block already carries two Next lines.",
       "expect": {
         "routesTo": "help",
@@ -75,7 +83,7 @@
     },
     {
       "id": "drift-on-this-branch",
-      "prompt": "/arch-crew check whether the work on this branch is drifting from the architecture we agreed on",
+      "prompt": "/arch-crew:help check whether the work on this branch is drifting from the architecture we agreed on",
       "forces": "A branch with real edits, active rules covering some of the touched paths, and a non-empty observation queue.",
       "expect": {
         "routesTo": "drift",
@@ -87,7 +95,7 @@
     },
     {
       "id": "deliberate-divergence",
-      "prompt": "/arch-crew the implementation deliberately violates one of our architecture decisions because the old architecture no longer works",
+      "prompt": "/arch-crew:help the implementation deliberately violates one of our architecture decisions because the old architecture no longer works",
       "forces": "The user states the divergence is intentional and names the decision as the thing that is wrong.",
       "expect": {
         "routesTo": "drift",
@@ -99,7 +107,7 @@
     },
     {
       "id": "deterministic-verification",
-      "prompt": "/arch-crew check whether our dependency boundaries are still valid",
+      "prompt": "/arch-crew:help check whether our dependency boundaries are still valid",
       "forces": "One active rule is deterministic and bound to an import-linter contract; the rest are narrative.",
       "expect": {
         "routesTo": "check",
@@ -111,7 +119,7 @@
     },
     {
       "id": "inherited-undocumented-repository",
-      "prompt": "/arch-crew I inherited this repository and there is almost no architecture documentation. Help me establish what the architecture actually is.",
+      "prompt": "/arch-crew:help I inherited this repository and there is almost no architecture documentation. Help me establish what the architecture actually is.",
       "forces": "A substantial codebase; no decisions directory, no ADRs, nothing designated authoritative.",
       "expect": {
         "routesTo": "migrate-reverse-discovery",
@@ -123,7 +131,7 @@
     },
     {
       "id": "prose-adrs-to-consolidate",
-      "prompt": "/arch-crew we have dozens of ADRs and I don't want to maintain them individually anymore",
+      "prompt": "/arch-crew:help we have dozens of ADRs and I don't want to maintain them individually anymore",
       "forces": "docs/adr holds many prose ADRs. The user wants one maintained document instead of a directory.",
       "expect": {
         "routesTo": "migrate-consolidation",
@@ -135,7 +143,7 @@
     },
     {
       "id": "documentation-mode-choice",
-      "prompt": "/arch-crew should our architecture live in one document instead of thirty files?",
+      "prompt": "/arch-crew:help should our architecture live in one document instead of thirty files?",
       "forces": "The user is asking about the mode itself, not about migrating anything yet.",
       "expect": {
         "routesTo": "mode",
@@ -147,7 +155,7 @@
     },
     {
       "id": "greenfield-architecture",
-      "prompt": "/arch-crew we're starting a new internal service for invoice reconciliation. Help me establish its architecture.",
+      "prompt": "/arch-crew:help we're starting a new internal service for invoice reconciliation. Help me establish its architecture.",
       "forces": "A new service, a small team, no existing code to review.",
       "expect": {
         "routesTo": "decide-architecture",
@@ -159,7 +167,7 @@
     },
     {
       "id": "ambiguous-review-this-architecture",
-      "prompt": "/arch-crew review this architecture",
+      "prompt": "/arch-crew:help review this architecture",
       "forces": "The repository has both a recorded baseline and uncommitted implementation work, so both readings are live and they lead to different workflows.",
       "expect": {
         "routesTo": "clarify",
@@ -171,7 +179,7 @@
     },
     {
       "id": "testing-strategy",
-      "prompt": "/arch-crew review our testing strategy",
+      "prompt": "/arch-crew:help review our testing strategy",
       "forces": "An existing suite: slow, mock-heavy, and still missing database failures.",
       "expect": {
         "routesTo": "test-patterns",
@@ -183,7 +191,7 @@
     },
     {
       "id": "design-pattern-question",
-      "prompt": "/arch-crew do we really need Strategy here?",
+      "prompt": "/arch-crew:help do we really need Strategy here?",
       "forces": "One class with a growing conditional; Python, where a function or a dict of callables may be the whole answer.",
       "expect": {
         "routesTo": "design-patterns",
@@ -195,7 +203,7 @@
     },
     {
       "id": "agent-autonomy",
-      "prompt": "/arch-crew how autonomous should this LLM agent be?",
+      "prompt": "/arch-crew:help how autonomous should this LLM agent be?",
       "forces": "A tool-using agent with write access to a ticketing system and no human approval step.",
       "expect": {
         "routesTo": "agentic-patterns",
@@ -207,7 +215,7 @@
     },
     {
       "id": "security-of-a-change",
-      "prompt": "/arch-crew we introduced OAuth and an external identity provider. Review the architectural security implications.",
+      "prompt": "/arch-crew:help we introduced OAuth and an external identity provider. Review the architectural security implications.",
       "forces": "A new trust boundary and a third-party identity provider; no scanner is installed and none is going to be.",
       "expect": {
         "routesTo": "threat-model",
@@ -219,7 +227,7 @@
     },
     {
       "id": "which-documents-are-authoritative",
-      "prompt": "/arch-crew what documents are currently authoritative?",
+      "prompt": "/arch-crew:help what documents are currently authoritative?",
       "forces": "Four designated sources, two of them covering the same subject with the same precedence.",
       "expect": {
         "routesTo": "sources",
@@ -231,7 +239,7 @@
     },
     {
       "id": "promote-a-decision",
-      "prompt": "/arch-crew make this proposed architecture decision active",
+      "prompt": "/arch-crew:help make this proposed architecture decision active",
       "forces": "Several decisions are proposed; the user has not said which one 'this' is.",
       "expect": {
         "routesTo": "promote",
@@ -243,7 +251,7 @@
     },
     {
       "id": "stale-constitution",
-      "prompt": "/arch-crew the constitution looks out of date, can you sort it out?",
+      "prompt": "/arch-crew:help the constitution looks out of date, can you sort it out?",
       "forces": "The status block already reported the rollup as stale.",
       "expect": {
         "routesTo": "constitution",
@@ -251,6 +259,30 @@
         "reviews": false,
         "writes": true,
         "notes": "The one scenario whose correct outcome includes a write, and only because the user asked for it. Regenerating a tracked file is named as such, and the decisions that moved are reported."
+      }
+    },
+    {
+      "id": "no-prose-into-a-sibling-command",
+      "prompt": "/arch-crew:help help me identify all the checks, drifts, and potential hooks I should add to maintain the architecture correctness",
+      "forces": "A repository with an established baseline whose rules are mostly narrative. The sentence is long, is phrased as a request rather than a flag, and names three capabilities at once, so whatever the run enters it will be tempted to carry the wording across.",
+      "expect": {
+        "routesTo": "check",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "Which rules have a mechanical check is what `check` owns, so it is entered -- with NO arguments. The failure this scenario exists to catch is real and was observed on 0.4.1: the run entered the right command and handed it a rewritten sentence, which the command's pre-executed line turned into argv (`Unknown argument 'Resolve'`). Reading the result back in the user's own terms happens after the command has run, not by passing the terms into it."
+      }
+    },
+    {
+      "id": "asks-for-a-hook-arch-crew-does-not-install",
+      "prompt": "/arch-crew:help seed the hook to monitor code quality",
+      "forces": "A repository with an established baseline and no linter config beyond what it already runs. The plugin's own drift hooks are already registered by installation, and arch-crew never writes into a tool's config.",
+      "expect": {
+        "routesTo": "check",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "Two facts, one line each: the drift hooks are already installed, and arch-crew does not write tool config. Then the real neighbour -- `check` resolves each rule's verified_by against the config the repository already has and names the rules no tool can decide, which are the candidates for a gate the user writes. Inventing a hook-seeding workflow is the failure."
       }
     }
   ]
