@@ -21,48 +21,85 @@ packaged skill's body hash matches the committed manifest), `test/fixtures/skill
 frontmatter-0.3.1.json`, `test/fixtures/skill-freeze/body-manifest.json`. Passing as of this commit
 (`npm test`).
 
-## §2 — Decision representation *(rewritten)*
+## §2 — Documentation mode *(restored 2026-09-10; the 0.3.x rewrite is withdrawn)*
 
-**Item — replaces "traditional ADRs vs. living architectural documents":** there is no mode to
-select and nothing to persist. Confirm:
+> **This section was rewritten once before, and that rewrite was the defect.** SP6 amended it to
+> "there is no mode to select and nothing to persist", which made the item agree with what had been
+> built rather than with what was required. The requirement is restored here in its original terms.
+> See [`docs/superpowers/specs/2026-09-10-requirements-reconciliation.md`](superpowers/specs/2026-09-10-requirements-reconciliation.md) §1.
 
-- Decision files under the repository's decisions directory are the **sole source of record** for
-  every rule and decision the crew produces.
-- `constitution.md` is a **generated, read-only rollup** of the `active` decision files — never a
-  second authority, never hand-edited. Its absence or staleness loses no decision: `--check` catches
-  staleness, and deleting it and regenerating reproduces it exactly.
-- A repository that already keeps prose ADRs (Nygard/MADR-style, in `docs/adr/`, `doc/adr/`, or
-  `adr/`) keeps them untouched beside the schema decisions. Migration links them in via a
-  traceability report; it never converts or edits their prose.
-- A team that prefers to work from decision files alone, without a rendered rollup, may simply not
-  run the generator. That is a usage choice, not a configured mode, and needs no config file to
-  express it.
+**Item:** the user selects one of two documentation modes; the choice is explicit, persisted, and
+honoured consistently by the toolchain.
 
-**Satisfied by:** nothing new in SP6 — SP1 already built the generator/rollup mechanism and SP4
-already built prose-ADR coexistence at migration time. SP6's contribution here is only the checklist
-wording, so the item stops asking about a mode that was never implemented.
+- **`adr`** — traditional ADRs. Many files, one per decision; each file is its own human record.
+- **`living`** — one or several **living architecture documents** are the primary human record. In
+  this mode the user **must not** be forced to maintain dozens of ADR-shaped files merely because
+  the runtime wants rule metadata.
+- Machine-readable enforcement metadata (rules, scopes, severities, `verified_by`, the generated
+  rollup) is **separate from and identical in both modes**, and no verification behaviour varies
+  with the mode.
+- The mode is never inferred and never changed as a side effect of another command.
 
-**Evidence:** `test/baseline.test.mjs` (generator behaviour, `--check` staleness), the 0.3.1
-"Coexisting with existing prose ADRs" section of `shared/migrating-decisions.md` (unchanged, still
-accurate), `test/e2e/bootstrap-migration.test.mjs` (traceability over prose ADRs, E2E-3 below).
-Passing as of this commit.
+**Satisfied by:** `runtime/baseline/config.mjs` (persisted in `arch-crew.json`),
+`runtime/baseline/living.mjs` (a decision is a `##` section of a living document; its rules ride in
+fenced `arch-decision` / `arch-rule` blocks beside the prose), and `runtime/baseline/record.mjs` —
+the single seam every consumer reads through, so the rollup, `check-rules`, the drift drain, rule
+injection and staleness cannot tell which mode produced their input. `arch mode` and `/arch-mode`
+make the choice user-facing; `arch promote` works in both.
 
-## §3 — Authoritative sources and baseline
+**Authority model:** [`docs/documentation-modes.md`](documentation-modes.md).
 
-**Item:** decision files remain the only thing anything treats as authoritative — no cache, no
-second store, no config file quietly became a second source of truth while SP2–SP5 were built.
+**Evidence:** `test/documentation-mode.test.mjs` — 24 tests, including the load-bearing one, which
+expresses the same two decisions both ways and asserts the machine layer is identical across modes.
+A repository with no `arch-crew.json` is in `adr` mode with a discovered directory, i.e. byte-for-byte
+the prior behaviour; the 332 tests that predate the mode all still pass unchanged. Passing as of
+this commit.
 
-**Satisfied by:** an audit, not new code. The property is enforced piecemeal — the drift queue is
-explicitly discardable and never a source of record, and `constitution.md`'s `status === "active"`
-filter is the only path to authority. Re-reading `runtime/checkers/*`, `runtime/migration/*`, and
-`runtime/drift/*` for this commit turned up no persisted state outside a decision file, the
-generated constitution, or the (explicitly non-authoritative) drift queue: `check-rules.mjs`
-re-reads each tool's own config file on every invocation rather than caching a prior resolution, and
-`drift.mjs status`/`drain` only ever reads the queue and `git diff` against the working tree.
+## §3 — Authoritative sources and baseline *(restored 2026-09-10; the 0.3.x inversion is withdrawn)*
 
-**Evidence:** this section itself, plus `test/e2e/drift-observed.test.mjs`'s "deleting the queue
-loses nothing — `git diff` still drives the drain" case, which is a direct, executable proof that the
-queue is not a second authority. Passing as of this commit.
+> **This item had its meaning inverted.** A requirement to let a project **designate** its own
+> authoritative inputs became a guarantee that **nothing but decision files** is authoritative — and
+> was then satisfied by "an audit, not new code", an audit that would have failed had the
+> requirement been built. See the reconciliation spec §2.
+
+**Item:** a project explicitly designates artifacts as authoritative inputs — PRDs, architecture
+documents and diagrams, engineering standards, API contracts, security requirements, selected ADRs,
+living architecture documents, and other explicitly chosen repository artifacts — with add/remove/
+change, provenance, source identity and path, precedence and conflict policy, and traceability to
+the baseline version being checked. Arbitrary repository documents are **never** automatically
+treated as authoritative. Conflicts are **reported**, never silently resolved. Minimal project
+configuration; **no database**.
+
+**Satisfied by:** `runtime/baseline/sources.mjs` and `arch sources`
+(`list|add|remove|change|checked`), persisted as a list in the one committed `arch-crew.json`.
+Provenance (`--by`, `--on`, `--provenance`); identity is the id, stable across a path change;
+precedence per kind and overridable; `sources checked --baseline <ref>` pins the digest actually
+read, so *never checked* / *unchanged since* / *changed since* are distinguishable — a source that
+moved makes claims resting on it **unverified, not wrong**.
+
+**Conflicts:** both sources are always listed; precedence orders the report and says so; equal
+precedence reports `unresolvable-by-precedence` rather than breaking the tie. `sources list` exits
+**3** on a conflict, distinct from `1`, so a CI gate can tell a real disagreement from a broken
+invocation. Missing and moved-since-checked sources are reported too.
+
+**Nothing is auto-designated.** There is no `discover`, no `--auto`, no scan, and a test asserts
+there is no way in.
+
+**The drift loop binds to it (step 3):** the packet names the designated sources this session's
+edits fall under — governed by scope, or edited directly — so the drain can say *"this contradicts
+the API contract and the security requirements you designated as authoritative."* **The evidence
+gate is unchanged:** every entry in that layer carries `judgement: "review"` and no checker binding.
+A designated source can produce a **finding**; it can never produce a **violation**, because a
+violation requires a tool that ran and failed and no checker speaks for a PRD.
+
+**What is still true from the old wording, and kept:** no cache and no second store became a source
+of truth. The drift queue remains explicitly discardable and non-authoritative.
+
+**Model:** [`docs/authoritative-sources.md`](authoritative-sources.md).
+
+**Evidence:** `test/authoritative-sources.test.mjs` (20 tests, including the no-auto-designation and
+evidence-gate assertions) and `test/e2e/drift-observed.test.mjs`'s "deleting the queue loses
+nothing" case. Passing as of this commit.
 
 ## §4 — Migration and bootstrap
 
@@ -75,10 +112,31 @@ discovery, not migration — is the only path from `proposed` to `active`; and t
 which proves the constitution is byte-unchanged until `promote` runs and that promotion flips exactly
 the named ids.
 
+**Added 2026-09-10 — ADR → living-document migration (reviewer blocker 3).** A project with 30
+traditional ADRs must be able to end with one or several coherent living architecture documents if
+that is what the user selects, and the traceability report must show **migrated · merged ·
+superseded · omitted · conflicting · unresolved**.
+
+The disposition vocabulary now carries all six. `left-as-prose` and `unmapped` are retained as
+accepted aliases folding into `omitted` and `unresolved`, so existing manifests keep parsing;
+`conflicting` is new, because an input that could not be migrated *because it contradicted another
+input* previously had to be filed as unmapped, which lost the one fact a reader most needed. The
+report groups every input into all six categories and prints an empty category as empty — *"nothing
+was omitted"* and *"omission was never considered"* must not look the same.
+
+The old ADRs are never deleted, converted, or edited; they may stay in the repository or in Git
+history. The living documents become the authoritative record **only after explicit human
+approval** — everything migrates in as `proposed`, the rollup says `_No active rules yet._`, and
+only `arch promote` moves a section to `active`.
+
 **Evidence:** `test/e2e/bootstrap-migration.test.mjs` (3 tests: discovery reads nothing but lists the
 undocumented repo's ADRs exactly; migration proposes and traces every input without editing prose;
 promoting a subset changes the constitution by exactly that subset), `test/approval-gate.test.mjs`
-(5 tests). Passing as of this commit.
+(5 tests), and `test/e2e/adr-to-living-migration.test.mjs` — 30 ADRs become 23 sections across two
+living documents, all six dispositions exercised (20/4/2/2/1/1 = 30), every ADR named in the report,
+the four that produced nothing carrying their reasons, nothing enforced until three are promoted,
+and the 30 originals untouched. Verified non-vacuous against four deliberate product mutations.
+Passing as of this commit.
 
 ## §5 — Compliance and architectural drift
 
@@ -115,6 +173,18 @@ all four `test/e2e/` suites) on every push and pull request, then a real
 repository's own decisions (currently all `review`, so this step cannot yet fail on a missing tool
 binary — it exists so a `deterministic` rule added later is enforced in CI from day one). CI never
 invokes `runtime/drift/drift.mjs` at all, so it never reads `.arch-crew/drift-queue.jsonl`.
+
+**Added 2026-09-10.** Two verbs and two commands joined the surface: `arch mode` / `/arch-mode`
+(§2) and `arch sources` / `/arch-sources` (§3). Both go through the one dispatcher, both are
+asserted by `test/surfaces.test.mjs`'s "every verb the dispatcher advertises resolves to a real
+delegate" and "every shipped command names a dispatcher verb that exists", and both ship in the
+Claude package (Codex ships the runtime, not the commands, as before).
+
+**GitHub Actions Node runtime deprecation — cleared, not accepted.** `actions/checkout` v4→v5,
+`actions/setup-node` v4→v5 and `actions/setup-python` v5→v6, all of which move from the `node20`
+runtime GitHub is removing to `node24`. `node-version: 22` is unchanged — the tested Node version
+was not touched. Nothing in `.github/workflows/` still warns, so there is nothing here to
+consciously accept.
 
 **Evidence:** `test/build.test.mjs` — `"target inventories contain only their manifest, generated
 target files, skills, and the runtime"`, `"the claude hook manifest registers the drift loop and

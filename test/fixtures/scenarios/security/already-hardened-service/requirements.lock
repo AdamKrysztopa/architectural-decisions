@@ -1,0 +1,6 @@
+# Fully pinned and hashed. CI installs with --require-hashes; a floating
+# version cannot enter the build without editing this file in a reviewed PR.
+flask==3.0.3 \
+    --hash=sha256:0000000000000000000000000000000000000000000000000000000000000001
+pytest==8.2.0 \
+    --hash=sha256:0000000000000000000000000000000000000000000000000000000000000002

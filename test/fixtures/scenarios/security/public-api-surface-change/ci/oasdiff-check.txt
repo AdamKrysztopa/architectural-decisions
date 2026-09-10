@@ -1,0 +1,8 @@
+# Recorded output of the `api-contract / oasdiff` check on this branch.
+# Conclusion: failure. This is the check that caught the change, before merge.
+
+1 changes: 1 error, 0 warning, 0 info
+error	[api-operation-added-without-security] at api/openapi.yaml
+	in API POST /v1/exports
+		added the new operation without a security requirement; the document-level
+		requirement 'bearerAuth' is switched off by 'security: []' on this operation
