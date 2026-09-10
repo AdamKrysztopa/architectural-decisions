@@ -676,3 +676,82 @@ test("status counts a stuck .draining slice into observed and names it separatel
   assert.match(stdout, /observed: 1/, "a crashed drain's slice must not be reported as observed: 0");
   assert.match(stdout, /\.draining slice/, "status must name the stuck slice as a distinct number");
 });
+
+// --- The comparison window ------------------------------------------------
+//
+// `merge-base HEAD <branch>` returns HEAD itself whenever HEAD is an ancestor
+// of every candidate branch -- on `main` with nothing unpushed, on a freshly
+// cut branch, on some CI checkouts. `git diff HEAD...HEAD` is then empty by
+// construction, and every committed change silently disappears from the
+// packet. An empty packet that means "no evidence was collected" must never be
+// indistinguishable from one that means "nothing changed".
+
+import { resolveBase } from "../runtime/drift/drift.mjs";
+
+const gitEnv = {
+  ...process.env,
+  GIT_AUTHOR_NAME: "t",
+  GIT_AUTHOR_EMAIL: "t@example.invalid",
+  GIT_COMMITTER_NAME: "t",
+  GIT_COMMITTER_EMAIL: "t@example.invalid",
+};
+
+async function gitRepo() {
+  const root = await scratch();
+  const run = (...args) => execFileAsync("git", args, { cwd: root, env: gitEnv });
+  await run("init", "--initial-branch=main");
+  await writeFile(join(root, "a.txt"), "one", "utf8");
+  await run("add", "a.txt");
+  await run("commit", "-m", "first", "--no-gpg-sign");
+  return { root, run };
+}
+
+test("a base that resolves to HEAD is reported as degenerate, not as a clean window", async () => {
+  const { root } = await gitRepo();
+  const resolved = resolveBase(root, null);
+  assert.equal(resolved.status, "degenerate", "on main with nothing ahead, merge-base is HEAD itself");
+  assert.ok(resolved.base, "the degenerate base is still reported, so the reader can see what it was");
+});
+
+test("a real comparison window is reported as merge-base and is not HEAD", async () => {
+  const { root, run } = await gitRepo();
+  await run("checkout", "-b", "work");
+  await writeFile(join(root, "b.txt"), "two", "utf8");
+  await run("add", "b.txt");
+  await run("commit", "-m", "second", "--no-gpg-sign");
+
+  const resolved = resolveBase(root, null);
+  assert.equal(resolved.status, "merge-base");
+  const { stdout: head } = await execFileAsync("git", ["rev-parse", "HEAD"], { cwd: root, env: gitEnv });
+  assert.notEqual(resolved.base, head.trim());
+});
+
+test("an explicitly passed base is graded too: HEAD is degenerate, an ancestor is not", async () => {
+  const { root, run } = await gitRepo();
+  await writeFile(join(root, "b.txt"), "two", "utf8");
+  await run("add", "b.txt");
+  await run("commit", "-m", "second", "--no-gpg-sign");
+
+  assert.equal(resolveBase(root, "HEAD").status, "degenerate");
+  assert.equal(resolveBase(root, "HEAD~1").status, "explicit");
+});
+
+test("no git at all is 'unavailable' — an honest absence, never an empty diff", async () => {
+  const root = await scratch();
+  const resolved = resolveBase(root, null);
+  assert.equal(resolved.status, "unavailable");
+  assert.equal(resolved.base, null);
+});
+
+test("the packet carries baseStatus, so a degenerate window survives into the report", async () => {
+  const packet = buildPacket({
+    root: "/repo",
+    base: "abc123",
+    baseStatus: "degenerate",
+    decisions: [],
+    paths: [],
+    queue: { observed: 0 },
+    checkerRows: [],
+  });
+  assert.equal(packet.baseStatus, "degenerate");
+});

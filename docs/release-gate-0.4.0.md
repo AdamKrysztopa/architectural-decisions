@@ -1163,6 +1163,13 @@ product blockers are built. **It is still NO-GO, on three grounds, in order of w
 Each of these was raised by a grader with an argument, and each is left alone because amending a
 criterion on the strength of one run is how a gate stops meaning anything.
 
+> **Superseded by §12.7.** The reviewer overturned this stance on the eleven, and the argument is
+> better than the one above: the principle protects a criterion whose only evidence is a failed run,
+> and most of these eleven are provable by static inspection instead — a hardcoded `20` against an
+> implementation that operates on headroom, a contract that requires a reopening signal and gives it
+> nowhere to go, a scenario set that cannot be run by its own documented procedure. The table below
+> is kept as written; §12.7 records what each item became.
+
 | # | Where | What |
 |---|---|---|
 | O1 | `drift-drain.json` | No scenario exercises the 0.4.0 authoritative-`sources` packet layer, and `shared/observing-drift.md` never explains it. A shipped field with no gate case is how the reserved-Violation property erodes next release. |
@@ -1176,3 +1183,39 @@ criterion on the strength of one run is how a gate stops meaning anything.
 | O9 | `test-patterns.json` `safety-critical-regulated` | `gatesClosed: []`, so its central `failsIf` is mechanically uncheckable — a regression inferring blanket E2E from "regulated" would pass `npm test` untouched. |
 | O10 | `shared/observing-drift.md` | `defaultBase()` can resolve to `HEAD`, making `git diff HEAD...HEAD` empty so a stale rule never surfaces at all. No guidance on a degenerate base. |
 | O11 | `test-patterns` Mode B | Nothing tells a **no-change** review how to render the output contract with zero purchases; the closed-gate refusals *are* the rows, and the skill never says so. |
+
+## 12.7 The eleven, amended — what each became
+
+The §12.6 stance was reviewed and overturned. Ten of the eleven were fixed or clarified before the
+next run; one (O6) was treated as a specification defect and clarified rather than implemented
+against. Nothing here weakens a gate: every amendment either binds an ungraded shipped capability,
+removes a contradiction between two contracts, or makes a criterion gradeable against the
+implementation it was written for.
+
+| # | What changed | Where |
+|---|---|---|
+| O1 | The designated-sources layer is now documented and graded. `shared/observing-drift.md` gained §3, which explains `sources`, `governs`/`edited`, that `judgement` is always `review` and **Violation** is therefore unavailable to the layer, that `precedence` orders the report and resolves nothing, and every `sourceConflicts` kind including `registry-unreadable`. Two scenarios (`authoritative-source-governs-the-change`, `authoritative-sources-disagree`) and the `sources-are-pointers` criterion grade it; a new test asserts the reference still documents each shipped field. | `shared/observing-drift.md`, `test/scenarios/drift-drain.json`, `test/scenarios.test.mjs` |
+| O2 | *Untrusted content in the context window* now opens on `agentic-support-bot`, with all three legs named — the customer's message is influenceable content, the refund tool is the consequential capability, the refund is a channel leaving the system — and the capability cut is required ahead of any filtering. Two `failsIf` clauses were added for the two ways a run can dodge it. | `test/scenarios/security.json` |
+| O3 | `threat-model`'s output contract gained **Gates considered and closed** (`Gate / Why it stays closed / Reopen when`), which is where Step 7's reopening signal for a closed gate now goes, plus a defined rendering for the "confirmed, no change" answer: Violations and Findings explicitly `_None._`, the closed-gate table carrying the substance, **Primary recommendation** reading `No change`. A closed gate is stated not to be a fourth class of finding. | `skills/threat-model/SKILL.md` |
+| O4 | `deliberate-omissions` is conditional: it applies where a materially plausible heavier control was considered and declined, and says outright that inventing a straw control to have something to decline never satisfies it. | `test/scenarios/security.json` |
+| O5 | `cap-forces-ranking` is stated in headroom — the cap of 20 minus the proposed decisions already in the directory — and now grades the zero-headroom case too. | `test/scenarios/migration.json` |
+| O6 | `traceability-exhaustive` is split by mode, and `shared/migrating-decisions.md`'s reverse-discovery step 6 now says what that mode's manifest holds: the **candidate regularities**, one entry each, named by the scope-and-pattern they were observed over — never a row per file under the inspected scope. The stale parenthetical in `build-migration-report.mjs` was corrected to match. | `test/scenarios/migration.json`, `shared/migrating-decisions.md`, `runtime/migration/build-migration-report.mjs` |
+| O7 | `reverse-discovery-cap-exceeded` no longer grades fixture scale. Its forces state the headroom, and its expectation is that the ranking exists and every candidate below the line is recorded with its reason. | `test/scenarios/migration.json` |
+| O8 | Fixed **wider than reported**: `baseline-capture.json` had no prompts, and neither did `drift-drain.json` or `migration.json` — 24 of the 48 scenarios could not be run by the documented procedure, not 6. All three sets now carry a `prompt` per scenario, and `test/scenarios.test.mjs` asserts one in every set. | three scenario sets, `test/scenarios.test.mjs` |
+| O9 | `safety-critical-regulated` closes *End-to-end tests*, with a note that regulation is not a force for complete-wiring evidence. Its central `failsIf` is now mechanically checkable. | `test/scenarios/test-patterns.json` |
+| O10 | Fixed in the runtime, not only in prose. `defaultBase()` became `resolveBase()`, which skips a candidate whose merge-base is HEAD, and reports `baseStatus` as `explicit`, `merge-base`, `degenerate` or `unavailable`; a degenerate window also warns on stderr and asks for `--base`. The packet carries `baseStatus`, and `observing-drift.md` §1 requires it to be read and stated before any conclusion is drawn from an empty packet. Five runtime tests and the `degenerate-comparison-window` scenario plus the `window-is-declared` criterion cover it. | `runtime/drift/drift.mjs`, `runtime/drift/packet.mjs`, `shared/observing-drift.md`, `test/drift.test.mjs`, `test/scenarios/drift-drain.json` |
+| O11 | `test-patterns` Mode B gained the same treatment as O3: a defined rendering for a no-change review — the table describes the evidence the suite already holds, the closed-gate refusals are rows in `Evidence deliberately omitted` with their `Reopen when`, and **The single highest-leverage move** reads `None — the suite is proportionate` rather than being left blank or filled with an invented move. | `skills/test-patterns/SKILL.md` |
+
+### What this costs the next run
+
+The drift set grew from 8 scenarios to 11, so the full re-run is **51 sessions, not 48**.
+`test/scenarios.test.mjs`'s inventories and `docs/validating-skills.md`'s table were updated to match.
+Both skill bodies changed, so `test/fixtures/skill-freeze/body-manifest.json` was updated deliberately
+and both target packages were rebuilt; `npm test` is 385 passing, 0 failing.
+
+### Deliberately not done
+
+`reverse-discovery-cap-exceeded`'s fixture still has no decisions directory, so its headroom is the
+full cap. The amended criterion grades a partially-full directory correctly, but no scenario exercises
+one. That is a coverage gap, recorded here rather than closed by inflating a fixture with sixteen
+throwaway proposed decisions.

@@ -150,7 +150,7 @@ classifier in isolation.
 
 **Evidence:** `test/e2e/drift-observed.test.mjs` (an edit to a scoped file is classified, never
 asserted as a violation; deleting the queue loses nothing; CI's documented commands never read the
-drift queue), cross-referenced against `test/scenarios/drift-drain.json` (8 scenarios; SP3) for the
+drift queue), cross-referenced against `test/scenarios/drift-drain.json` (11 scenarios; SP3) for the
 judgement half — whether a given classification is genuinely correct, not only mechanically
 well-formed. Passing as of this commit.
 
@@ -540,15 +540,22 @@ that had just passed.
 **Do not tag 0.4.0.** What remains, and nothing less:
 
 1. Install the built Claude package; confirm the session sees five skills including `threat-model`.
-2. Re-run all 48 from genuinely fresh sessions — prompt verbatim, skill not named — with tiers logged.
-3. Grade all 48; no ungraded cases.
+2. Re-run all **51** from genuinely fresh sessions — prompt verbatim, skill not named — with tiers
+   logged. (48 + the three drift scenarios §12.7 added for the sources layer and the comparison window.)
+3. Grade all 51; no ungraded cases.
 4. Confirm the six run-quality failures do not recur. If the same output-contract fields are dropped
    again by different runs, D2/D3 are not closed and the text is at fault after all.
 5. Re-run `drift-drain/rule-outlived-its-subject` specifically against the N15 fix.
-6. Work, or consciously accept, the eleven carried-forward items in
-   [gate record §12.6](release-gate-0.4.0.md#126-outstanding-carried-forward--flagged-by-graders-deliberately-not-amended).
+6. ~~Work, or consciously accept, the eleven carried-forward items in
+   [gate record §12.6](release-gate-0.4.0.md#126-outstanding-carried-forward--flagged-by-graders-deliberately-not-amended).~~
+   **Done, before the re-run rather than after it** — ten fixed, O6 clarified as a specification
+   defect, recorded item by item in
+   [gate record §12.7](release-gate-0.4.0.md#127-the-eleven-amended--what-each-became). Two of them
+   were the reason the re-run could not have been valid anyway: O8 (24 of the 48 scenarios had no
+   prompt and so could not be run by the documented procedure) and O10 (a degenerate git base
+   silently suppressing every committed change).
 
-**Current test counts, this commit:** `npm test` **379 passing, 0 failing** (was 332 at the second
-pass). `npm run sync:check` clean. Both targets rebuild byte-for-byte. Real-tool E2E lane **5/5**
+**Current test counts, this commit:** `npm test` **385 passing, 0 failing** (379 before the §12.7
+amendments; 332 at the second pass). `npm run sync:check` clean. Both targets rebuild byte-for-byte. Real-tool E2E lane **5/5**
 with a real `import-linter` and `gitleaks 8.30.1`. Package-content gitleaks audit over `build/`:
 1.29 MB scanned, **no leaks**. GitHub Actions Node-runtime deprecation **cleared**, not accepted.

@@ -147,6 +147,10 @@ Output — the threat model (the shared contract, below).
 | Asset or boundary | Actor | Impact | Cheapest control | Cost of that control | Evidence (file, line, structure) | Reopen when |
 |---|---|---|---|---|---|---|
 
+### Gates considered and closed — reviewed, not bought
+| Gate | Why it stays closed | Reopen when |
+|---|---|---|
+
 ### Assumptions — recorded, never graded
 | Assumption | Why it is accepted | What would make it false |
 |---|---|---|
@@ -178,7 +182,30 @@ whole of the concession. Hoisting the **Primary recommendation** block, the Find
 named control above the assets/actors/boundaries block is not — a pointer costs the reader one line
 and still walks them through the derivation; a hoist replaces the derivation with a verdict.
 
-**Never publish a score, a percentage, a grade, or a count that spans the three sections.**
+**A closed gate is an output, not a silence.** Step 7 of Mode A and the same obligation in Mode B
+require a reopening signal for every gate you closed; the **Gates considered and closed** table is
+where it goes, and it is the only place a reviewer can see that a gate was reached and answered
+rather than never reached at all. A gate you considered and closed belongs there whether or not
+anything else in the report changed. What does *not* belong there is every gate in the decision tree:
+list the ones a reader would otherwise expect you to have bought, not an inventory. **A closed gate
+is not a fourth class of finding**: nothing in this table is a violation, a review finding, or an
+assumption, and nothing in it may be counted alongside them.
+
+**The "confirmed, no change" answer has a defined shape, and it is not an empty report.** When the
+correct conclusion is *this design is proportionate to its threat model; no change is currently
+justified*, render it like this and keep it short:
+
+- **Violations** and **Findings** are rendered `_None._` — explicitly, not omitted, so "nothing was
+  found" and "nobody looked" cannot be confused.
+- **Gates considered and closed** carries the substance of the report: the controls you confirmed,
+  why each stays closed on today's actors, and the signal that would reopen it. This table is what a
+  no-change review is *for*.
+- **Primary recommendation** reads `No change — the design is proportionate to its threat model`, and
+  is still the last line of the model, in its usual place.
+- Every other block keeps its usual meaning. **Controls deliberately not bought** stays honest: if
+  nothing heavier was genuinely in play, say that rather than naming a control nobody considered.
+
+**Never publish a score, a percentage, a grade, or a count that spans the sections above.**
 
 ## What this skill does not do
 

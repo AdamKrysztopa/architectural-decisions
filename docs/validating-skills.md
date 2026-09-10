@@ -35,6 +35,12 @@ discovery (`shared/migrating-decisions.md`) — listing candidates without adopt
 confirmed inputs, citing sources honestly, and capping how many decisions one reverse-discovery pass
 may propose.
 
+**Every set carries a `prompt` per scenario, and `npm test` enforces it.** The run procedure below is
+built on pasting a real user prompt verbatim into a fresh session, so a set without prompts cannot be
+run by its own documented method at all — which is what `baseline-capture.json`, `drift-drain.json`
+and `migration.json` were, through the 0.4.0 gate's two runs. All five sets, and all fifty-one
+scenarios in them, are runnable.
+
 ## The scenario set
 
 `test/scenarios/test-patterns.json` is the force-driven gating set for `test-patterns`. It follows
@@ -110,7 +116,7 @@ one that changed:
 |---|---|---|
 | `test/scenarios/test-patterns.json` | 12 | SP1 |
 | `test/scenarios/baseline-capture.json` | 6 | SP1 |
-| `test/scenarios/drift-drain.json` | 8 | SP3 |
+| `test/scenarios/drift-drain.json` | 11 | SP3 |
 | `test/scenarios/migration.json` | 10 | SP4 |
 | `test/scenarios/security.json` | 12 | SP5 |
 

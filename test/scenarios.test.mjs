@@ -219,6 +219,7 @@ test("the capture scenario set is complete and well formed", async () => {
 
   for (const scenario of set.scenarios) {
     assert.ok(scenario.forces?.length > 0, `${scenario.id} names no forces`);
+    assert.ok(scenario.prompt?.length > 40, `${scenario.id} has no usable prompt`);
     assert.equal(typeof scenario.expect.captures, "boolean", `${scenario.id} does not state whether it captures`);
     if (scenario.expect.captures) {
       assert.equal(scenario.expect.status, "proposed", `${scenario.id} must capture as proposed`);
@@ -247,6 +248,9 @@ const driftScenarioFile = join(repositoryRoot, "test/scenarios/drift-drain.json"
 const driftReference = join(repositoryRoot, "shared/observing-drift.md");
 
 const requiredDriftScenarioIds = [
+  "authoritative-source-governs-the-change",
+  "authoritative-sources-disagree",
+  "degenerate-comparison-window",
   "impression-only",
   "narrative-rule-touched",
   "new-boundary",
@@ -264,7 +268,9 @@ const requiredDriftCriteriaIds = [
   "no-scores",
   "no-silent-writes",
   "proposed-not-defect",
+  "sources-are-pointers",
   "violation-is-reserved",
+  "window-is-declared",
 ];
 
 test("the drift scenario set is complete and anchored in the shared reference", async () => {
@@ -290,6 +296,7 @@ test("the drift scenario set is complete and anchored in the shared reference", 
 
   for (const scenario of set.scenarios) {
     assert.ok(scenario.forces?.length > 40, `${scenario.id} names no forces`);
+    assert.ok(scenario.prompt?.length > 40, `${scenario.id} has no usable prompt`);
     assert.equal(typeof scenario.expect.writes, "boolean", `${scenario.id} does not say whether it writes`);
     if (scenario.expect.class !== null) {
       assert.ok(classes.has(scenario.expect.class), `${scenario.id} expects a class that is not a heading`);
@@ -307,6 +314,31 @@ test("the drift scenario set is complete and anchored in the shared reference", 
     set.scenarios.some((scenario) => scenario.expect.downgraded === true),
     "no scenario exercising the evidence-gate downgrade",
   );
+});
+
+// The two layers the 0.4.0 packet grew that the classifier can silently ignore:
+// the designated-sources layer, and how much the git comparison window is
+// worth. A scenario set that grades them is only half the guard -- the shared
+// reference has to say what a correct run does with each, or the scenarios are
+// grading an expectation the skill was never told about.
+test("the drift reference documents the sources layer and the comparison window", async () => {
+  const reference = await readFile(driftReference, "utf8");
+  for (const anchor of [
+    "`sources`",
+    "judgement: \"review\"",
+    "sourceConflicts",
+    "unresolvable-by-precedence",
+    "stale-baseline",
+    "registry-unreadable",
+    "baseStatus",
+    "degenerate",
+    "--base",
+  ]) {
+    assert.ok(
+      reference.includes(anchor),
+      `shared/observing-drift.md never mentions ${anchor} — a shipped packet field with no guidance`,
+    );
+  }
 });
 
 const migrationScenarioFile = join(repositoryRoot, "test/scenarios/migration.json");
@@ -336,6 +368,7 @@ test("the migration scenario set is complete and well formed", async () => {
 
   for (const scenario of set.scenarios) {
     assert.ok(scenario.forces?.length > 0, `${scenario.id} names no forces`);
+    assert.ok(scenario.prompt?.length > 40, `${scenario.id} has no usable prompt`);
     assert.ok(scenario.expect?.notes?.length > 0, `${scenario.id} states no expected outcome`);
   }
 });

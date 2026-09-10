@@ -31,6 +31,7 @@
   "scenarios": [
     {
       "id": "greenfield-recommendation",
+      "prompt": "We're starting a new internal service that imports supplier invoices and reconciles them against purchase orders. Three engineers, one Postgres, no traffic to speak of yet. How should we structure it?",
       "forces": "A new internal service; the run composes a modular monolith with a layered domain and names the cost of each pick.",
       "expect": {
         "captures": true,
@@ -40,6 +41,7 @@
     },
     {
       "id": "explicit-refusal",
+      "prompt": "The team wants to break our app into microservices before we hire in the autumn. We're eight engineers on one deploy and nothing is slow. Should we do it?",
       "forces": "A team asks for microservices; the run recommends staying a monolith and names the signal that would reopen the question.",
       "expect": {
         "captures": true,
@@ -49,6 +51,7 @@
     },
     {
       "id": "question-only",
+      "prompt": "What is CQRS exactly, and is it the same thing as event sourcing? I keep seeing them mentioned together.",
       "forces": "The user asks what CQRS is and whether it relates to event sourcing. The run explains, and recommends nothing.",
       "expect": {
         "captures": false,
@@ -58,6 +61,7 @@
     {
       "id": "already-decided",
       "fixture": "test/fixtures/scenarios/baseline-capture/already-decided",
+      "prompt": "The reporting service needs order data. Can it just read the orders service's tables directly? Building an API for it feels like a lot of work for an internal read.",
       "forces": "The constitution already carries an active decision on service-to-service data access; this run reaches a different conclusion on the same subject.",
       "expect": {
         "captures": true,
@@ -67,6 +71,7 @@
     },
     {
       "id": "no-real-binding",
+      "prompt": "Our domain code keeps ending up importing the database layer directly and it's making everything hard to test. How should we structure that boundary?",
       "forces": "The run recommends that the domain package must not import infrastructure. The repository has no import-linter config and no equivalent checker.",
       "expect": {
         "captures": true,
@@ -76,6 +81,7 @@
     },
     {
       "id": "binding-exists",
+      "prompt": "Our domain code keeps ending up importing the database layer directly and it's making everything hard to test. How should we structure that boundary so it stays that way?",
       "forces": "Same rule, but the repository already has a .importlinter file containing a contract named domain-isolation.",
       "expect": {
         "captures": true,

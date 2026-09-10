@@ -340,7 +340,10 @@
         "Unit tests",
         "Integration tests"
       ],
-      "gatesClosed": [],
+      "gatesClosed": [
+        "End-to-end tests"
+      ],
+      "gatesClosedNotes": "Regulation is not a force for complete-wiring evidence. The E2E gate still needs its own named journey and a failure mode narrower evidence cannot catch; 'an auditor will look at it' is neither. A run that infers a large E2E suite from 'it is regulated' fails this scenario on the gate, not only on its reasoning.",
       "expect": "Independent assurance and traceability legitimately override the default assumption that developers own all the evidence — this is a real force, and the output must say so plainly rather than defending whole-team ownership against a regulator. Evidence must be named, owned, retained, and mapped to obligations. Regulation still does not automatically buy a large E2E suite; that must be earned on its own gate.",
       "failsIf": [
         "Whole-team ownership is defended as a principle against a stated regulatory obligation",

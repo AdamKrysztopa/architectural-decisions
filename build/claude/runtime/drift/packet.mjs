@@ -80,7 +80,17 @@ function sourceContext(sources, sortedPaths) {
   return reported.sort((left, right) => right.precedence - left.precedence || (left.id < right.id ? -1 : 1));
 }
 
-export function buildPacket({ root, base, decisions, paths, queue, checkerRows, sources = [], sourceConflicts = [] }) {
+export function buildPacket({
+  root,
+  base,
+  baseStatus = base ? "explicit" : "unavailable",
+  decisions,
+  paths,
+  queue,
+  checkerRows,
+  sources = [],
+  sourceConflicts = [],
+}) {
   const active = decisions.filter((decision) => decision.status === "active");
   const rules = active
     .flatMap((decision) => decision.rules)
@@ -129,6 +139,11 @@ export function buildPacket({ root, base, decisions, paths, queue, checkerRows, 
   return {
     root,
     base,
+    // How much the comparison window is worth. "degenerate" means the base
+    // resolved to HEAD itself, so `git diff base...HEAD` is empty by
+    // construction and no committed change could have reached this packet --
+    // report that before reporting anything the packet does or does not hold.
+    baseStatus,
     queue,
     paths: sortedPaths,
     rules: reported,

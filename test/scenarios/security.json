@@ -37,7 +37,7 @@
     },
     {
       "id": "deliberate-omissions",
-      "statement": "The run states which heavier control it did not buy, and the actor that did not justify it."
+      "statement": "Where a materially plausible heavier control was considered and declined, the run names it and the actor that did not justify it. Where nothing heavier was genuinely in play, saying that plainly is the correct answer — this criterion is never satisfied by inventing a straw control to have something to decline, which is the security theatre the skill exists to prevent."
     },
     {
       "id": "reopening-signals",
@@ -190,19 +190,23 @@
         "The agent holds a refund tool that moves real money out of the company's account.",
         "The refund tool's credential is the same service account used by three other internal batch jobs.",
         "A wrong refund is not something the customer or the company can costlessly undo once it is issued.",
-        "The agent's task is scoped to one customer's order history per conversation."
+        "The agent's task is scoped to one customer's order history per conversation.",
+        "The customer's own message is what the agent reads and acts on — arbitrary text an actor outside the company wrote, arriving in the same context window as the refund tool."
       ],
-      "expect": "Tool permission scoping opens — refund is a spend action, and the credential is shared across systems that don't need refund access. Blast radius of an autonomous action opens — money moved is a cost beyond the agent's own session. Human approval on irreversible actions opens — a refund is not cheaply reversible. Agent credential scope opens — the shared service account's privilege is compared against the refund task's actual need, and the difference between them is the finding.",
+      "expect": "Tool permission scoping opens — refund is a spend action, and the credential is shared across systems that don't need refund access. Blast radius of an autonomous action opens — money moved is a cost beyond the agent's own session. Human approval on irreversible actions opens — a refund is not cheaply reversible. Agent credential scope opens — the shared service account's privilege is compared against the refund task's actual need, and the difference between them is the finding. Untrusted content in the context window opens too, with all three of its legs named: the customer's message is content an actor can influence, the refund tool is the consequential capability, and the refund itself is a channel that leaves the system. The cheaper control is the capability cut — a turn that has read the customer's message does not also hold the refund tool — named before any filtering or guardrail pass.",
       "failsIf": [
         "Refunds are allowed to proceed without a human approval step.",
         "The shared service account's broader scope is not named as a finding.",
-        "The agent's read-only order-lookup ability is conflated with the refund tool's write ability."
+        "The agent's read-only order-lookup ability is conflated with the refund tool's write ability.",
+        "The customer-authored message is not treated as untrusted content, or the injection gate is skipped because the agent is not reading the open web.",
+        "Prompt-injection filtering or a guardrail pass is offered as the control instead of the capability cut, or ahead of it."
       ],
       "gatesOpen": [
         "Tool permission scoping",
         "Blast radius of an autonomous action",
         "Human approval on irreversible actions",
-        "Agent credential scope"
+        "Agent credential scope",
+        "Untrusted content in the context window"
       ],
       "gatesClosed": []
     },

@@ -1,6 +1,7 @@
 {
   "root": "__FIXTURES_ROOT__",
   "base": null,
+  "baseStatus": "unavailable",
   "queue": {
     "observed": 3,
     "malformed": 1,

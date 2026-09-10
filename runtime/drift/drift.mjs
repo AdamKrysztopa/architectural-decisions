@@ -66,15 +66,43 @@ function stripCarriageReturn(line) {
   return line.endsWith("\r") ? line.slice(0, -1) : line;
 }
 
-function defaultBase(root) {
-  const head = git(root, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]);
-  const branches = head ? [head.trim()] : [];
+// The comparison window, and — just as important — how much it is worth.
+//
+// `merge-base HEAD <branch>` returns HEAD itself whenever HEAD is an ancestor
+// of every candidate branch: on `main` with nothing unpushed, on a freshly cut
+// branch, on a shallow CI checkout. `git diff HEAD...HEAD` is then empty by
+// construction, so every committed change disappears from the packet and the
+// drain reports "nothing scoped" for a repository that may have drifted badly.
+// An empty result that means "no evidence was collected" must never render as
+// an empty result that means "nothing changed", so a degenerate window is
+// named in the packet rather than silently accepted: candidates that resolve
+// to HEAD are skipped in favour of one that does not, and if none does, the
+// status says so and the caller is told to pass --base.
+export function resolveBase(root, explicit) {
+  const head = git(root, ["rev-parse", "HEAD"])?.trim() ?? null;
+  if (explicit) {
+    const resolved = git(root, ["rev-parse", "--verify", "--quiet", `${explicit}^{commit}`])?.trim() ?? null;
+    if (head && resolved && resolved === head) return { base: explicit, status: "degenerate" };
+    return { base: explicit, status: "explicit" };
+  }
+
+  const originHead = git(root, ["symbolic-ref", "--quiet", "--short", "refs/remotes/origin/HEAD"]);
+  const branches = originHead ? [originHead.trim()] : [];
   branches.push("origin/main", "main", "origin/master", "master");
+
+  let degenerate = null;
   for (const branch of branches) {
     const merged = git(root, ["merge-base", "HEAD", branch]);
-    if (merged) return merged.trim();
+    if (!merged) continue;
+    const base = merged.trim();
+    if (head && base === head) {
+      degenerate ??= base;
+      continue;
+    }
+    return { base, status: "merge-base" };
   }
-  return null;
+  if (degenerate) return { base: degenerate, status: "degenerate" };
+  return { base: null, status: "unavailable" };
 }
 
 function gitPaths(root, base) {
@@ -169,7 +197,14 @@ export async function run(argv, cwd = process.cwd()) {
   }
 
   const drained = await drainQueue(root);
-  const base = options.base ?? defaultBase(root);
+  const { base, status: baseStatus } = resolveBase(root, options.base);
+  if (baseStatus === "degenerate") {
+    process.stderr.write(
+      "The comparison base resolves to HEAD itself, so no committed change can appear in this packet. " +
+        "Only queued observations and the working tree were read. Pass --base <ref> with a meaningful " +
+        "comparison point (the branch point, the last reviewed commit, the CI base) to see committed drift.\n",
+    );
+  }
   const sources = new Map();
   for (const observation of drained.observations) {
     const entry = sources.get(observation.path) ?? { path: observation.path, sources: new Set(), tools: new Set() };
@@ -202,6 +237,7 @@ export async function run(argv, cwd = process.cwd()) {
   const packet = buildPacket({
     root,
     base,
+    baseStatus,
     decisions,
     sources: designated,
     sourceConflicts,

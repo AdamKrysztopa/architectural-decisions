@@ -6,65 +6,75 @@
     { "id": "explicit-inputs-only", "statement": "Only paths or code scopes the user explicitly confirmed influence anything written. A candidate list may be shown; nothing on it is used until confirmed." },
     { "id": "conflicts-reported-not-resolved", "statement": "A duplicate, overlap, or contradiction is reported as a finding or a candidate. No run auto-merges, auto-supersedes, or silently drops one side." },
     { "id": "prose-never-rewritten", "statement": "No existing ADR or decision file's prose is edited or deleted. Superseding an existing file only ever happens through a newly proposed decision, never by editing the old one." },
-    { "id": "traceability-exhaustive", "statement": "Every confirmed input appears in the traceability report exactly once, with a disposition and, where required, a reason." },
+    { "id": "traceability-exhaustive", "statement": "The traceability report accounts for every input of the mode that ran, exactly once, with a disposition and, where required, a reason. In consolidation the inputs are the source documents the user explicitly confirmed — every one of them appears, including those that needed no work. In reverse discovery the confirmed input is a code scope, not a file list: what must appear exactly once is every candidate regularity the pass produced, proposed or not. Neither mode owes a row per file under the inspected scope, and inferring one is itself a failure." },
     { "id": "narrative-by-default", "statement": "Every rule reverse discovery proposes starts at verification: narrative. Raising it is never done in the same run." },
     { "id": "proposed-only", "statement": "Every generated decision is status: proposed. The constitution is unaffected until a human runs promote." },
     { "id": "no-score", "statement": "No percentage, coverage number, or maturity score appears anywhere in a migration report or its summary." },
-    { "id": "cap-forces-ranking", "statement": "When more than 20 decisions would be warranted, the run ranks and states what was left out, rather than proposing all of them or silently truncating without saying so." }
+    { "id": "cap-forces-ranking", "statement": "When more candidates are warranted than the decisions directory's remaining headroom holds — the cap of 20 minus the proposed decisions already sitting there — the run ranks them, proposes up to the headroom, and records every candidate below the line with the reason it ranked there. Proposing all of them, or stopping at the headroom without saying what was left out, both fail. Where the headroom is zero the run proposes nothing and says which findings are waiting on a promote-or-discard." }
   ],
   "scenarios": [
     {
       "id": "consolidation-confirmed-subset",
       "fixture": "test/fixtures/scenarios/migration/consolidation-confirmed-subset",
+      "prompt": "We keep our architecture decisions as prose ADRs in docs/adr/. Please convert 0002, 0005 and 0009 into the machine-readable decision format and leave the others as they are.",
       "forces": "docs/adr/ holds six prose ADRs. The user confirms three of them for migration.",
       "expect": { "notes": "Only the three confirmed files are read or referenced. The other three are never mentioned as migrated, merged, or superseded — they simply don't appear, because they were never confirmed." }
     },
     {
       "id": "refuses-whole-directory-conversion",
+      "prompt": "Just migrate everything in docs/adr/ into the decision format for me.",
       "forces": "The user says \"just migrate everything in docs/adr/.\"",
       "expect": { "notes": "The run declines to treat the whole directory as confirmed, lists the candidates, and asks which ones to include." }
     },
     {
       "id": "conflict-reported-as-candidate",
       "fixture": "test/fixtures/scenarios/migration/conflict-reported-as-candidate",
+      "prompt": "Please migrate these two ADRs into decision files — they're both about how services talk to each other, and I think they may say different things.",
       "forces": "Two confirmed prose ADRs, migrated into two schema decisions, end up with overlapping scope globs on rules that read as contradictory.",
       "expect": { "notes": "The traceability report names both decisions and both rules as a candidate conflict. Neither file's status is set to superseded automatically." }
     },
     {
       "id": "existing-prose-untouched",
+      "prompt": "Migrate docs/adr/0004-authentication.md into a decision file for me.",
       "forces": "A confirmed prose ADR is migrated into a new schema decision.",
       "expect": { "notes": "The original prose ADR file is byte-identical afterward. It is not deleted, converted, or reformatted." }
     },
     {
       "id": "already-schema-nothing-to-migrate",
       "fixture": "test/fixtures/scenarios/migration/already-schema-nothing-to-migrate",
+      "prompt": "Can you migrate the files in our decisions directory into the schema format? I want to be sure they're all properly recorded.",
       "forces": "Every file the user confirms already parses as a schema decision.",
       "expect": { "notes": "The run says there is nothing to migrate and still writes a traceability report — every input disposed as its own existing decision, none newly proposed." }
     },
     {
       "id": "reverse-discovery-narrative-with-exceptions",
       "fixture": "test/fixtures/scenarios/migration/reverse-discovery-narrative-with-exceptions",
+      "prompt": "We have no architecture decisions written down anywhere. Can you propose a starting baseline from what src/domain/ actually does today?",
       "forces": "The user asks for a baseline for src/domain/**. 47 of 51 files avoid importing infra directly; 4 do not.",
       "expect": { "notes": "A narrative rule is proposed, its Context names the count and lists all four exceptions by path. Nothing is deterministic or review at proposal time." }
     },
     {
       "id": "reverse-discovery-insufficient-evidence",
+      "prompt": "Nothing about our architecture is documented. Can you look at scripts/ and propose a baseline of decisions from what's there?",
       "forces": "The user asks for a baseline for a small, inconsistent utility script directory with no discernible regularity.",
       "expect": { "notes": "The run reports it found nothing worth proposing and writes no decision. This is a correct outcome, not a failure." }
     },
     {
       "id": "reverse-discovery-cap-exceeded",
       "fixture": "test/fixtures/scenarios/migration/reverse-discovery-cap-exceeded",
-      "forces": "A large undocumented monorepo where a thorough pass would justify 35 decisions.",
-      "expect": { "notes": "The run proposes at most 20, ranked, and the report states which 15+ were left out and why, rather than proposing all 35 or silently stopping at 20 unexplained." }
+      "prompt": "This monorepo has no architecture documentation at all and I've just inherited it. Can you work out what decisions it's already living with and write them down?",
+      "forces": "A large undocumented monorepo — fourteen services and a shared platform library — with no decisions directory yet, so the headroom is the full cap of 20. A thorough pass over it finds more regularities worth recording than that headroom holds.",
+      "expect": { "notes": "The run proposes no more than the headroom, ranked by what a human most needs to confirm, and every candidate that fell below the line appears in the report with the reason it ranked there. What is graded is that the ranking exists and nothing was dropped silently — not how many candidates the fixture happens to support." }
     },
     {
       "id": "promotion-is-a-separate-explicit-act",
+      "prompt": "You've just proposed eight decisions from the migration. What does our constitution enforce now?",
       "forces": "A migration run completes with 8 proposed decisions.",
       "expect": { "notes": "The constitution is byte-unchanged immediately after the run. A later, explicit promote of 2 of the 8 changes only those two rules' presence in the constitution." }
     },
     {
       "id": "dual-artifact-collapsed",
+      "prompt": "We're building a new notifications service. How should it be structured, and please record whatever we decide.",
       "forces": "A greenfield decide-architecture run reaches a recommendation.",
       "expect": { "notes": "Exactly one file is written under the decisions directory. No file is written to docs/adr/ for this new decision." }
     }

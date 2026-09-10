@@ -14,6 +14,23 @@ host with no hooks — there, `queue.observed` is simply `0`.
 If it exits 1, it could not do its job: fix the decision file it names. It never exits 2, because no
 drift finding may fail a build.
 
+**Then read `baseStatus`, before reading anything else in the packet.** It says what the git half of
+the evidence is worth, and an empty packet means two completely different things depending on it.
+
+- `merge-base` or `explicit` — a real comparison window. Committed changes reached the packet.
+- `degenerate` — the base resolved to **HEAD itself**, so `git diff base...HEAD` is empty by
+  construction and *no committed change could have appeared here at all*. This is the ordinary state
+  on `main` with nothing unpushed, on a freshly cut branch, and on some CI checkouts. Only the queue
+  and the working tree were read. **Say so in the report, in those words, before saying what was or
+  was not found** — and ask for a meaningful comparison point (`--base <the branch point, the last
+  reviewed commit, the CI base>`) rather than concluding anything from the silence.
+- `unavailable` — no base could be resolved at all (no git, no candidate branch). Same obligation:
+  report it, then report only what the queue and working tree support.
+
+"Nothing to report" earned from a degenerate window is not the same claim as "nothing to report"
+earned from a real one, and reporting them identically is the one way this loop can be confidently
+wrong.
+
 ## 2. Read `judgement` before reading anything else
 
 Every entry in `rules` carries a `judgement` field. It is not advice.
@@ -23,7 +40,7 @@ Every entry in `rules` carries a `judgement` field. It is not advice.
   `unavailable`, `unbound`, `unreadable-config`, `error`, `not-run`, and `pass`. A model standing in
   for a tool that did not run, or that errored rather than ran to a verdict, is the single worst
   failure this loop can produce.
-- `required` — a `review` rule. Classify it, under the gate in section 4.
+- `required` — a `review` rule. Classify it, under the gate in section 5.
 
 Narrative rules never reach `rules` at all — they are **counted**, not carried: each one only adds
 to the top-level `narrativeSkipped` field. Report that count and nothing else. Nothing may grade
@@ -36,7 +53,50 @@ nonzero `scopeless` means a decision file needs a fix, not that nothing happened
 `scope` simply did not match any path changed this run. `outOfScope` counts the changed paths no
 active rule's scope covers.
 
-## 3. Classify each finding into exactly one class
+## 3. Read `sources` — the designated authoritative documents
+
+`sources` is a second layer beside `rules`, and it is **not** a second kind of rule. Each entry is a
+document this repository explicitly designated authoritative — a PRD, an architecture document, an
+API contract, a security requirement, an engineering standard, a living document — that this
+session's edits bear on. An entry appears for exactly two establishable reasons, and the entry says
+which:
+
+- `governs` — a non-empty list means edited paths fall inside code this source's `scope` covers.
+- `edited: true` — the designated document itself was edited this session.
+
+**Every entry carries `judgement: "review"`, and that is the whole of the layer's authority.** No
+checker speaks for a designated document, so the deterministic lane is not available to it: the word
+**Violation** is unavailable here without exception, however plainly the change seems to contradict
+the document. A source cannot be failed. It can only be read, and the reading is the human's. Report
+each entry as what it is — a pointer, naming the document, why it is in the packet (`governs` or
+`edited`), its `kind` and what it `covers` — and stop there. A source has no rules, so a finding
+against one can never carry a rule id, and the four-part gate in section 5 therefore cannot be met
+for it. If you can name the file, the line and the text that appears to contradict the *document's*
+own content, you may offer that as a reading of your own, said in those words and kept out of every
+class in section 4; what you may not do is let it borrow a rule's classification or a checker's
+authority.
+
+`precedence` **orders the report and nothing else.** A higher-precedence source is printed first; it
+does not overrule, cancel, or resolve a lower one, and the lower source still says what it says.
+
+`sourceConflicts` is reported, never resolved. Its kinds are:
+
+- `unresolvable-by-precedence` — two sources of equal precedence claim the same subject. A human
+  decides which governs; you do not.
+- `precedence-ordered` — one outranks the other on a subject, and they still disagree. Read both.
+- `stale-baseline` — the source's bytes moved since it was last checked. Claims resting on it are
+  **unverified, not wrong** — say it that way.
+- `missing` — a designated source is not in this repository.
+- `registry-unreadable` — the registry itself could not be read. Report the message verbatim and
+  treat the entire layer as absent for this run; this is the same obligation as an `unavailable`
+  checker, for the same reason.
+
+An empty `sources` array means no designated source was touched by these paths — not that none is
+designated, and not that nothing was checked. Nothing in this layer is ever counted into a class
+total in section 5, and nothing in it may be routed into section 6: a source that turns out to be
+wrong is a document for its owner to change, not a decision file for you to propose.
+
+## 4. Classify each finding into exactly one class
 
 ### Violation
 
@@ -61,14 +121,14 @@ correct outcome, and it is where every finding that fails the gate lands.
 ### Legitimate evolution
 
 The change is a *new* architectural decision — a new boundary, a reversed dependency direction, a
-subject no active rule covers. Not a defect. Section 5.
+subject no active rule covers. Not a defect. Section 6.
 
 ### Stale or contradictory documentation
 
 The **rule** is wrong, not the code: it names a module that no longer exists, contradicts another
-active rule, or describes a structure this repository abandoned. Also section 5.
+active rule, or describes a structure this repository abandoned. Also section 6.
 
-## 4. The evidence gate
+## 5. The evidence gate
 
 Before writing *Suspected drift*, name the source out loud: rule id, file, line, and the text or
 structure that contradicts the statement. **Missing any one of the four — downgrade it to
@@ -82,7 +142,7 @@ percentage, no headline count that mixes classes.** One tool failure and two imp
 If every rule lands in *Insufficient evidence* or nothing was scoped, say so and stop. "Nothing to
 report" is the correct outcome more often than not.
 
-## 5. Route evolution into a proposed decision, never a defect report
+## 6. Route evolution into a proposed decision, never a defect report
 
 For *Legitimate evolution* and *Stale or contradictory documentation*:
 
@@ -108,7 +168,7 @@ A `proposed` file changes `constitution.md` by exactly zero bytes until a human 
 the gate, and it already exists — do not work around it by writing `status: active`, and do not work
 around it by retiring the rule it would replace.
 
-## 6. What this step may never do
+## 7. What this step may never do
 
 Modify code. Modify documentation. Edit a rule, a decision file's prose, or `constitution.md`. Write
 into a tool's config. Promote a status. **Set `status: superseded` or `superseded_by` on an existing

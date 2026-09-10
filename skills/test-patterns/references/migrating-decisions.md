@@ -111,7 +111,19 @@ licence to go hunting for the real file, or as a reason to produce nothing.
    headroom is zero and nothing can be added at all. There `build-migration-report.mjs` refuses to
    write the report, and a human must promote or discard some of what is already `proposed` before
    this pass can add anything — say which findings are waiting on that, and why.
-6. Same manifest and report step as consolidation.
+6. Same manifest and report step as consolidation — **over different inputs, and the difference is
+   not cosmetic.** Step 1 confirmed a code *scope*, not a list of documents, so the scope is not the
+   unit of traceability and neither is the file. **The manifest's inputs are the candidate
+   regularities this pass produced**, one entry each, named by the scope-and-pattern it was observed
+   over (`services/*/api.py`, `src/domain/** does not import app.db`) — the same string the decision
+   it becomes cites in its `## Sources`. Every candidate carries a disposition and appears exactly
+   once: `migrated`, naming the decision it became; `omitted`, with the reason it ranked below the
+   headroom line; or `unresolved`, where the count and its exceptions were too thin to propose on.
+
+   **A file under the inspected scope is not an input.** Inspecting 51 modules to find one regularity
+   is one candidate, not 51 rows, and a manifest that lists the tree has recorded the reading rather
+   than the finding. Nothing obliges you to account for a file the pass looked at and drew nothing
+   from.
 
 ## Promoting
 

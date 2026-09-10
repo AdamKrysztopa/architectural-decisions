@@ -234,6 +234,24 @@ actually touch, not by directory name.
 **Sound as-is:** <what is already right — say so.>
 ```
 
+**A "no change" review has a defined rendering, and it is not an empty template.** When the correct
+conclusion is *the suite is proportionate; no change is currently justified*, the contract is
+satisfied like this — and kept short:
+
+- The portfolio table describes **the evidence the suite already holds**, not evidence to buy. Each
+  row's `Selected evidence` is what is there now, `Why it belongs` is the risk it covers today, and
+  `Cost accepted` is what the team is already paying for it. A no-change review is not a review with
+  no rows.
+- **The refusals are rows too.** Every gate you reached and closed — the E2E suite not bought, the
+  mutation testing not added, the contract tests the deployment topology does not justify — is
+  recorded in `Evidence deliberately omitted` with its `Reopen when`. In a no-change review these
+  carry most of the report's content: they are the record that a gate was reached and answered, not
+  never reached.
+- **The single highest-leverage move** reads `None — the suite is proportionate`, followed by the
+  signal that would change that. It is never left blank, and a move is never invented to fill it.
+- **Sound as-is** carries what is already right, said plainly. Any optional observation stays
+  explicitly optional and never gets promoted into the highest-leverage slot.
+
 **Never prescribe numerical ratios** of unit, integration, and E2E tests. Report counts you measured;
 do not hand back targets.
 

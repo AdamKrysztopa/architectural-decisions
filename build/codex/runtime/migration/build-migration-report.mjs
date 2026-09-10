@@ -81,8 +81,9 @@ export async function run(argv, cwd = process.cwd()) {
   }
 
   // Count every status: proposed decision file in the directory, not just the
-  // ones a disposition happens to name. Reverse discovery has no inputs and no
-  // dispositions to count (it proposes straight from code observation), and a
+  // ones a disposition happens to name. Reverse discovery's dispositions name
+  // candidate regularities rather than source documents (and an early pass may
+  // carry none at all), so counting them would not count the backlog, and a
   // duplicate/superseded disposition still writes a brand-new proposed file --
   // either way, what the cap must bound is "how many unreviewed proposed
   // decisions will a human face," which is a fact about the directory, not
