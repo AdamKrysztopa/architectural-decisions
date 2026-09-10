@@ -39,7 +39,34 @@ Selected explicitly, persisted in `arch-crew.json`, never inferred:
 arch mode                                              # what is selected now
 arch mode adr [--dir docs/architecture/decisions]
 arch mode living --document docs/architecture/overview.md [--document ...]
+arch mode <mode> --rollup docs/architecture/constitution.md   # where the rollup goes
 ```
+
+### Where the generated rollup lands
+
+`constitution.md` is generated, carries a do-not-edit banner, and by default
+lands beside the human record: one level **above** the decisions directory in
+`adr` mode, and **in** the documents' own directory in `living` mode. That
+living-mode default puts a generated file among authored documents, which some
+projects forbid outright (a test asserting every `*.md` under `docs/adr` is an
+authored ADR goes red the first time the rollup is written).
+
+State the path once, and it holds in both modes and for every invocation,
+including one given an explicit `--dir`:
+
+```json
+{
+  "documentation": {
+    "mode": "living",
+    "documents": ["docs/adr/architecture.md"],
+    "rollup": "docs/generated/constitution.md"
+  }
+}
+```
+
+`--dir` says which directory rules are read **from**; `rollup` says where the
+generated summary of them belongs. Leave `rollup` unset and the per-mode
+default above is unchanged.
 
 ### `adr` — many ADRs (the default)
 

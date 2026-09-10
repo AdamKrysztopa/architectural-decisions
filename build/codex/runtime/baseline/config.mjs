@@ -86,6 +86,19 @@ export function normalizeConfig(raw, { source = CONFIG_FILENAME } = {}) {
     throw new ConfigError("documentation.decisions must be a path");
   }
 
+  // Where the generated rollup goes. Null means the default, which differs by
+  // mode: beside the decisions directory in `adr`, beside the documents in
+  // `living`. That living-mode default drops a generated file INTO a directory
+  // of authored documents, which a project may reasonably forbid, so the path
+  // is configurable and nothing else about the rollup changes with it.
+  const rollup = documentation.rollup ?? null;
+  if (rollup !== null && (typeof rollup !== "string" || rollup.trim() === "")) {
+    throw new ConfigError("documentation.rollup must be a path");
+  }
+  if (rollup !== null && !rollup.endsWith(".md")) {
+    throw new ConfigError(`documentation.rollup '${rollup}' must name a Markdown file`);
+  }
+
   return {
     source,
     present: true,
@@ -97,6 +110,8 @@ export function normalizeConfig(raw, { source = CONFIG_FILENAME } = {}) {
     // documents. Empty in `adr` mode, where each decision file is its own
     // human record.
     documents,
+    // Null means "wherever this mode puts it by default". See resolveRecord.
+    rollup,
     sources: raw.sources ?? [],
   };
 }
@@ -111,7 +126,15 @@ export async function readConfig(root) {
     text = await readFile(configPath(root), "utf8");
   } catch (error) {
     if (error.code === "ENOENT") {
-      return { source: null, present: false, mode: DEFAULT_MODE, decisions: null, documents: [], sources: [] };
+      return {
+        source: null,
+        present: false,
+        mode: DEFAULT_MODE,
+        decisions: null,
+        documents: [],
+        rollup: null,
+        sources: [],
+      };
     }
     throw error;
   }

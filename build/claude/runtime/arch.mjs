@@ -16,6 +16,11 @@ import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const VERBS = {
+  status: {
+    summary: "Where this repository stands: mode, record, decision counts, sources, queued edits.",
+    usage: "status [--json]",
+    load: async () => (await import("./baseline/status.mjs")).run,
+  },
   mode: {
     summary: "Show or set the human documentation mode: many ADRs, or living architecture documents.",
     usage: "mode [adr|living] [--dir <path>] [--document <path>]...",

@@ -571,6 +571,161 @@ test("the security outcomes that are easy to lose are covered", async () => {
   }
 });
 
+// --- the public front door -------------------------------------------------
+//
+// This set grades a COMMAND, not a skill, and it grades the one judgement the
+// command exists to make: given a sentence a user actually typed, which
+// existing capability owns that outcome. The runner is never told the answer --
+// the prompt is the whole input, exactly as the user would type it, `/arch-crew`
+// included.
+
+const routerScenarioFile = join(repositoryRoot, "test/scenarios/router.json");
+const routerCommand = join(repositoryRoot, "commands/arch-crew.md");
+
+// The closed vocabulary of destinations. A scenario that expects something not
+// on this list is expecting a capability arch-crew does not ship.
+const routerDestinations = [
+  "agentic-patterns",
+  "check",
+  "clarify",
+  "constitution",
+  "decide-architecture",
+  "design-patterns",
+  "drift",
+  "help",
+  "migrate-consolidation",
+  "migrate-reverse-discovery",
+  "mode",
+  "promote",
+  "sources",
+  "test-patterns",
+  "threat-model",
+];
+
+const requiredRouterScenarioIds = [
+  "agent-autonomy",
+  "ambiguous-review-this-architecture",
+  "bare-invocation",
+  "capability-help",
+  "deliberate-divergence",
+  "design-pattern-question",
+  "deterministic-verification",
+  "documentation-mode-choice",
+  "drift-on-this-branch",
+  "greenfield-architecture",
+  "inherited-undocumented-repository",
+  "open-ended-what-should-i-do",
+  "promote-a-decision",
+  "prose-adrs-to-consolidate",
+  "security-of-a-change",
+  "stale-constitution",
+  "testing-strategy",
+  "which-documents-are-authoritative",
+];
+
+const requiredRouterCriteriaIds = [
+  "enters-the-workflow",
+  "evolution-not-defect",
+  "gates-survive-routing",
+  "help-is-cheap",
+  "no-invented-capability",
+  "no-side-effects-from-routing",
+  "one-question-at-most",
+  "routes-not-reimplements",
+];
+
+test("the router scenario set is complete and well formed", async () => {
+  const set = JSON.parse(await readFile(routerScenarioFile, "utf8"));
+  assert.equal(set.skill, "command:arch-crew");
+  assert.ok(set.about?.length > 0);
+  await assert.doesNotReject(readFile(join(repositoryRoot, set.howToRun), "utf8"));
+
+  const ids = set.scenarios.map((scenario) => scenario.id);
+  assert.equal(new Set(ids).size, ids.length, "a router scenario id is duplicated");
+  assert.deepEqual([...ids].sort(), requiredRouterScenarioIds);
+  assert.deepEqual(set.criteria.map((criterion) => criterion.id).sort(), requiredRouterCriteriaIds);
+
+  for (const scenario of set.scenarios) {
+    // The prompt IS the input. It carries `/arch-crew` because this set grades
+    // the public door, not the skill behind it.
+    assert.ok(scenario.prompt?.startsWith("/arch-crew"), `${scenario.id}'s prompt is not typed at the door`);
+    assert.ok(scenario.forces?.length > 40, `${scenario.id} names no forces`);
+    assert.ok(
+      routerDestinations.includes(scenario.expect.routesTo),
+      `${scenario.id} routes to '${scenario.expect.routesTo}', which is not a capability this package ships`,
+    );
+    for (const field of ["asks", "reviews", "writes"]) {
+      assert.equal(typeof scenario.expect[field], "boolean", `${scenario.id} does not say whether it ${field}`);
+    }
+    assert.ok(scenario.expect.notes?.length > 20, `${scenario.id} says nothing about why`);
+  }
+});
+
+// The point of the set: every destination is exercised. A capability with no
+// scenario is a capability whose routing nobody ever graded, which is how a
+// front door quietly loses one.
+test("every capability the door can route to is exercised by a scenario", async () => {
+  const set = JSON.parse(await readFile(routerScenarioFile, "utf8"));
+  const exercised = new Set(set.scenarios.map((scenario) => scenario.expect.routesTo));
+  assert.deepEqual([...exercised].sort(), [...routerDestinations].sort());
+});
+
+test("the outcomes a front door most easily loses are covered", async () => {
+  const set = JSON.parse(await readFile(routerScenarioFile, "utf8"));
+  const scenario = (id) => set.scenarios.find((entry) => entry.id === id);
+
+  // Help stays cheap: orientation never becomes a review.
+  for (const id of ["capability-help", "bare-invocation", "open-ended-what-should-i-do"]) {
+    assert.equal(scenario(id).expect.routesTo, "help", `${id} must stay orientation`);
+    assert.equal(scenario(id).expect.reviews, false, `${id} turns orientation into a review`);
+    assert.equal(scenario(id).expect.writes, false, `${id} writes to answer a question about capabilities`);
+  }
+
+  // A deliberate divergence enters drift as possible evolution, not as a defect.
+  assert.equal(scenario("deliberate-divergence").expect.routesTo, "drift");
+  assert.match(scenario("deliberate-divergence").expect.notes, /legitimate evolution/);
+
+  // Ambiguity costs one question, not a guess.
+  assert.equal(scenario("ambiguous-review-this-architecture").expect.asks, true);
+  assert.equal(scenario("ambiguous-review-this-architecture").expect.writes, false);
+
+  // Routing into promotion is not promoting.
+  assert.equal(scenario("promote-a-decision").expect.writes, false);
+  assert.equal(scenario("promote-a-decision").expect.asks, true);
+
+  // Exactly one scenario may write, and only because the user asked for it.
+  const writing = set.scenarios.filter((entry) => entry.expect.writes);
+  assert.deepEqual(writing.map((entry) => entry.id), ["stale-constitution"]);
+});
+
+// The set grades a document, so the document has to exist and has to be the one
+// the door actually ships. Without this, the scenarios could grade behaviour
+// nothing in the package describes.
+test("every destination the scenarios name is one the shipped command describes", async () => {
+  const text = (await readFile(routerCommand, "utf8")).toLowerCase();
+  const described = {
+    "agentic-patterns": /agentic-patterns/,
+    check: /arch-check/,
+    clarify: /ask exactly one/,
+    constitution: /arch-constitution/,
+    "decide-architecture": /decide-architecture/,
+    "design-patterns": /design-patterns/,
+    drift: /arch-drift/,
+    help: /capability map/,
+    "migrate-consolidation": /consolidation/,
+    "migrate-reverse-discovery": /reverse.discovery/,
+    mode: /arch-mode/,
+    promote: /arch-promote/,
+    sources: /arch-sources/,
+    "test-patterns": /test-patterns/,
+    "threat-model": /threat-model/,
+  };
+  assert.deepEqual(Object.keys(described).sort(), [...routerDestinations].sort());
+  for (const [destination, pattern] of Object.entries(described)) {
+    assert.match(text, pattern, `the shipped door describes no route for '${destination}'`);
+  }
+});
+
 // Every `fixture` a scenario names must resolve to a real directory that has
 // something in it.
 //

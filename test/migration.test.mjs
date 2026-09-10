@@ -82,6 +82,38 @@ test("listCandidates finds ADR-shaped files across every known directory", async
   ]);
 });
 
+test("listCandidates lists a three-digit ADR set, and never the generated or boilerplate files beside it", async () => {
+  // The defect this pins: a `\d{4}-` shape test hid a whole 000-..010- ADR
+  // set. The directory was found, every file in it was skipped, and the empty
+  // listing was indistinguishable from a repository with nothing to migrate --
+  // which left /arch-migrate with nothing to confirm.
+  const root = await mkdtemp(join(tmpdir(), "arch-crew-migration-"));
+  await mkdir(join(root, "docs/adr"), { recursive: true });
+  await writeFile(join(root, "docs/adr/000-implementation-plan.md"), "# plan\n");
+  await writeFile(join(root, "docs/adr/010-house-idioms.md"), "# idioms\n");
+  await writeFile(join(root, "docs/adr/decision-log.md"), "# no digits at all\n");
+  // Generated or boilerplate, never a candidate: excluded by name.
+  await writeFile(join(root, "docs/adr/constitution.md"), "# generated rollup\n");
+  await writeFile(join(root, "docs/adr/migration-report.md"), "# generated report\n");
+  await writeFile(join(root, "docs/adr/README.md"), "# index\n");
+  await writeFile(join(root, "docs/adr/template.md"), "# template\n");
+  // Not Markdown at all.
+  await writeFile(join(root, "docs/adr/notes.txt"), "not markdown\n");
+
+  assert.deepEqual(await listCandidates(root), [
+    "docs/adr/000-implementation-plan.md",
+    "docs/adr/010-house-idioms.md",
+    "docs/adr/decision-log.md",
+  ]);
+});
+
+test("listCandidates does not descend into a directory that happens to end in .md", async () => {
+  const root = await mkdtemp(join(tmpdir(), "arch-crew-migration-"));
+  await mkdir(join(root, "docs/adr/archive.md"), { recursive: true });
+  await writeFile(join(root, "docs/adr/001-kept.md"), "# kept\n");
+  assert.deepEqual(await listCandidates(root), ["docs/adr/001-kept.md"]);
+});
+
 test("listCandidates never reads file contents", async () => {
   const root = await mkdtemp(join(tmpdir(), "arch-crew-migration-"));
   await mkdir(join(root, "docs/adr"), { recursive: true });
@@ -160,7 +192,61 @@ test("candidateScopeConflicts flags overlapping scopes across different decision
   ];
   const conflicts = candidateScopeConflicts(classifyInputs(confirmed));
   assert.equal(conflicts.length, 1);
-  assert.deepEqual(conflicts[0], { decisionA: 1, decisionB: 2, ruleA: "rule-a", ruleB: "rule-b" });
+  assert.deepEqual(conflicts[0], {
+    decisionA: 1,
+    decisionB: 2,
+    ruleA: "rule-a",
+    ruleB: "rule-b",
+    // Carried so the report can name the scopes that overlap, which is the
+    // one fact a reader needs to narrow one of them.
+    scopeA: ["services/**"],
+    scopeB: ["services/billing/**"],
+  });
+});
+
+const manyRules = (id, count, scope) =>
+  `---\nid: ${id}\nstatus: active\nskill: decide-architecture\ndate: 2026-09-09\ncommit: aaaaaaa\nrules:\n` +
+  Array.from(
+    { length: count },
+    (_, index) =>
+      `  - id: rule-${id}-${index}\n    statement: Placeholder statement.\n    scope: ["${scope}"]\n` +
+      "    severity: blocking\n    verification: narrative\n",
+  ).join("") +
+  `---\n# Title ${id}\n\n## Context\nx\n`;
+
+test("candidateScopeConflicts does not pair rules that carry exactly the same scope", () => {
+  // Two decisions of ten identically scoped rules used to produce 100 pairs,
+  // every one of them "these two rules are both scoped informant/**". That is
+  // shared ground by construction, not a candidate conflict, and at scale it
+  // buries the overlaps worth reading.
+  const confirmed = [
+    { path: "0001-a.md", text: manyRules("0001", 10, "informant/**") },
+    { path: "0002-b.md", text: manyRules("0002", 10, "informant/**") },
+  ];
+  assert.deepEqual(candidateScopeConflicts(classifyInputs(confirmed)), []);
+});
+
+test("candidateScopeConflicts still reports a narrower scope nested inside a broader one", () => {
+  // The suppression above must not cost the finding it exists to make legible.
+  const confirmed = [
+    { path: "0001-a.md", text: manyRules("0001", 10, "informant/**") },
+    { path: "0002-b.md", text: manyRules("0002", 1, "informant/adapters/**") },
+  ];
+  const conflicts = candidateScopeConflicts(classifyInputs(confirmed));
+  assert.equal(conflicts.length, 10);
+  assert.equal(conflicts[0].scopeB[0], "informant/adapters/**");
+});
+
+test("candidateScopeConflicts compares scopes as sets, so order and repetition do not defeat suppression", () => {
+  const scoped = (id, ruleId, scope) =>
+    `---\nid: ${id}\nstatus: active\nskill: decide-architecture\ndate: 2026-09-09\ncommit: aaaaaaa\n` +
+    `rules:\n  - id: ${ruleId}\n    statement: Placeholder statement.\n    scope: ${scope}\n` +
+    `    severity: blocking\n    verification: narrative\n---\n# Title ${id}\n\n## Context\nx\n`;
+  const confirmed = [
+    { path: "0001-a.md", text: scoped("0001", "rule-a", '["tests/**", "informant/**"]') },
+    { path: "0002-b.md", text: scoped("0002", "rule-b", '["informant/**", "tests/**", "informant/**"]') },
+  ];
+  assert.deepEqual(candidateScopeConflicts(classifyInputs(confirmed)), []);
 });
 
 test("candidateScopeConflicts reports nothing for disjoint scopes", () => {
@@ -177,6 +263,7 @@ import { fileURLToPath } from "node:url";
 
 import {
   DISPOSITIONS,
+  RENDERED_CONFLICT_CAP,
   REPORTED_DISPOSITIONS,
   buildTraceability,
   canonicalDisposition,
@@ -308,6 +395,95 @@ test("renders the golden traceability report byte-for-byte", async () => {
   const rendered = renderTraceabilityReport(model);
   const expected = await readFile(join(migrationFixtures, "migration-report.expected.md"), "utf8");
   assert.equal(rendered, expected);
+});
+
+test("a candidate-conflict section past the cap is summarised, not printed in full", async () => {
+  // 2,394 pairs is not a section, it is a wall: the instruction to read each
+  // one is a dead letter and a genuine conflict hides in it. Past the cap the
+  // list becomes a per-decision-pair tally a person can actually act on.
+  const decisions = [await fixtureDecision()];
+  const inputs = [{ path: "docs/adr/0003-shared-db-writes.md" }];
+  const dispositions = [{ path: "docs/adr/0003-shared-db-writes.md", kind: "migrated", decisionId: 11 }];
+  const conflicts = [];
+  for (let index = 0; index < 60; index += 1) {
+    conflicts.push({
+      decisionA: 1,
+      decisionB: index < 50 ? 2 : 3,
+      ruleA: `rule-a-${String(index).padStart(3, "0")}`,
+      ruleB: `rule-b-${String(index).padStart(3, "0")}`,
+      scopeA: ["informant/**"],
+      scopeB: ["informant/adapters/**"],
+    });
+  }
+  const rendered = renderTraceabilityReport(
+    buildTraceability({ inputs, dispositions, decisions, conflicts, generatedAt: "2026-09-09" }),
+  );
+
+  const section = rendered.slice(rendered.indexOf("## Candidate conflicts"));
+  const bullets = section.split("\n").filter((line) => line.startsWith("- Decision "));
+  assert.equal(bullets.length, RENDERED_CONFLICT_CAP);
+  assert.match(section, /60 overlapping rule pair\(s\) across 2 decision pair\(s\)/);
+  assert.match(section, /40 further pair\(s\) are not listed/);
+  // The tally names both decision pairs, largest first.
+  assert.match(section, /- Decisions 0001 and 0002: 50 overlapping rule pair\(s\)\./);
+  assert.match(section, /- Decisions 0001 and 0003: 10 overlapping rule pair\(s\)\./);
+  // Each printed pair names the scopes, which is what a reader narrows.
+  assert.match(section, /`informant\/\*\*`.*`informant\/adapters\/\*\*`/);
+});
+
+test("a candidate-conflict section within the cap prints every pair and no tally", async () => {
+  const decisions = [await fixtureDecision()];
+  const inputs = [{ path: "docs/adr/0003-shared-db-writes.md" }];
+  const dispositions = [{ path: "docs/adr/0003-shared-db-writes.md", kind: "migrated", decisionId: 11 }];
+  const conflicts = [
+    { decisionA: 1, decisionB: 2, ruleA: "a", ruleB: "b", scopeA: ["src/**"], scopeB: ["src/api/**"] },
+  ];
+  const rendered = renderTraceabilityReport(
+    buildTraceability({ inputs, dispositions, decisions, conflicts, generatedAt: "2026-09-09" }),
+  );
+  const section = rendered.slice(rendered.indexOf("## Candidate conflicts"));
+  assert.match(section, /1 overlapping rule pair\(s\) across 1 decision pair\(s\)/);
+  assert.equal(section.split("\n").filter((line) => line.startsWith("- Decision ")).length, 1);
+  assert.doesNotMatch(section, /further pair\(s\) are not listed/);
+});
+
+test("the report's own prose carries no em or en dash, and human text passes through unchanged", async () => {
+  // The banner says never to hand-edit this file, so any character the
+  // renderer emits on its own account is a character the reader is stuck
+  // with. Text that came from the human is theirs and is not rewritten.
+  const decisions = [await fixtureDecision()];
+  const inputs = [
+    { path: "docs/adr/0003-shared-db-writes.md" },
+    { path: "docs/adr/0004-unrelated-note.md" },
+  ];
+  const humanReason = "Meeting notes — kept as prose, deliberately.";
+  const dispositions = [
+    { path: "docs/adr/0003-shared-db-writes.md", kind: "migrated", decisionId: 11 },
+    { path: "docs/adr/0004-unrelated-note.md", kind: "omitted", reason: humanReason },
+  ];
+  const conflicts = [
+    { decisionA: 1, decisionB: 2, ruleA: "a", ruleB: "b", scopeA: ["src/**"], scopeB: ["src/api/**"] },
+  ];
+  const rendered = renderTraceabilityReport(
+    buildTraceability({ inputs, dispositions, decisions, conflicts, generatedAt: "2026-09-09" }),
+  );
+
+  // The human's own em dash survives, twice: once in the inputs list, once in
+  // the traceability summary.
+  assert.equal(rendered.split(humanReason).length - 1, 2);
+  const generatedOnly = rendered.split(humanReason).join("");
+  assert.doesNotMatch(generatedOnly, /[\u2013\u2014]/);
+
+  // And the empty-conflicts branch, the other fixed prose, is clean too.
+  const noConflicts = renderTraceabilityReport(
+    buildTraceability({
+      inputs: [inputs[0]],
+      dispositions: [dispositions[0]],
+      decisions,
+      generatedAt: "2026-09-09",
+    }),
+  );
+  assert.doesNotMatch(noConflicts, /[\u2013\u2014]/);
 });
 
 test("the report renders identically regardless of input or disposition order", async () => {

@@ -38,9 +38,11 @@ licence to go hunting for the real file, or as a reason to produce nothing.
 
 ## Consolidation
 
-1. List candidates: `node <plugin-root>/runtime/migration/discover-candidates.mjs`. It only names
-   files shaped like `NNNN-slug.md`, or containing "adr", inside a known ADR directory — it reads no
-   content.
+1. List candidates: `node <plugin-root>/runtime/migration/discover-candidates.mjs`. It names every
+   `*.md` in a known ADR directory, minus `constitution.md`, `migration-report.md`, `README.md` and
+   `template.md` — it reads no content. The listing is deliberately wide: listing is not adopting,
+   and a filename-shape test narrow enough to be tidy silently hides whole ADR sets (a three-digit
+   `000-`…`010-` set, a `decision-log.md`) from the user who is about to confirm a subset.
 2. Present the list. Get the user's confirmed subset.
 3. For each confirmed file, read it and decide, honestly:
    - Already parses as a schema decision? Nothing to migrate — say so, **and still carry it into

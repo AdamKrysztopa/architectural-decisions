@@ -132,6 +132,33 @@ function describeDisposition(disposition) {
   return `${disposition.kind} (${disposition.reason})`;
 }
 
+// How many rule pairs the report prints in full before it summarises the
+// rest. A quadratic pair count is readable only while it is short; past this
+// the list is replaced by a per-decision-pair tally, the same way rule
+// injection truncates rather than blowing its budget.
+export const RENDERED_CONFLICT_CAP = 20;
+
+function describeScope(scope) {
+  return Array.isArray(scope) && scope.length > 0 ? ` (${scope.map((glob) => `\`${glob}\``).join(", ")})` : "";
+}
+
+function pairLabel(conflict) {
+  return `${String(conflict.decisionA).padStart(4, "0")} and ${String(conflict.decisionB).padStart(4, "0")}`;
+}
+
+function decisionPairCounts(conflicts) {
+  const counts = new Map();
+  for (const conflict of conflicts) {
+    const label = pairLabel(conflict);
+    counts.set(label, (counts.get(label) ?? 0) + 1);
+  }
+  return [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+}
+
+function countDecisionPairs(conflicts) {
+  return decisionPairCounts(conflicts).length;
+}
+
 export function renderTraceabilityReport(model) {
   const byPath = new Map(model.dispositions.map((disposition) => [disposition.path, disposition]));
   const sortedInputs = [...model.inputs].sort((a, b) => a.path.localeCompare(b.path));
@@ -149,7 +176,7 @@ export function renderTraceabilityReport(model) {
     "",
   ];
   for (const input of sortedInputs) {
-    lines.push(`- \`${input.path}\` — ${describeDisposition(byPath.get(input.path))}`);
+    lines.push(`- \`${input.path}\`: ${describeDisposition(byPath.get(input.path))}`);
   }
 
   // The same dispositions again, grouped into the six categories the
@@ -168,7 +195,7 @@ export function renderTraceabilityReport(model) {
       continue;
     }
     for (const input of members) {
-      lines.push(`- \`${input.path}\` — ${describeDisposition(byPath.get(input.path))}`);
+      lines.push(`- \`${input.path}\`: ${describeDisposition(byPath.get(input.path))}`);
     }
     lines.push("");
   }
@@ -212,21 +239,34 @@ export function renderTraceabilityReport(model) {
   );
   if (sortedConflicts.length === 0) {
     lines.push(
-      "_None detected. This is not a guarantee the decisions are compatible — only that no rule scopes were found to overlap._",
+      "_None detected. This is not a guarantee the decisions are compatible, only that no rule scopes were" +
+        " found to overlap._",
       "",
     );
   } else {
     lines.push(
-      "Overlapping rule scopes across different decisions. These are candidates for a human to read, never an" +
-        " assertion that the rules actually conflict — confirm, narrow the scope, or leave them as intentionally" +
-        " shared ground.",
+      `${sortedConflicts.length} overlapping rule pair(s) across ${countDecisionPairs(sortedConflicts)}` +
+        " decision pair(s). These are candidates for a human to read, never an assertion that the rules" +
+        " actually conflict: confirm, narrow the scope, or leave them as intentionally shared ground. Two" +
+        " rules carrying exactly the same scope are shared ground by construction and are not listed here.",
       "",
     );
-    for (const conflict of sortedConflicts) {
+    for (const conflict of sortedConflicts.slice(0, RENDERED_CONFLICT_CAP)) {
       lines.push(
-        `- Decision ${String(conflict.decisionA).padStart(4, "0")} rule \`${conflict.ruleA}\` and decision ` +
-          `${String(conflict.decisionB).padStart(4, "0")} rule \`${conflict.ruleB}\` have overlapping scope.`,
+        `- Decision ${String(conflict.decisionA).padStart(4, "0")} rule \`${conflict.ruleA}\`` +
+          `${describeScope(conflict.scopeA)} and decision ${String(conflict.decisionB).padStart(4, "0")}` +
+          ` rule \`${conflict.ruleB}\`${describeScope(conflict.scopeB)} have overlapping scope.`,
       );
+    }
+    if (sortedConflicts.length > RENDERED_CONFLICT_CAP) {
+      lines.push(
+        "",
+        `${sortedConflicts.length - RENDERED_CONFLICT_CAP} further pair(s) are not listed. By decision pair:`,
+      );
+      for (const [pair, count] of decisionPairCounts(sortedConflicts)) {
+        lines.push(`- Decisions ${pair}: ${count} overlapping rule pair(s).`);
+      }
+      lines.push("", "Narrow a scope, or read the two decisions side by side; the full list is not printed.");
     }
     lines.push("");
   }

@@ -7,14 +7,14 @@ Generated 2026-09-09.
 
 ## Inputs and their disposition
 
-- `docs/adr/0003-shared-db-writes.md` — migrated → 0011
-- `docs/adr/0004-unrelated-note.md` — left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
+- `docs/adr/0003-shared-db-writes.md`: migrated → 0011
+- `docs/adr/0004-unrelated-note.md`: left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
 
 ## Traceability summary
 
 ### migrated (1)
 
-- `docs/adr/0003-shared-db-writes.md` — migrated → 0011
+- `docs/adr/0003-shared-db-writes.md`: migrated → 0011
 
 ### merged (0)
 
@@ -26,7 +26,7 @@ _None._
 
 ### omitted (1)
 
-- `docs/adr/0004-unrelated-note.md` — left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
+- `docs/adr/0004-unrelated-note.md`: left-as-prose (Meeting notes, not a decision; no schema equivalent proposed.)
 
 ### conflicting (0)
 
@@ -48,4 +48,4 @@ Every one of the 2 confirmed input(s) appears in exactly one category above.
 
 ## Candidate conflicts
 
-_None detected. This is not a guarantee the decisions are compatible — only that no rule scopes were found to overlap._
+_None detected. This is not a guarantee the decisions are compatible, only that no rule scopes were found to overlap._

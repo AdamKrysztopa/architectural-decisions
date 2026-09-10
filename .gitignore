@@ -6,8 +6,12 @@ inputs/
 .DS_Store
 **/.DS_Store
 
-# Skill eval results (local only)
-test-runs/
+# Skill eval results (local only) -- except a run a release doc cites as evidence,
+# which has to be in the repository for the citation to mean anything.
+# (An excluded DIRECTORY cannot have its contents re-included, so exclude the
+# entries inside it instead and negate the one run that is evidence.)
+test-runs/*
+!test-runs/0.4.1-router/
 
 # Drift-observation queue (local only, per checkout)
 .arch-crew/
