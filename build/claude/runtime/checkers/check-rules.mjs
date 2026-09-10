@@ -21,7 +21,7 @@ for (const adapter of [astGrep, dependencyCruiser, gitleaks, importLinter, oasdi
 assertRegistryAgreesWithKnownTools(KNOWN_TOOLS);
 
 function parseArgs(argv) {
-  const options = { dir: null, run: false, requireTools: false, json: false };
+  const options = { dir: null, run: false, requireTools: false, json: false, includeProposed: false };
   for (let index = 0; index < argv.length; index += 1) {
     const flag = argv[index];
     if (flag === "--dir") {
@@ -32,11 +32,14 @@ function parseArgs(argv) {
       options.run = true;
     } else if (flag === "--require-tools") {
       options.requireTools = true;
+    } else if (flag === "--include-proposed") {
+      options.includeProposed = true;
     } else if (flag === "--json") {
       options.json = true;
     } else {
       throw new Error(
-        `Unknown argument '${flag}'. Usage: check-rules.mjs [--dir <path>] [--run] [--require-tools] [--json]`,
+        `Unknown argument '${flag}'. Usage: check-rules.mjs [--dir <path>] [--run] [--require-tools] ` +
+          "[--include-proposed] [--json]",
       );
     }
   }
@@ -132,7 +135,8 @@ function isWarningFailure(row, rule, options) {
 
 function printHuman(rows, skippedNonDeterministic) {
   for (const row of rows) {
-    process.stdout.write(`${row.rule}  ${row.status}  ${row.tool}#${row.contract}  (${row.evidence})\n`);
+    const marker = row.proposed === true ? "  [proposed — resolution only, not enforced]" : "";
+    process.stdout.write(`${row.rule}  ${row.status}  ${row.tool}#${row.contract}  (${row.evidence})${marker}\n`);
   }
   process.stdout.write(`${skippedNonDeterministic} non-deterministic rule(s) counted, not graded.\n`);
 }
@@ -148,8 +152,32 @@ export async function run(argv, cwd = process.cwd()) {
     return 1;
   }
 
-  const active = decisions.filter((decision) => decision.status === "active");
-  const rules = active.flatMap((decision) => decision.rules);
+  // ENFORCEMENT reads `active` only: a proposed decision is not yet binding on
+  // anybody, and grading a repository against rules no human has approved would
+  // make proposal indistinguishable from adoption.
+  //
+  // RESOLUTION is a different question, and --include-proposed is how a run
+  // asks it. shared/recording-decisions.md tells a run to check a binding
+  // resolves BEFORE raising a rule to `deterministic` -- but the decision being
+  // captured is `proposed` by definition, so without this flag the row the
+  // instruction asks for could never exist and the check silently returned
+  // nothing. That gap was found by running the baseline-capture scenarios
+  // against the real tool.
+  //
+  // This widens what is REPORTED, never what is enforced: a proposed rule's row
+  // can never make this command exit non-zero (see isBlockingFailure /
+  // isWarningFailure, which are reached only for graded rules).
+  const graded = decisions.filter((decision) => decision.status === "active");
+  const considered = options.includeProposed
+    ? decisions.filter((decision) => decision.status === "active" || decision.status === "proposed")
+    : graded;
+  const proposedRuleIds = new Set(
+    considered
+      .filter((decision) => decision.status === "proposed")
+      .flatMap((decision) => decision.rules)
+      .map((rule) => rule.id),
+  );
+  const rules = considered.flatMap((decision) => decision.rules);
   const deterministic = rules.filter((rule) => rule.verification === "deterministic");
   const skippedNonDeterministic = rules.length - deterministic.length;
 
@@ -158,7 +186,11 @@ export async function run(argv, cwd = process.cwd()) {
   // resolves against cwd.
   const rows = [];
   for (const rule of [...deterministic].sort((left, right) => left.id.localeCompare(right.id))) {
-    rows.push(await checkRule(cwd, rule, options));
+    const row = await checkRule(cwd, rule, options);
+    // Marked so a reader (and a grader) can never mistake a resolution row for
+    // an enforcement verdict.
+    if (proposedRuleIds.has(rule.id)) row.proposed = true;
+    rows.push(row);
   }
 
   if (options.json) {
@@ -167,9 +199,13 @@ export async function run(argv, cwd = process.cwd()) {
     printHuman(rows, skippedNonDeterministic);
   }
 
+  // Only rules from ACTIVE decisions can move the exit code. A proposed rule
+  // was reported so the capturing run could see whether its binding resolves;
+  // letting it fail the command would enforce a decision nobody has approved.
   const byRuleId = new Map(deterministic.map((rule) => [rule.id, rule]));
-  if (rows.some((row) => isBlockingFailure(row, byRuleId.get(row.rule), options))) return 2;
-  if (rows.some((row) => isWarningFailure(row, byRuleId.get(row.rule), options))) return 3;
+  const gradedRows = rows.filter((row) => row.proposed !== true);
+  if (gradedRows.some((row) => isBlockingFailure(row, byRuleId.get(row.rule), options))) return 2;
+  if (gradedRows.some((row) => isWarningFailure(row, byRuleId.get(row.rule), options))) return 3;
   return 0;
 }
 

@@ -15,6 +15,7 @@
   "scenarios": [
     {
       "id": "consolidation-confirmed-subset",
+      "fixture": "test/fixtures/scenarios/migration/consolidation-confirmed-subset",
       "forces": "docs/adr/ holds six prose ADRs. The user confirms three of them for migration.",
       "expect": { "notes": "Only the three confirmed files are read or referenced. The other three are never mentioned as migrated, merged, or superseded — they simply don't appear, because they were never confirmed." }
     },
@@ -25,6 +26,7 @@
     },
     {
       "id": "conflict-reported-as-candidate",
+      "fixture": "test/fixtures/scenarios/migration/conflict-reported-as-candidate",
       "forces": "Two confirmed prose ADRs, migrated into two schema decisions, end up with overlapping scope globs on rules that read as contradictory.",
       "expect": { "notes": "The traceability report names both decisions and both rules as a candidate conflict. Neither file's status is set to superseded automatically." }
     },
@@ -35,6 +37,7 @@
     },
     {
       "id": "already-schema-nothing-to-migrate",
+      "fixture": "test/fixtures/scenarios/migration/already-schema-nothing-to-migrate",
       "forces": "Every file the user confirms already parses as a schema decision.",
       "expect": { "notes": "The run says there is nothing to migrate and still writes a traceability report — every input disposed as its own existing decision, none newly proposed." }
     },
@@ -51,6 +54,7 @@
     },
     {
       "id": "reverse-discovery-cap-exceeded",
+      "fixture": "test/fixtures/scenarios/migration/reverse-discovery-cap-exceeded",
       "forces": "A large undocumented monorepo where a thorough pass would justify 35 decisions.",
       "expect": { "notes": "The run proposes at most 20, ranked, and the report states which 15+ were left out and why, rather than proposing all 35 or silently stopping at 20 unexplained." }
     },

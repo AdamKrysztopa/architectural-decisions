@@ -84,8 +84,16 @@ Prose holds the reasoning. Never rewrite the prose of an existing decision file.
   `gitleaks`, `import-linter`, `oasdiff`, `pytest-archon`, `semgrep`.
 
   Before raising a rule to `deterministic`, run
-  `node <plugin-root>/runtime/checkers/check-rules.mjs` and confirm this rule's row is not `unbound`
-  or `unreadable-config` — do not raise a rule on the strength of believing the contract exists.
+  `node <plugin-root>/runtime/checkers/check-rules.mjs --include-proposed` and confirm this rule's
+  row is not `unbound` or `unreadable-config` — do not raise a rule on the strength of believing the
+  contract exists.
+
+  **`--include-proposed` is not optional here, and the reason matters.** Without it the command
+  reports only rules from `active` decisions — and the decision you are capturing is `proposed`, so
+  its rows would simply not appear and the check would look like it passed by returning nothing. The
+  flag widens what is *reported*, never what is *enforced*: a proposed rule's row is marked
+  `[proposed — resolution only, not enforced]` and can never change the command's exit code. If you
+  see an empty result where you expected your own rule, you have run it without the flag.
 
   A checker's verdict is **repository-wide by default** — every adapter scans the whole repository in
   one pass, never only the paths a rule's `scope` names. `import-linter`, `dependency-cruiser`,

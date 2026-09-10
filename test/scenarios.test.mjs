@@ -537,3 +537,45 @@ test("the security outcomes that are easy to lose are covered", async () => {
     );
   }
 });
+
+// Every `fixture` a scenario names must resolve to a real directory that has
+// something in it.
+//
+// Without this, a fixture path can rot silently -- renamed, moved, or never
+// created -- and the scenario goes on claiming to be staged against a
+// representative repository while the runner has nothing to look at. That is
+// precisely the fault (§6.2/B2) that voided ten scenarios in the 0.4.0 gate and
+// produced four "confounded blocker" classifications nobody could resolve. A
+// missing fixture must cost a red test, not a re-run.
+test("every fixture a scenario names exists and is not empty", async () => {
+  const { readdir, stat } = await import("node:fs/promises");
+  const sets = await readdir(join(repositoryRoot, "test/scenarios"));
+  let checked = 0;
+
+  for (const name of sets.filter((entry) => entry.endsWith(".json"))) {
+    const set = JSON.parse(await readFile(join(repositoryRoot, "test/scenarios", name), "utf8"));
+    for (const scenario of set.scenarios) {
+      if (!scenario.fixture) continue;
+      checked += 1;
+
+      assert.ok(
+        !scenario.fixture.startsWith("/") && !scenario.fixture.includes(".."),
+        `${name}/${scenario.id}: fixture must be a repository-relative path, got '${scenario.fixture}'`,
+      );
+
+      const path = join(repositoryRoot, scenario.fixture);
+      let entries = null;
+      try {
+        assert.ok((await stat(path)).isDirectory());
+        entries = await readdir(path);
+      } catch {
+        assert.fail(`${name}/${scenario.id}: fixture '${scenario.fixture}' is not a directory on disk`);
+      }
+      assert.ok(entries.length > 0, `${name}/${scenario.id}: fixture '${scenario.fixture}' is empty`);
+    }
+  }
+
+  // A guard on the guard: if every fixture key were deleted this test would
+  // pass vacuously, which is the one way it could stop protecting anything.
+  assert.ok(checked >= 10, `expected at least 10 fixture-bearing scenarios, found ${checked}`);
+});

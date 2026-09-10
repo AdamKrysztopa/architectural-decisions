@@ -57,6 +57,7 @@
     },
     {
       "id": "already-decided",
+      "fixture": "test/fixtures/scenarios/baseline-capture/already-decided",
       "forces": "The constitution already carries an active decision on service-to-service data access; this run reaches a different conclusion on the same subject.",
       "expect": {
         "captures": true,

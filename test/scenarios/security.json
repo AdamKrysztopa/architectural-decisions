@@ -137,6 +137,7 @@
     },
     {
       "id": "no-scanner-installed",
+      "fixture": "test/fixtures/scenarios/security/no-scanner-installed",
       "mode": "review",
       "title": "The right rule, and no tool to prove it",
       "prompt": "We keep finding API keys in old commits. Review how this repo handles secrets and tell me what to change.",

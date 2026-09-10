@@ -899,3 +899,60 @@ test("--dir overrides discovery, matching build-constitution.mjs", async () => {
   );
   assert.equal(await checkRules(["--dir", decisions], root), 0);
 });
+
+// A capturing run must be able to verify its own binding BEFORE raising a rule
+// to `deterministic` -- which is exactly what shared/recording-decisions.md
+// instructs. Every captured decision is `proposed`, and enforcement reads
+// `active` only, so without --include-proposed the instructed command returned
+// an empty result and looked like it had passed.
+//
+// Found by running the baseline-capture scenario set against the real tool
+// during the 0.4.0 remediation, not by a unit test: the unit tests all only
+// ever built `active` fixtures.
+test("--include-proposed resolves a proposed rule's binding without enforcing it", async () => {
+  const { mkdtemp, mkdir, writeFile } = await import("node:fs/promises");
+  const { tmpdir } = await import("node:os");
+  const { join } = await import("node:path");
+  const { run: checkRules } = await import("../runtime/checkers/check-rules.mjs");
+
+  const root = await mkdtemp(join(tmpdir(), "arch-proposed-"));
+  const decisions = join(root, "docs/architecture/decisions");
+  await mkdir(decisions, { recursive: true });
+  // A binding that names a contract nothing in this repository declares, so a
+  // row that appears must read `unbound` -- the very status the skill tells a
+  // run to look for before raising the rule.
+  await writeFile(
+    join(decisions, "0001-domain-isolation.md"),
+    `---\nid: 0001\nstatus: proposed\nskill: decide-architecture\ndate: 2026-09-10\ncommit: 0000000\nrules:\n  - id: domain-isolation\n    statement: The domain layer imports no infrastructure.\n    scope: ["src/**"]\n    severity: blocking\n    verification: deterministic\n    verified_by: import-linter#domain-isolation\n---\n\n# Domain isolation\n\nBody.\n`,
+    "utf8",
+  );
+
+  const capture = async (argv) => {
+    const original = process.stdout.write;
+    let out = "";
+    process.stdout.write = (chunk) => { out += chunk; return true; };
+    try {
+      const code = await checkRules(argv, root);
+      return { code, out };
+    } finally {
+      process.stdout.write = original;
+    }
+  };
+
+  // Without the flag: the proposed rule is invisible, and that silence is what
+  // made the instruction unexecutable.
+  const without = await capture(["--json"]);
+  assert.deepEqual(JSON.parse(without.out).rows, []);
+
+  // With it: the run can finally see its own rule's resolution.
+  const with_ = await capture(["--include-proposed", "--json"]);
+  const rows = JSON.parse(with_.out).rows;
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].rule, "domain-isolation");
+  assert.equal(rows[0].status, "unbound");
+  assert.equal(rows[0].proposed, true, "a proposed row must be marked as such");
+
+  // And it must NOT enforce: `unbound` on a blocking rule would exit 2 if this
+  // decision were active. A proposed decision nobody approved must not fail CI.
+  assert.equal(with_.code, 0, "a proposed rule must never change the exit code");
+});
