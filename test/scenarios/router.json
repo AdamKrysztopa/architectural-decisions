@@ -1,0 +1,257 @@
+{
+  "skill": "command:arch-crew",
+  "about": "Force-driven scenarios for the public front door, /arch-crew. Each scenario is a real user sentence and the capability that owns its outcome. The runner is NOT told which capability to pick -- that judgement is the thing under test. There is no numeric scoring: a run passes when it enters the capability that owns the outcome, for the stated reason, without doing work the intent did not ask for and without acquiring authority the door does not have. The scenarios that matter most are the three refusals: help that stays cheap, a deliberate divergence that is not a defect, and a promotion that still has to be asked for.",
+  "howToRun": "docs/validating-skills.md",
+  "criteria": [
+    {
+      "id": "routes-not-reimplements",
+      "statement": "The run selects an existing capability and enters it. It does not answer the architectural question itself, and it does not restate a capability's procedure in its own words."
+    },
+    {
+      "id": "enters-the-workflow",
+      "statement": "Where the capability needs no separate human act, the run BEGINS it in the same turn. Replying only 'run /arch-drift' when the drift workflow could have started is a failure, not a courtesy."
+    },
+    {
+      "id": "help-is-cheap",
+      "statement": "A request for orientation produces the capability map and whatever the status block already reported. No repository review, no drain, no decision files read, no checker spawned."
+    },
+    {
+      "id": "one-question-at-most",
+      "statement": "A materially ambiguous intent gets exactly one clarifying question. An intent that is clear enough to act on gets none."
+    },
+    {
+      "id": "evolution-not-defect",
+      "statement": "Code differing from the recorded architecture is never routed as a defect by default. The five classes survive the routing, and a deliberate divergence is treated as a candidate for legitimate evolution."
+    },
+    {
+      "id": "gates-survive-routing",
+      "statement": "Every approval gate inside the selected capability is intact after routing. Promotion is still asked for, a source is still designated only by a human, and the documentation mode is still the user's choice."
+    },
+    {
+      "id": "no-side-effects-from-routing",
+      "statement": "Choosing a destination writes nothing: no decision file, no config change, no registry entry, no regenerated rollup. Any write that happens is one the entered capability itself performs under its own rules."
+    },
+    {
+      "id": "no-invented-capability",
+      "statement": "The run routes only to capabilities that exist. It never promises an analysis arch-crew does not ship, and it never invents a command name."
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "capability-help",
+      "prompt": "/arch-crew what can you do in this repository?",
+      "forces": "A repository with a baseline already in place. The user is orienting, not asking for work; nothing in the sentence names a task.",
+      "expect": {
+        "routesTo": "help",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "A capability map grouped by what the user might want, plus whatever the status block already said about this repository. Reading decision files to answer this is the failure."
+      }
+    },
+    {
+      "id": "bare-invocation",
+      "prompt": "/arch-crew",
+      "forces": "No intent at all. The status block is the only thing the run knows.",
+      "expect": {
+        "routesTo": "help",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "Same map. An empty invocation is orientation, never a licence to start the most likely workflow."
+      }
+    },
+    {
+      "id": "open-ended-what-should-i-do",
+      "prompt": "/arch-crew what should I do?",
+      "forces": "Three proposed decisions are waiting and the queue holds observed edits, so the status block already carries two Next lines.",
+      "expect": {
+        "routesTo": "help",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "Orientation built from state already read, or one useful question. Not a full repository analysis, and not a guess at which of the two backlogs the user meant."
+      }
+    },
+    {
+      "id": "drift-on-this-branch",
+      "prompt": "/arch-crew check whether the work on this branch is drifting from the architecture we agreed on",
+      "forces": "A branch with real edits, active rules covering some of the touched paths, and a non-empty observation queue.",
+      "expect": {
+        "routesTo": "drift",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "The drift workflow begins in this turn. The five classes and the evidence gate are the classifier's, not the door's, and the door must not pre-empt either."
+      }
+    },
+    {
+      "id": "deliberate-divergence",
+      "prompt": "/arch-crew the implementation deliberately violates one of our architecture decisions because the old architecture no longer works",
+      "forces": "The user states the divergence is intentional and names the decision as the thing that is wrong.",
+      "expect": {
+        "routesTo": "drift",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "Same workflow, opposite default. This enters as a candidate for legitimate evolution whose honest outcome may be a proposed decision changing the baseline. Demanding the code be reverted is the failure."
+      }
+    },
+    {
+      "id": "deterministic-verification",
+      "prompt": "/arch-crew check whether our dependency boundaries are still valid",
+      "forces": "One active rule is deterministic and bound to an import-linter contract; the rest are narrative.",
+      "expect": {
+        "routesTo": "check",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "A rule a tool can decide goes to the tool. The status vocabulary is reported as it stands -- unavailable is not a pass -- and --run is offered rather than assumed."
+      }
+    },
+    {
+      "id": "inherited-undocumented-repository",
+      "prompt": "/arch-crew I inherited this repository and there is almost no architecture documentation. Help me establish what the architecture actually is.",
+      "forces": "A substantial codebase; no decisions directory, no ADRs, nothing designated authoritative.",
+      "expect": {
+        "routesTo": "migrate-reverse-discovery",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "Reverse discovery, from confirmed scopes. Everything it eventually writes is proposed, and nothing is adopted from a scan the user did not confirm."
+      }
+    },
+    {
+      "id": "prose-adrs-to-consolidate",
+      "prompt": "/arch-crew we have dozens of ADRs and I don't want to maintain them individually anymore",
+      "forces": "docs/adr holds many prose ADRs. The user wants one maintained document instead of a directory.",
+      "expect": {
+        "routesTo": "migrate-consolidation",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "Consolidation, with the documentation-mode choice surfaced as the user's to make. The candidate list is shown and a confirmed subset asked for; listing is not adopting."
+      }
+    },
+    {
+      "id": "documentation-mode-choice",
+      "prompt": "/arch-crew should our architecture live in one document instead of thirty files?",
+      "forces": "The user is asking about the mode itself, not about migrating anything yet.",
+      "expect": {
+        "routesTo": "mode",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "The trade-off is explained and the choice left with the user. The door never switches the mode as a side effect of being asked about it."
+      }
+    },
+    {
+      "id": "greenfield-architecture",
+      "prompt": "/arch-crew we're starting a new internal service for invoice reconciliation. Help me establish its architecture.",
+      "forces": "A new service, a small team, no existing code to review.",
+      "expect": {
+        "routesTo": "decide-architecture",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "The selection interview, which composes the least architecture that meets the requirement and names the cost of each pick."
+      }
+    },
+    {
+      "id": "ambiguous-review-this-architecture",
+      "prompt": "/arch-crew review this architecture",
+      "forces": "The repository has both a recorded baseline and uncommitted implementation work, so both readings are live and they lead to different workflows.",
+      "expect": {
+        "routesTo": "clarify",
+        "asks": true,
+        "reviews": false,
+        "writes": false,
+        "notes": "Exactly one question: judge the design, or check the code against the design we recorded. Then go. Guessing here spends a review on the wrong question."
+      }
+    },
+    {
+      "id": "testing-strategy",
+      "prompt": "/arch-crew review our testing strategy",
+      "forces": "An existing suite: slow, mock-heavy, and still missing database failures.",
+      "expect": {
+        "routesTo": "test-patterns",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "The test-patterns review, which reads the real suite and returns one proportional rebalancing move."
+      }
+    },
+    {
+      "id": "design-pattern-question",
+      "prompt": "/arch-crew do we really need Strategy here?",
+      "forces": "One class with a growing conditional; Python, where a function or a dict of callables may be the whole answer.",
+      "expect": {
+        "routesTo": "design-patterns",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "Object-level pattern judgement, biased toward the language feature over the ceremony. 'No pattern' is a valid answer the door must not foreclose."
+      }
+    },
+    {
+      "id": "agent-autonomy",
+      "prompt": "/arch-crew how autonomous should this LLM agent be?",
+      "forces": "A tool-using agent with write access to a ticketing system and no human approval step.",
+      "expect": {
+        "routesTo": "agentic-patterns",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "The agentic design review, which pushes toward the least autonomy that works."
+      }
+    },
+    {
+      "id": "security-of-a-change",
+      "prompt": "/arch-crew we introduced OAuth and an external identity provider. Review the architectural security implications.",
+      "forces": "A new trust boundary and a third-party identity provider; no scanner is installed and none is going to be.",
+      "expect": {
+        "routesTo": "threat-model",
+        "asks": false,
+        "reviews": true,
+        "writes": false,
+        "notes": "The boundary-first threat review. It never scans, every deterministic claim binds to a checker the repository already runs, and the output carries no score."
+      }
+    },
+    {
+      "id": "which-documents-are-authoritative",
+      "prompt": "/arch-crew what documents are currently authoritative?",
+      "forces": "Four designated sources, two of them covering the same subject with the same precedence.",
+      "expect": {
+        "routesTo": "sources",
+        "asks": false,
+        "reviews": false,
+        "writes": false,
+        "notes": "The registry is read out, conflicts included and unresolved. The door designates nothing and picks no winner."
+      }
+    },
+    {
+      "id": "promote-a-decision",
+      "prompt": "/arch-crew make this proposed architecture decision active",
+      "forces": "Several decisions are proposed; the user has not said which one 'this' is.",
+      "expect": {
+        "routesTo": "promote",
+        "asks": true,
+        "reviews": false,
+        "writes": false,
+        "notes": "Routing into promotion does not perform it. What is proposed is shown, the ids are asked for, and promotion happens only once the user names them."
+      }
+    },
+    {
+      "id": "stale-constitution",
+      "prompt": "/arch-crew the constitution looks out of date, can you sort it out?",
+      "forces": "The status block already reported the rollup as stale.",
+      "expect": {
+        "routesTo": "constitution",
+        "asks": false,
+        "reviews": false,
+        "writes": true,
+        "notes": "The one scenario whose correct outcome includes a write, and only because the user asked for it. Regenerating a tracked file is named as such, and the decisions that moved are reported."
+      }
+    }
+  ]
+}

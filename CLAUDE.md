@@ -15,6 +15,14 @@ canonical shared documentation. Target adapters in `builders/` select those file
 allowlisted install trees in `build/<target>/`; generated artifacts are committed so Git-backed
 marketplaces can install a target package directly.
 
+`commands/` holds the Claude-only slash-command surface (Codex has no equivalent, so the adapter
+ships it to `build/claude` alone). `commands/arch-crew.md` is the public front door: it reads a
+user's intent, routes it into an existing skill, command or workflow, and enters it. It is a router
+with no authority of its own — the one command it pre-executes is `arch status`, which reads and
+never writes. Adding a capability means adding a route there, and a scenario in
+`test/scenarios/router.json`; both directions are enforced by `test/router.test.mjs` and
+`test/scenarios.test.mjs`.
+
 `.claude-plugin/{plugin.json,marketplace.json}` remains the root Claude compatibility façade.
 Its user-facing marketplace and install commands, plugin identity, skill namespace, and canonical
 skill bytes must remain compatible with the existing Claude release.

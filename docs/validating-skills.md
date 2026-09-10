@@ -35,11 +35,21 @@ discovery (`shared/migrating-decisions.md`) — listing candidates without adopt
 confirmed inputs, citing sources honestly, and capping how many decisions one reverse-discovery pass
 may propose.
 
+`test/scenarios/router.json` is the sixth scenario set, and the only one that grades a **command**
+rather than a skill: `/arch-crew`, the public front door. Each prompt is a sentence a user would
+actually type, `/arch-crew` included, and the runner is never told which capability is correct —
+that judgement is the thing under test. It grades three outcomes a front door loses most easily:
+orientation that stays cheap, a deliberate divergence that enters as possible evolution rather than
+as a defect, and a promotion that still has to be asked for.
+
 **Every set carries a `prompt` per scenario, and `npm test` enforces it.** The run procedure below is
 built on pasting a real user prompt verbatim into a fresh session, so a set without prompts cannot be
 run by its own documented method at all — which is what `baseline-capture.json`, `drift-drain.json`
-and `migration.json` were, through the 0.4.0 gate's two runs. All five sets, and all fifty-one
+and `migration.json` were, through the 0.4.0 gate's two runs. All six sets, and all sixty-nine
 scenarios in them, are runnable.
+
+One difference in the router set's procedure: paste the prompt **with** its leading `/arch-crew`,
+because the command is what is being graded. Every other set is pasted without naming a skill.
 
 ## The scenario set
 

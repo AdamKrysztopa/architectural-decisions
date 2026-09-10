@@ -25,6 +25,33 @@ code) — then either runs a short selection interview or reviews your code agai
 through-line in all five: recommend the **least architecture that meets the requirement**, and name
 the cost of every pick.
 
+## One front door
+
+You do not need to remember any of the names below. Describe the architectural task:
+
+```text
+/arch-crew help
+/arch-crew review this branch for architectural drift
+/arch-crew help me establish this project's architecture
+/arch-crew migrate our ADRs to living documentation
+/arch-crew review our security architecture
+```
+
+`/arch-crew` reads the intent, picks the capability that owns that outcome, and **enters it** — you
+should not have to issue a second arch-crew command unless the workflow itself requires a separate
+human act, as promotion and designating a source do. With no intent, or `help`, it prints a short
+capability map grouped by what you might want to accomplish, coloured by what this repository
+already has: its documentation mode, how many decisions are active and proposed, how many sources
+are designated, and how many edits are queued. Answering that costs one cheap read (`arch status`)
+and never a review.
+
+The door is a router, not an authority: routing alone never promotes a decision, changes the
+documentation mode, designates a source, or edits the baseline, and every approval gate inside the
+capability it enters stays exactly where it was.
+
+> Claude Code namespaces plugin commands, so the door may appear in the picker as
+> `/arch-crew:arch-crew`. The lower-level commands below all still work and are unchanged.
+
 ## The baseline
 
 Each skill records the decision it reached — including an explicit refusal — as a file under the
@@ -61,25 +88,30 @@ Everything deterministic this package ships is reachable from one dispatcher, so
 module paths to remember:
 
 ```sh
-node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs"            # the six verbs
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs"            # every verb
+node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" status     # where this repository stands, in one read
 node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check      # resolve every verified_by binding
 node "$CLAUDE_PLUGIN_ROOT/runtime/arch.mjs" check --run  # and evaluate it with the real tool
 ```
 
-The verbs are `constitution`, `promote`, `check`, `drift`, `migrate` and `candidates`. Each one
+The verbs are `status`, `mode`, `sources`, `constitution`, `promote`, `check`, `drift`, `migrate` and
+`candidates`. Each one
 delegates to the CLI that already owned it, and **exit codes pass through unchanged** — `check`
 returns 2 for a blocking failure and 3 for a warning, which is what makes it usable as a CI gate.
 
-On Claude Code you rarely type any of that. Five slash commands wrap the verbs and carry the
-procedure the output has to be read against:
+On Claude Code you rarely type any of that. Slash commands wrap the verbs and carry the procedure
+the output has to be read against — and `/arch-crew` above wraps all of them:
 
 | Command | What it does |
 |---|---|
+| `/arch-crew` | The front door: describe the task, and it routes you into the right one of the rest. |
 | `/arch-check` | Resolves every deterministic rule and reports the status vocabulary honestly — `unavailable` is not a pass. |
 | `/arch-drift` | Drains the queue and classifies it per `observing-drift.md`, evidence gate included. |
 | `/arch-constitution` | Regenerates the constitution, or `--check`s that it is current. |
 | `/arch-promote` | Promotes named decisions — and asks first, because promotion is a human act. |
 | `/arch-migrate` | Lists candidates and proposes decisions from a manifest you confirm. |
+| `/arch-mode` | Shows or sets whether the human record is many ADRs or living documents. |
+| `/arch-sources` | Designates, lists and reconciles what this project treats as authoritative. |
 
 The Stop hook points at the two you would otherwise forget: it tells you when edits are queued, and
 when the committed constitution has gone stale. It only ever reports — no hook here writes to your
@@ -96,8 +128,9 @@ Add the marketplace and install the plugin:
 /plugin install arch-crew
 ```
 
-Then invoke a skill directly (e.g. `arch-crew:decide-architecture`) or just describe an architecture
-decision and the right skill triggers.
+Then type `/arch-crew` and describe what you need. Invoking a skill directly
+(e.g. `arch-crew:decide-architecture`) still works, and so does simply describing an architecture
+decision with no command at all — the right skill triggers on its own.
 
 This is the original Claude Code installation path and remains fully backward-compatible.
 
