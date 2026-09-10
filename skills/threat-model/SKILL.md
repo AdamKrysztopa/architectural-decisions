@@ -161,6 +161,23 @@ Output — the threat model (the shared contract, below).
 named actors require — or naming a control to drop.>
 ```
 
+**The ordering above is non-negotiable.** System context, assets, actors and boundaries come first;
+**Primary recommendation** stays last, after the findings it was derived from. This is not a
+formatting preference, and it is not negotiable against a host style guide, a request for brevity, or
+a user who asks for the headline first. A control list printed first is the shape-first failure mode
+this entire skill exists to prevent: it lets a reader accept controls without ever seeing the
+boundary that justifies them, so the one question worth asking — *which actor, at which boundary,
+made this worth buying?* — never gets asked. A threat model whose controls are not visibly derived
+from boundaries cannot be checked by anyone. Deriving it boundary-first and then printing it
+recommendation-first is still a failure: a derivation the reader cannot see is not evidence the
+reader has, and saying "everything below is what that came from" does not restore it.
+
+**A preference for leading with the answer is satisfied by a pointer, not by a move.** One line above
+the threat model reading `Recommendation: <one sentence> — derived below` is allowed, and is the
+whole of the concession. Hoisting the **Primary recommendation** block, the Findings table, or any
+named control above the assets/actors/boundaries block is not — a pointer costs the reader one line
+and still walks them through the derivation; a hoist replaces the derivation with a verdict.
+
 **Never publish a score, a percentage, a grade, or a count that spans the three sections.**
 
 ## What this skill does not do

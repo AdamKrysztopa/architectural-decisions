@@ -44,6 +44,30 @@ Walk the steps in order; skip branches that don't apply. Record every pick as
 - **A data / ML / LLM / agentic system** → run the relevant branch *first*, then add the stochastic
   overlay in Step 5. The overlay is **additive**: evaluations do not replace ordinary code testing,
   and code tests are not evidence of semantic quality.
+- **One named gate or one named layer** ("should we add contract tests?", "is our E2E suite too
+  slow?", "do we need a QA sign-off for this release?") → **walk the dimension the question named,
+  and defer the rest by name.** Run Step 2 scoped to that question — the failure surface at stake
+  and its blast radius — then open only that dimension's gates. Close with one line naming the
+  dimensions you did not walk and why: *"dimension 1 (quality practices) and dimension 3 (stochastic
+  evaluation) not walked — this question is about the executable suite's E2E layer only, and the
+  system has no model or data-quality surface; ask again if a judge or an ML component lands."*
+  Deferring by name is what makes a narrow answer auditable — the reader can see which dimensions
+  you priced at zero and disagree with one. Walking past them silently is indistinguishable from
+  having decided they were fine, and that is the shape a reader cannot check.
+
+  Walking all three dimensions instead is the opposite failure and equally wrong: a full portfolio
+  interview answering "should we add contract tests?" buys attention the question did not ask for,
+  and the one answer that mattered arrives buried.
+
+**Route on the mode before you route on the width.** A question about a suite that already exists is
+a review even when it is narrow — narrowness scopes how many dimensions you walk, never which mode
+you are in. Reading "narrow" first is how a review gets answered as a single-gate lookup and the
+existing suite is never read at all.
+
+**No branch here removes Step 2, and none removes the always-on gates.** The narrow branch scopes
+Step 2 — one failure surface instead of the whole map — it does not skip it, and **Code review** and
+**Static analysis and typing** are reached on every walk. A layer recommended with no named failure
+behind it is a layer bought from a shape, which is the one thing this file exists to stop.
 
 ## Step 2 — Identify the system and its failure surfaces
 Classify explicitly — every common system lands somewhere:

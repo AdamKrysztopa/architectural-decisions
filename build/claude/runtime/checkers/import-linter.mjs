@@ -145,12 +145,26 @@ async function resolve(root, contract) {
 // says "something in this config failed".
 const REPORT_LINE = /^(.+?)\s+(KEPT|BROKEN)\s*$/;
 
+// import-linter colours its report, and it does so even when stdout is a pipe
+// rather than a TTY. The contract name therefore arrives wrapped in SGR escape
+// sequences ("\x1b[22msvc-db-isolation \x1b[0m\x1b[32m\x1b[22mKEPT\x1b[0m..."),
+// which no plain-text comparison against the contract name can match.
+//
+// Left unstripped, every deterministic import-linter rule reports `error`
+// ("the output format may have changed") against a real, current import-linter
+// that ran perfectly well -- the deterministic lane silently stops producing
+// pass or fail. This is exactly the failure the real-tool E2E lane exists to
+// catch, and it is why that lane is not optional before a release.
+// Anchored on the ESC byte deliberately: a bare bracket pattern would also
+// eat ordinary bracketed text out of a contract name.
+const ANSI = /\u001b\[[0-9;]*[A-Za-z]/g;
+
 async function run(root, contract) {
   const result = await spawnTool("lint-imports", [], { cwd: root });
   if (!result.available) {
     return { status: "unavailable", evidence: "lint-imports is not on PATH" };
   }
-  for (const line of result.stdout.split("\n")) {
+  for (const line of result.stdout.replace(ANSI, "").split("\n")) {
     const match = REPORT_LINE.exec(line.trim());
     if (match && match[1] === contract) {
       return match[2] === "KEPT"

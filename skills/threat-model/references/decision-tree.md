@@ -17,15 +17,39 @@ and a finding that cannot name an asset, an actor, an impact, and a control with
 downgraded to an observation.
 
 ## Step 1 — Clarify the requested scope
-*Is this one narrow control question, or a system's whole security posture?*
+*Is this one narrow control question, one named axis of a system, or a system's whole security
+posture?*
 - **One control** ("how should we store this API key?", "does this endpoint need auth?") → answer
   it directly from the matching gate in Steps 3–5 and stop. Naming the asset and the actor for that
   one control (a narrowly-scoped pass through Step 2) is still required — a control chosen without
   them is a control bought from a list.
+- **One named axis of a whole system** ("should we require MFA on the admin panel?", "is our tenant
+  isolation right?", "we're adding a webhook — what does it need?") → **walk the axis the user named,
+  and defer the rest by name.** Run Step 2 scoped to that axis — the assets it touches, the actors
+  that reach it, the boundary it sits on — then open only that axis's gates in Steps 3–7. Close with
+  one line naming the axes you did not walk and why: *"supply chain, secrets and data protection not
+  walked — nothing in this question touches the build, a credential store, or stored data; ask again
+  if the admin panel gains a data export."* Deferring by name is what makes a narrow answer
+  auditable — the reader can see which axes you priced at zero and disagree with one. Walking past
+  them silently is indistinguishable from having decided they were fine, and that is the shape a
+  reader cannot check.
+
+  Walking everything instead is the opposite failure and equally wrong: a full eight-step posture
+  review answering "should the admin panel require MFA?" buys attention the question did not ask
+  for, and the one answer that mattered arrives buried.
 - **A system, a new service, or a new trust boundary** → walk Step 2 in full before opening any
   gate.
 - **An existing system under review** → go to Step 8; fall back to Steps 2–7 only where the review
   surfaces a gap the existing design never decided.
+
+**Route on the mode before you route on the width.** A question about a system that already exists
+is a review even when it is narrow — narrowness scopes how many axes you walk, never which mode you
+are in. Reading "narrow" first is how a review gets answered as a one-control lookup and the
+existing design is never read at all.
+
+**No branch here removes Step 2.** The narrow branches scope it — fewer assets, fewer actors, one
+boundary — they do not skip it. A control named with no asset and no actor behind it is a control
+bought from a list, which is the one thing this file exists to stop.
 
 Skip anything the repository or the user has already answered — do not re-litigate an authentication
 scheme that is already implemented and adequate; note it as already closed and move on.
