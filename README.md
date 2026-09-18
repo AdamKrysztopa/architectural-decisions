@@ -16,7 +16,7 @@ have — each branching automatically on whether you're greenfield or refactorin
 |-------|-----------|-----------------|------------------|
 | `arch-crew:decide-architecture` | Pick or assess **software architecture** (structure, topology, data, overlays) | Selection interview → composed stack | Review code → targeted moves |
 | `arch-crew:design-patterns` | Pick or assess **GoF / Python-idiomatic design patterns** | Which-pattern interview → one recommendation (+ Pythonic form) | Smell → pattern review |
-| `arch-crew:agentic-patterns` | Design or assess an **LLM-agent system** | Layered design interview (autonomy → … → integration) | Seven-defect agent review |
+| `arch-crew:agentic-patterns` | Design or assess an **LLM-agent system** | Layered design interview (autonomy → … → integration) | Nine-point agent review |
 | `arch-crew:test-patterns` | Decide which **evidence** a system needs — quality practices, executable tests (unit/integration/contract/E2E), and data/ML/LLM evaluation | Risk-led evidence portfolio + ADR | Test-suite review + one highest-leverage rebalancing move |
 | `arch-crew:threat-model` | Decide or audit the **security of a design** — trust boundaries, authorization placement, secrets, data protection, supply chain, agent/tool permissions | Boundary-first threat interview → findings with asset, actor, impact, control + cost | Security review → one highest-leverage move |
 

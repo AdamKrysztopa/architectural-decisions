@@ -1,6 +1,7 @@
 ---
 id: 0002
-status: active
+status: superseded
+superseded_by: 0004
 skill: decide-architecture
 date: 2026-09-09
 commit: 7da6235

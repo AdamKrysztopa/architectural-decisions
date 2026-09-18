@@ -1,6 +1,6 @@
 ---
 name: agentic-patterns
-description: "Use when designing or assessing an LLM-agent system — 'how should I build this agent', 'do I need multiple agents or one', 'should this be a workflow or an agent', 'how do I add memory/tools/human approval', 'is my ReAct loop / multi-agent setup right', or any agent-architecture code review. Branches automatically: greenfield → a layered design interview (autonomy → reasoning loop → topology → memory → reliability → governance → integration); existing agent code → a review against the catalog's seven recurring defects. Pushes toward the least autonomy that works. Reach for this whenever agents, tools, multi-agent, RAG-agents, orchestration, or LLM control flow come up, even if no pattern is named."
+description: "Use when designing or assessing an LLM-agent system — 'how should I build this agent', 'do I need multiple agents or one', 'should this be a workflow or an agent', 'how do I add memory/tools/human approval', 'is my ReAct loop / multi-agent setup right', or any agent-architecture code review. Branches automatically: greenfield → a layered design interview (autonomy → reasoning loop → topology → memory → reliability → governance → input boundary → integration); existing agent code → a review against the catalog's nine-point checklist (seven over-building defects, one under-building check, one stale-scaffold check). Pushes toward the least autonomy that works. Reach for this whenever agents, tools, multi-agent, RAG-agents, orchestration, or LLM control flow come up, even if no pattern is named."
 ---
 
 # agentic-patterns : design the simplest agent that meets the requirement, or audit the one you have
@@ -19,12 +19,13 @@ an integration seam.
 
 Knowledge lives in two references you read on demand:
 - `references/decision-tree.md` — the layered design interview, bottom of the autonomy spectrum up.
-- `references/catalog.md` — every pattern (when / cost / review cue) and the **seven recurring
-  defects** (plus an under-building counter-check) to check existing agent code against.
+- `references/catalog.md` — every pattern (when / cost / review cue) and the **nine-point
+  checklist** (seven over-building defects, one under-building check, one stale-scaffold check) to
+  check existing agent code against.
 
 Neither reference covers *evidence*: for scaffold tests and semantic evals — what to assert about
-the deterministic wiring and what to evaluate about the model's output — hand off to the
-`test-patterns` skill, which owns that decision tree.
+the deterministic wiring and what to evaluate about the model's output — hand off to
+`arch-crew:test-patterns`, which owns that decision tree.
 
 ## Step 0 — Establish where the user is
 
@@ -71,11 +72,15 @@ Read `references/decision-tree.md` and walk it from the **autonomy gate** up.
    large to hardcode. Demote to "no agent" only when *none* of those hold. Don't skip the gate to get
    to the fun part — and don't force a genuinely open task into a rigid pipeline either.
 2. **Walk the layers in order**, skipping branches that don't apply (workflow designs skip the
-   agent-only layers; single-agent designs skip topology). Ask one layer at a time.
+   agent-only layers; single-agent designs skip topology; a single call goes straight to
+   governance and the input boundary). Ask one layer at a time.
 3. **Compose the design** — stack the selected layers, each naming its pattern and the one-line
    reason it's there, with the *cost* from `references/catalog.md`.
-4. **Surface the standing notes** the active branches trigger: cap loops + early-exit, step budgets,
-   single-agent-first, HITL for irreversible actions, trace everything.
+4. **Add the baseline and surface the standing notes.** Every design gets tracing and, if shipped,
+   offline evaluation; every agent design gets a step budget. Then the notes the active branches
+   trigger: cap loops + early-exit, compaction for long loops, durable execution for runs that
+   must survive a restart, single-agent-first, HITL for irreversible actions, guardrails on
+   untrusted input.
 
 Output — a "Your agentic design" the user can build from:
 
@@ -88,8 +93,8 @@ Output — a "Your agentic design" the user can build from:
 | Reasoning loop | <ReAct / Plan-and-Execute / Reflection> (+ Tool Use) | ... | ... |
 | ...only the layers that apply... |
 
-**Guardrails to include from day one:** <step budget, loop cap, HITL gates, tracing — per the
-active branches.>
+**Baseline and guardrails from day one:** <tracing and offline evaluation always; step budget for
+any agent; loop caps, HITL gates, input/output/tool guardrails — per the active branches.>
 
 **The least-autonomy check:** <one or two sentences confirming nothing here is more autonomous than
 the task requires — or flagging a layer to drop.>
@@ -99,7 +104,8 @@ the task requires — or flagging a layer to drop.>
 outcome *is* the recommendation — and it's the most valuable one this skill gives. Say plainly what
 to build instead (a single well-prompted call, optionally with retrieval; or the one workflow shape
 and its guardrails), why it's sufficient, and the single signal that would later justify climbing
-the spectrum. Two honest lines beat a padded multi-layer design for a problem that didn't need one.
+the spectrum. It still gets the baseline (tracing, offline evaluation) and, where they apply,
+HITL for irreversible actions and guardrails on untrusted input. Two honest lines beat a padded multi-layer design for a problem that didn't need one.
 
 ## Mode B — Refactoring: agent-system review
 
@@ -111,16 +117,17 @@ only ever subtract.
 
 1. **Map the current design.** From the code or description, name each layer: autonomy level,
    reasoning loop, single vs. multi, memory, reliability, governance, integration.
-2. **Run the checklist** from `references/catalog.md` — seven over-building defects plus one
-   under-building counter-check: (1) agent where a workflow/call would do, (2) multi-agent where one
+2. **Run the nine-point checklist** from `references/catalog.md` — seven over-building defects,
+   one under-building check, and one stale-scaffold check: (1) agent where a workflow/call would do, (2) multi-agent where one
    agent would do, (3) loops without a step budget + early-exit, (4) unvalidated tool outputs, (5) no
    durable memory when runs outlive the context window, (6) ungated irreversible actions, (7) no
-   tracing, and (8) — the other direction — a workflow/single call silently doing an agent's job
-   badly (e.g. hardcoded retrieval that can't re-query). Most findings live in (1)–(7); (8) keeps the
-   review honest. The checklist is a **lens,
-   not a form to fill**: many real systems are a *workflow* or a *workflow-of-single-calls* (e.g.
-   LangGraph), so translate each defect to what the system actually is rather than scoring it as if
-   it were an autonomous agent — and if you find a genuine issue that none of the eight name (a dead
+   tracing, (8) — the other direction — a workflow/single call silently doing an agent's job badly
+   (e.g. hardcoded retrieval that can't re-query), and (9) a scaffold (context resets, sprint
+   splits, evaluators) not re-tested since the last model upgrade. Most findings live in (1)–(7);
+   (8) keeps the review honest. The checklist is a **lens, not a form to fill**: many real systems
+   are a *workflow* or a *workflow-of-single-calls* (e.g. a LangGraph `StateGraph` with fixed
+   edges), so translate each defect to what the system actually is rather than scoring it as if it
+   were an autonomous agent — and if you find a genuine issue that none of the nine name (a dead
    tool, a disabled checkpointer, an unbuilt "agent" that's really a stub), report it anyway. Also
    handle the **pre-build** case: if the agentic layer is only designed-on-paper / stubbed, review
    the *intended* design and flag the defects to preempt before they're written.
@@ -171,7 +178,7 @@ that would justify climbing the spectrum.>
 Classify every rule honestly (default `narrative`) and regenerate the constitution.
 
 **Refactoring → a review report.** Write the review to `docs/agentic-review-<YYYY-MM-DD>.md` (create
-`docs/` if absent — Current design + Findings from the seven-defect checklist + Simplify /
+`docs/` if absent — Current design + Findings from the nine-point checklist + Simplify /
 Sound-as-is). If the system is already sound, say so plainly and keep the report short — a clean
 bill of health is a valid, useful outcome, not a failure to find work. If a finding is a direction
 the user commits to, capture it the same way — one decision file, following
@@ -187,7 +194,7 @@ that has none? Read `references/migrating-decisions.md` and follow it.
 
 The autonomy gate leads on purpose: the costliest agentic mistakes are made *before* any pattern is
 chosen, by reaching for an agent (or a swarm) when something simpler and more reliable would serve.
-Naming the cost beside every layer, and leading review mode with the seven-defect checklist, keeps
+Naming the cost beside every layer, and leading review mode with the nine-point checklist, keeps
 the focus where real failures happen — over-engineering and missing guardrails — rather than on
 collecting exotic patterns.
 
@@ -210,8 +217,9 @@ proceed.**
 
 ## Record the decision
 
-Covered above: every recommendation this skill makes — **including an explicit refusal** — is
-persisted as the one decision file described in "Recording the outcome." Do not record when the run
+Covered above: every greenfield recommendation — **including an explicit refusal** — and every
+review finding the user commits to is persisted as the one decision file described in "Recording
+the outcome." A review otherwise writes only its report. Do not record when the run
 only answered a question without recommending anything.
 
 ## Notice drift later
