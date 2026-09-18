@@ -7,15 +7,6 @@ Edit a decision file and regenerate; never edit this file.
 
 ## Rules
 
-### markdown-copied-byte-for-byte
-
-Shared Markdown is copied byte-for-byte; no prose templating engine is introduced.
-
-- Severity: blocking
-- Scope: `skills/**`, `shared/**`
-- Verified by review — needs judgement, and may be graded as a soft signal.
-- Source: [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md)
-
 ### no-security-scoring
 
 No security output carries a maturity score, rating, grade, percentage, or control count. Findings are grouped by evidence class, never ranked into one list.
@@ -24,6 +15,15 @@ No security output carries a maturity score, rating, grade, percentage, or contr
 - Scope: `skills/threat-model/**`, `test/scenarios/security.json`
 - Verified by review — needs judgement, and may be graded as a soft signal.
 - Source: [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md)
+
+### runtime-uses-node-builtins-only
+
+The shipped runtime uses Node builtins only.
+
+- Severity: blocking
+- Scope: `runtime/**`
+- Verified by review — needs judgement, and may be graded as a soft signal.
+- Source: [0004 Frozen skill frontmatter changes only through a decision, and agentic-patterns' description is corrected](decisions/0004-frozen-frontmatter-changes-by-decision.md)
 
 ### security-claims-are-bound
 
@@ -34,25 +34,25 @@ A security claim that a tool could decide is bound to a checker the repository a
 - Verified by review — needs judgement, and may be graded as a soft signal.
 - Source: [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md)
 
-### skill-frontmatter-is-frozen
+### shared-markdown-copied-verbatim
 
-The four skills' name and description frontmatter must not change; triggering is part of the shipped release.
+Shared Markdown is copied byte-for-byte; no prose templating engine is introduced.
+
+- Severity: blocking
+- Scope: `skills/**`, `shared/**`
+- Verified by review — needs judgement, and may be graded as a soft signal.
+- Source: [0004 Frozen skill frontmatter changes only through a decision, and agentic-patterns' description is corrected](decisions/0004-frozen-frontmatter-changes-by-decision.md)
+
+### skill-frontmatter-changes-by-decision
+
+The four skills' name and description frontmatter match test/fixtures/skill-freeze byte for byte; triggering is part of the shipped release, so a change lands only with a decision that names it and an updated fixture.
 
 - Severity: blocking
 - Scope: `skills/agentic-patterns/SKILL.md`, `skills/decide-architecture/SKILL.md`, `skills/design-patterns/SKILL.md`, `skills/test-patterns/SKILL.md`
 - Verified by review — needs judgement, and may be graded as a soft signal.
-- Source: [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md)
-
-### zero-runtime-dependencies
-
-The shipped runtime uses Node builtins only.
-
-- Severity: blocking
-- Scope: `runtime/**`
-- Verified by review — needs judgement, and may be graded as a soft signal.
-- Source: [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md)
+- Source: [0004 Frozen skill frontmatter changes only through a decision, and agentic-patterns' description is corrected](decisions/0004-frozen-frontmatter-changes-by-decision.md)
 
 ## Active decisions
 
-- [0002 The baseline is a directory of decisions with a generated constitution](decisions/0002-architectural-baseline.md) — decide-architecture
 - [0003 Security ships as a fifth skill, and it never scans](decisions/0003-security-skill.md) — threat-model
+- [0004 Frozen skill frontmatter changes only through a decision, and agentic-patterns' description is corrected](decisions/0004-frozen-frontmatter-changes-by-decision.md) — agentic-patterns

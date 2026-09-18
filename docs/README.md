@@ -34,7 +34,7 @@ Start a new Codex session after installation.
 |--------|-----|--------------|-----------------|
 | `arch-crew:decide-architecture` | software architecture (structure, topology, data, overlays) | selection interview → composed stack + ADR | review → targeted moves + report |
 | `arch-crew:design-patterns` | GoF + Python-idiomatic design patterns | which-pattern interview → one recommendation + Pythonic form | smell → pattern review |
-| `arch-crew:agentic-patterns` | LLM-agent systems (autonomy, loops, memory, governance) | layered design interview → "your agentic design" + ADR | seven-defect agent review |
+| `arch-crew:agentic-patterns` | LLM-agent systems (autonomy, loops, memory, governance) | layered design interview → "your agentic design" + ADR | nine-point agent review |
 | `arch-crew:test-patterns` | testing strategy — quality practices vs. deterministic executable testing vs. stochastic evaluation, plus the oracle guardrail over all three | risk-led evidence portfolio → risk/evidence/cost table + ADR | suite review → one highest-leverage rebalancing move |
 | `arch-crew:threat-model` | architecture-level security (trust boundaries, authN/authZ, secrets, data protection, supply chain, agent permissions) | boundary-first threat interview → findings with asset/actor/impact/control + cost | security review → one highest-leverage move |
 

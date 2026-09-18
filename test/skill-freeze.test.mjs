@@ -26,16 +26,16 @@ function splitFrontmatter(text) {
 }
 
 for (const [name, expected] of Object.entries(frozen)) {
-  test(`${name}'s frozen frontmatter is byte-identical to its 0.3.1 shape`, async () => {
+  test(`${name}'s frozen frontmatter is byte-identical to its fixture`, async () => {
     const text = await readFile(join(skillsRoot, name, "SKILL.md"), "utf8");
     const { block } = splitFrontmatter(text);
     const nameLine = /^name:\s*(.+)$/m.exec(block)[1].trim();
     const description = block.slice(block.indexOf("description:")).replace(/^description:\s*/, "").trim();
-    assert.equal(nameLine, expected.name, `${name}'s frontmatter 'name' changed since 0.3.1`);
+    assert.equal(nameLine, expected.name, `${name}'s frontmatter 'name' differs from its fixture`);
     assert.equal(
       description,
       expected.description,
-      `${name}'s frontmatter 'description' changed since 0.3.1 — triggering behaviour is part of the shipped release`,
+      `${name}'s frontmatter 'description' differs from its fixture — triggering behaviour is part of the shipped release; change it only with a decision (see 0004)`,
     );
   });
 }
