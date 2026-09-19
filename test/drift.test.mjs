@@ -390,8 +390,16 @@ test("the session-start hook finds the constitution for every one of build-const
   }
 });
 
-test("the stop hook emits a systemMessage only when the queue is non-empty", async () => {
+// The Stop hook invites /arch-crew:drift only where a drain has something to
+// classify against; test/drift-no-record.test.mjs covers the repository with none.
+async function scratchWithRecord() {
   const root = await scratch();
+  await mkdir(join(root, "docs/architecture/decisions"), { recursive: true });
+  return root;
+}
+
+test("the stop hook emits a systemMessage only when the queue is non-empty", async () => {
+  const root = await scratchWithRecord();
   const quiet = await runHook("notify.mjs", JSON.stringify({ cwd: root }), { CLAUDE_PROJECT_DIR: root });
   assert.equal(quiet.code, 0);
   assert.equal(quiet.stdout.trim(), "");
@@ -405,7 +413,7 @@ test("the stop hook emits a systemMessage only when the queue is non-empty", asy
 });
 
 test("the stop hook does not repeat the same banner across turns with no new edits", async () => {
-  const root = await scratch();
+  const root = await scratchWithRecord();
   await appendObservation(root, { t: "T1", path: "a.py", tool: "Edit" });
 
   const first = await runHook("notify.mjs", JSON.stringify({ cwd: root }), { CLAUDE_PROJECT_DIR: root });
@@ -616,9 +624,10 @@ describe("the drain CLI drains the fixture repository", () => {
 });
 
 test("the drain exits 1 when it cannot do its job and never exits 2", async () => {
-  const empty = await scratch();
+  const broken = await scratchWithRecord();
+  await writeFile(join(broken, "docs/architecture/decisions/0001-broken.md"), "---\nid: 1\n---\n", "utf8");
   await assert.rejects(
-    execFileAsync(process.execPath, [join(repositoryRoot, "runtime/drift/drift.mjs"), "drain", "--root", empty]),
+    execFileAsync(process.execPath, [join(repositoryRoot, "runtime/drift/drift.mjs"), "drain", "--root", broken]),
     (error) => error.code === 1,
   );
 });

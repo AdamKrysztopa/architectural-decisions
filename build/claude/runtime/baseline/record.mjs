@@ -68,21 +68,56 @@ function display(root, path) {
   return !rel || rel.startsWith("..") || isAbsolute(rel) ? path : rel.split("\\").join("/");
 }
 
-export async function resolveRecord(root, { dir = null } = {}) {
+// Where the record lives, without loading it: the precedence above, and
+// nothing else. resolveRecord is this plus the load, so a hook that only needs
+// to know whether a record exists cannot disagree with the drain about where.
+export async function locateRecord(root, { dir = null } = {}) {
   const config = await readConfig(root);
 
   // An explicit directory is a direct instruction about the machine layer, and
   // it overrides the mode without changing it: the config still says what the
   // human record is, we were simply told where to read rules from this time.
   if (dir) {
-    const directory = isAbsolute(dir) ? dir : resolve(root, dir);
-    return fromDirectory(directory, { mode: config.mode, config }, configuredRollup(root, config));
+    return { mode: config.mode, config, directory: isAbsolute(dir) ? dir : resolve(root, dir), documents: [] };
   }
 
   if (config.mode === "living") {
     const documents = config.documents.map((path) =>
       resolveProjectPath(root, path, "documentation.documents"),
     );
+    return { mode: "living", config, directory: dirname(documents[0]), documents };
+  }
+
+  const directory = config.decisions
+    ? resolveProjectPath(root, config.decisions, "documentation.decisions")
+    : await discoverDirectory(root);
+  return { mode: "adr", config, directory, documents: [] };
+}
+
+// Whether a drain has anything to classify edits against: a record at its
+// located path (one stat), or a designated source. Any failure answers false,
+// because the Stop hook that asks must never invite a command that then fails.
+export async function canClassify(root) {
+  try {
+    const located = await locateRecord(root);
+    if (located.config.sources.length > 0) return true;
+    const info = await stat(located.mode === "living" ? located.documents[0] : located.directory);
+    return located.mode === "living" ? info.isFile() : info.isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+export async function resolveRecord(root, { dir = null } = {}) {
+  const located = await locateRecord(root, { dir });
+  const { config } = located;
+
+  if (dir) {
+    return fromDirectory(located.directory, { mode: config.mode, config }, configuredRollup(root, config));
+  }
+
+  if (located.mode === "living") {
+    const { documents } = located;
     const { decisions, errors } = await loadLivingDocuments(documents, (path) => display(root, path));
     return {
       decisions,
@@ -104,8 +139,5 @@ export async function resolveRecord(root, { dir = null } = {}) {
     };
   }
 
-  const directory = config.decisions
-    ? resolveProjectPath(root, config.decisions, "documentation.decisions")
-    : await discoverDirectory(root);
-  return fromDirectory(directory, { mode: "adr", config }, configuredRollup(root, config));
+  return fromDirectory(located.directory, { mode: "adr", config }, configuredRollup(root, config));
 }

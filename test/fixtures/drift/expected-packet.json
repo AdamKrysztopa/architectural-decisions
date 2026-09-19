@@ -1,5 +1,7 @@
 {
   "root": "__FIXTURES_ROOT__",
+  "record": "present",
+  "nextStep": null,
   "base": null,
   "baseStatus": "unavailable",
   "queue": {
@@ -79,6 +81,7 @@
   ],
   "sources": [],
   "sourceConflicts": [],
+  "documents": [],
   "narrativeSkipped": 1,
   "scopeless": 0,
   "outOfScope": 1

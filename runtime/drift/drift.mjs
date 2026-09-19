@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 import { resolveRecord } from "../baseline/record.mjs";
 import { findConflicts, loadSources } from "../baseline/sources.mjs";
+import { findArchitectureDocuments } from "./documents.mjs";
 import { buildPacket } from "./packet.mjs";
 import {
   clearNotifiedCount,
@@ -144,6 +145,33 @@ function checkerRows(root, directory) {
   }
 }
 
+// With no decision record there are no rules, so the drain falls back to what
+// the repository does have: designated sources first, undesignated
+// architecture documents second, and only when neither exists does it propose
+// seeding a record.
+function nextStepWithoutRecord(designated, documents) {
+  const undesignated = documents.filter((path) => !designated.some((source) => source.path === path));
+  if (undesignated.length > 0) {
+    return (
+      `No decision record yet, so there are no active rules; the edits were read against the ${undesignated.length} ` +
+      "architecture document(s) found instead. To make one binding, designate it with /arch-crew:sources, " +
+      "or turn it into proposed decisions with /arch-crew:migrate."
+    );
+  }
+  if (designated.length > 0) {
+    return (
+      "No decision record yet, so there are no active rules; the edits were read against the designated sources only. " +
+      "Record a first decision (/arch-crew:help routes you to the right skill) to give drift rules to classify against."
+    );
+  }
+  return (
+    "No decision record and no architecture documentation found, so there are no active rules to classify these " +
+    "edits against. Seed one: record a first decision with an arch-crew skill (/arch-crew:help routes you to the " +
+    "right one), or run /arch-crew:migrate to propose decisions from the existing code. Drift classifies against " +
+    "them from then on."
+  );
+}
+
 export async function run(argv, cwd = process.cwd()) {
   const options = parseArgs(argv);
   // Falling back to bare `cwd` here (rather than the same CLAUDE_PROJECT_DIR-
@@ -186,7 +214,11 @@ export async function run(argv, cwd = process.cwd()) {
   // those are is a machine-layer question, so it goes through the mode-aware
   // seam and the drain itself stays mode-blind.
   const { decisions, errors, directory, missingDirectory } = await resolveRecord(root, { dir: options.dir });
-  if (missingDirectory) {
+  // A named --dir that does not exist is the caller's mistake. The default
+  // location being absent is the ordinary state of a repository that has
+  // recorded nothing yet, and the drain still has a queue to consume and
+  // other documentation to read.
+  if (missingDirectory && options.dir) {
     process.stderr.write(`No decisions directory at ${directory}\n`);
     return 1;
   }
@@ -233,9 +265,15 @@ export async function run(argv, cwd = process.cwd()) {
     sourceConflicts = [{ kind: "registry-unreadable", subject: "sources", sources: [], note: error.message }];
   }
 
+  const documents = missingDirectory ? await findArchitectureDocuments(root) : [];
+  const nextStep = missingDirectory ? nextStepWithoutRecord(designated, documents) : null;
+
   const times = drained.observations.map((observation) => observation.t).sort();
   const packet = buildPacket({
     root,
+    record: missingDirectory ? "absent" : "present",
+    documents,
+    nextStep,
     base,
     baseStatus,
     decisions,
@@ -254,10 +292,22 @@ export async function run(argv, cwd = process.cwd()) {
       since: times[0] ?? null,
       until: times[times.length - 1] ?? null,
     },
-    checkerRows: checkerRows(root, directory),
+    checkerRows: missingDirectory ? null : checkerRows(root, directory),
   });
 
-  process.stdout.write(`${JSON.stringify(packet, null, 2)}\n`);
+  if (missingDirectory && !options.json) {
+    process.stdout.write(
+      [
+        `Drained ${drained.observations.length} observed edit(s).`,
+        nextStep,
+        ...packet.sources.map((source) => `  designated: ${source.path}`),
+        ...packet.documents.map((document) => `  found:      ${document.path}`),
+        "",
+      ].join("\n"),
+    );
+  } else {
+    process.stdout.write(`${JSON.stringify(packet, null, 2)}\n`);
+  }
   await releaseDrained(root, drained.names);
   // The Stop hook's "N edits observed" memory is scoped to the queue it
   // described; a drain that consumed that queue invalidates it.

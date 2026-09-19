@@ -80,6 +80,24 @@ function sourceContext(sources, sortedPaths) {
   return reported.sort((left, right) => right.precedence - left.precedence || (left.id < right.id ? -1 : 1));
 }
 
+// Architecture documents found in a repository with no decision record. Same
+// authority as a designated source -- a pointer, never a verdict -- and less
+// provenance: nobody has designated these, so each says so in its own note.
+function documentContext(documents, sources, sortedPaths) {
+  const designated = new Set(sources.map((source) => source.path));
+  const edited = new Set(sortedPaths.map((entry) => entry.path));
+  return documents
+    .filter((path) => !designated.has(path))
+    .map((path) => ({
+      path,
+      edited: edited.has(path),
+      judgement: "review",
+      note: edited.has(path)
+        ? `${path} was edited this session. It is not designated authoritative, so it binds nothing yet; read it as context.`
+        : `${path} is architecture documentation nobody has designated authoritative. Read the edits against it as context; it binds nothing yet.`,
+    }));
+}
+
 export function buildPacket({
   root,
   base,
@@ -90,6 +108,9 @@ export function buildPacket({
   checkerRows,
   sources = [],
   sourceConflicts = [],
+  record = "present",
+  documents = [],
+  nextStep = null,
 }) {
   const active = decisions.filter((decision) => decision.status === "active");
   const rules = active
@@ -138,6 +159,11 @@ export function buildPacket({
 
   return {
     root,
+    // "absent" means no decision record exists yet, so `rules` is empty by
+    // construction rather than because nothing drifted; `nextStep` says what
+    // would give this drain something to classify against.
+    record,
+    nextStep,
     base,
     // How much the comparison window is worth. "degenerate" means the base
     // resolved to HEAD itself, so `git diff base...HEAD` is empty by
@@ -152,6 +178,7 @@ export function buildPacket({
     // construction — see sourceContext above.
     sources: sourceContext(sources, sortedPaths),
     sourceConflicts,
+    documents: documentContext(documents, sources, sortedPaths),
     narrativeSkipped,
     scopeless,
     outOfScope: sortedPaths.filter((entry) => !matchedPaths.has(entry.path)).length,

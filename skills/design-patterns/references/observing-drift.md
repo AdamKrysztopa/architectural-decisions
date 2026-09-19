@@ -11,8 +11,24 @@ notice says edits are queued. Not on every edit: a trivial edit must never trigg
 Codex. The drain reads the observation queue first and `git` second, so it works identically on a
 host with no hooks — there, `queue.observed` is simply `0`.
 
-If it exits 1, it could not do its job: fix the decision file it names. It never exits 2, because no
-drift finding may fail a build.
+If it exits 1, it could not do its job: fix the decision file it names, or the `--dir` you passed
+that does not exist. It never exits 2, because no drift finding may fail a build.
+
+A repository with **no decision record yet** is not an error. The drain exits 0, consumes the queue,
+and says `record: "absent"`: `rules` is empty by construction, so an empty `rules` there means
+"nothing to classify against", never "nothing drifted". It falls back to what the repository does
+have, in this order, and `nextStep` says which case you are in:
+
+1. **Designated sources** (section 3) — read exactly as they are when a record exists.
+2. **`documents`** — architecture documentation the drain found but nobody designated
+   (`ARCHITECTURE.md`, `docs/architecture/*.md`, prose ADRs, and the like). Each carries
+   `judgement: "review"` and an `edited` flag. Read the edits against them as context, with even
+   less authority than a source: nothing here is a finding against a rule. Offer to make one
+   binding — `/arch-crew:sources` to designate it, `/arch-crew:migrate` to propose decisions from
+   it — and ask; never designate or migrate on the user's behalf.
+3. **Nothing at all** — say so, and offer to seed a first decision (an arch-crew skill records it;
+   `/arch-crew:help` routes there) or reverse-discover proposals from the code with
+   `/arch-crew:migrate`. Drift classifies against that record from the next drain on.
 
 **Then read `baseStatus`, before reading anything else in the packet.** It says what the git half of
 the evidence is worth, and an empty packet means two completely different things depending on it.

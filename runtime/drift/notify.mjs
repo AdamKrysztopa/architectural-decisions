@@ -11,6 +11,7 @@
 // the observation count as of the last banner; the hook stays quiet until that
 // count changes, and a drain or `discard` clears the mark along with the queue.
 
+import { canClassify } from "../baseline/record.mjs";
 import { countObservations, readNotifiedCount, resolveRoot, writeNotifiedCount } from "./queue.mjs";
 import { constitutionIsStale } from "./staleness.mjs";
 
@@ -40,8 +41,13 @@ async function main() {
   // constitution stale are exactly the edits that put something in the queue.
   // A stale constitution with an empty queue is reported by `arch constitution
   // --check`, which is the lane that exists to report it loudly.
+  // With nothing to classify against, the queue notice stays silent rather than
+  // becoming a one-time hint: SessionStart already says, once per session, that
+  // no constitution exists, and a drain run by hand still consumes the queue and
+  // proposes seeding. The check costs one stat, and only on a turn that would
+  // otherwise notify.
   const notices = [];
-  if (observed > 0 && observed !== lastNotified) {
+  if (observed > 0 && observed !== lastNotified && (await canClassify(root))) {
     notices.push(
       `${observed} edit${observed === 1 ? "" : "s"} observed this session. Run /arch-crew:drift to classify them against the active rules.`,
     );
