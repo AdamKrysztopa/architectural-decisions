@@ -26,9 +26,16 @@ repeated here. Bracketed keys are sources, listed at the end.
   descriptions, tools that can't report failure cleanly ([WT]).
 - **Reflection (self-reflection)** `#ap-reflection` — the *same* model critiques and revises its
   own output ([LIU] 4.9). Feedback from a different agent or model is cross-reflection
-  ([LIU] 4.10) — that is Evaluator-Optimizer. *When:* there's a clear correctness signal to check
-  against. *Cost:* unbounded self-revision; a model grading itself shares its own blind spots.
-  *Review cue:* reflection with no iteration cap or no early-exit on a clean critique.
+  ([LIU] 4.10) — that is Evaluator-Optimizer. Reflexion ([SHN]) is the cross-attempt variant: the
+  environment resets, the task is re-attempted, and a short lesson from each failure carries into
+  the next attempt of that task only. *When:* a correctness signal the generator does not produce —
+  tests, a tool, an environment flag, a schema check. The model's critique of its own output is not
+  one: without an outside signal, self-correction tends to lower accuracy ([KAM]). *Not when:* the
+  check is deterministic and attempts are cheap and side-effect free, until plain retry or
+  best-of-N against the same check has been measured at equal cost — on HumanEval, retry beat
+  Reflexion at lower cost ([KAP]). *Cost:* unbounded self-revision; a model grading itself shares
+  its own blind spots. *Review cue:* no iteration cap; the exit decided by the model's own critique
+  rather than the outside signal; a loop never compared with plain retry.
 - **Plan-and-Execute** `#ap-plan` — a planner decomposes the goal into ordered steps before an
   executor acts. *When:* long-horizon, multi-system tasks. Keep the plan high-level: granular
   up-front specs cascade their errors downstream ([HD]). *Cost:* brittle if it can't re-plan on
@@ -80,9 +87,11 @@ repeated here. Bracketed keys are sources, listed at the end.
   sequential calls that have no data dependency.
 - **Evaluator-Optimizer (cross-reflection)** `#ap-evaluator-optimizer` — a generator and a
   *separate* evaluator loop until criteria pass ([LIU] 4.10; also called maker-checker or
-  generator-verifier, [AZ]). *When:* measurable quality bar. *Cost:* unbounded loops. *Review cue:*
-  no iteration cap; evaluator and generator are the same undifferentiated prompt (that is
-  Reflection).
+  generator-verifier, [AZ]). *When:* measurable quality bar. An evaluator prompt on the same model
+  is not independent of the generator; tests, a checked rubric, or a different model are. *Cost:*
+  unbounded loops. *Review cue:* no iteration cap; evaluator and generator are the same
+  undifferentiated prompt (that is Reflection); a deterministic check used only inside the loop,
+  never as plain retry or best-of-N at equal cost ([KAP]).
 
 ## III. Multi-agent topologies (only when one agent can't hold the task)
 The line that matters is **who keeps control of the answer**: a manager that calls specialists and
@@ -267,6 +276,8 @@ newer model no longer needs is cost with no payoff.
 - [CX] <https://www.anthropic.com/engineering/code-execution-with-mcp>
 - [DAO] <https://arxiv.org/abs/2601.19752>
 - [HD] <https://www.anthropic.com/engineering/harness-design-long-running-apps>
+- [KAM] <https://arxiv.org/abs/2406.01297>
+- [KAP] <https://arxiv.org/abs/2407.01502>
 - [LAA] <https://blog.langchain.com/introducing-ambient-agents/>
 - [LCM] <https://docs.langchain.com/oss/python/langchain/mcp/tools>
 - [LCS] <https://docs.langchain.com/oss/python/langchain/multi-agent/subagents>
@@ -280,6 +291,7 @@ newer model no longer needs is cost with no payoff.
 - [OAM] <https://openai.github.io/openai-agents-python/multi_agent/>
 - [OAR] <https://openai.github.io/openai-agents-python/guardrails/>
 - [SH] <https://arxiv.org/abs/2508.07935>
+- [SHN] <https://arxiv.org/abs/2303.11366>
 - [SK] <https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills>
 - [SW] <https://github.com/openai/swarm>
 - [WT] <https://www.anthropic.com/engineering/writing-tools-for-agents>

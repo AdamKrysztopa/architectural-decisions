@@ -55,7 +55,8 @@ A workflow is developer-steered: predictable, cheaper, testable. Pick the shape:
   **Parallelization** `#ap-parallelization`.
 - **Generate, then score against criteria, and loop** (draft vs. a rubric until it passes) →
   **Evaluator-Optimizer** `#ap-evaluator-optimizer`. *Note:* cap iterations (1–3), early-exit on a
-  pass.
+  pass. When the check is deterministic, measure plain retry or best-of-N against it first and
+  keep the loop only if it wins at equal cost.
 
 A workflow design then takes governance, the input boundary, and integration from Q8–Q10. Q3–Q7
 are agent-only.
@@ -69,8 +70,11 @@ typed, schema-validated tool call; reliability rides on tool design.
   before they enter reasoning.
 - **Commit to a plan up front, then execute** (long-horizon, multi-system) → **Plan-and-Execute**
   `#ap-plan` (re-plan on failure).
-- **Draft, self-critique, and revise** (clear correctness signal to check) → **Reflection**
-  `#ap-reflection`. *Note:* cap reflection iterations (1–3), exit when the critique is clean.
+- **Draft, check, and revise** (a correctness signal the model does not produce: tests, a tool,
+  an environment flag) → **Reflection** `#ap-reflection`. *Note:* cap reflection iterations (1–3);
+  exit when that signal passes, not when the model's own critique is clean; measure plain retry
+  against the same signal first. With no outside signal, prefer a single pass or sampling with a
+  vote — self-critique alone tends to lower accuracy.
 - **Gather and grade evidence iteratively** (answer quality hangs on retrieval the model must
   steer) → **Agentic RAG** `#ap-agentic-rag`. *Note:* route easy queries to a one-shot fast path
   and reserve the loop for hard ones. *Prerequisite:* advanced static RAG (hybrid dense + BM25, a
